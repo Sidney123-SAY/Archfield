@@ -697,8 +697,24 @@ function cleanup() {
   run("DELETE FROM oauth_pending WHERE expires_at < ?", now);
 }
 
+// En développement : adresse à ouvrir sur un téléphone connecté au même Wi-Fi, avec un QR code à scanner.
+const rank = (ip) => (ip.startsWith("192.168.") ? 0 : ip.startsWith("10.") ? 1 : 2);
+function showPhoneAccess() {
+  const ips = Object.values(require("node:os").networkInterfaces()).flat()
+    .filter((i) => i && i.family === "IPv4" && !i.internal && !/^169\.254\./.test(i.address)).map((i) => i.address)
+    .sort((a, b) => rank(a) - rank(b)); // le Wi-Fi d'une box (192.168…) avant les réseaux virtuels (WSL, VirtualBox)
+  if (!ips.length) return console.log("Aucun réseau Wi-Fi détecté : le site n'est ouvrable que sur cet ordinateur.");
+  const urls = ips.map((ip) => `http://${ip}:${PORT}`);
+  console.log(`\nSur votre téléphone, connecté au même Wi-Fi, ouvrez : ${urls.join("  ou  ")}`);
+  try { require("qrcode-terminal").generate(urls[0], { small: true }, (qr) => console.log(qr)); } catch (e) {}
+  console.log("Si le téléphone n'y arrive pas, autorisez Node.js dans le pare-feu (réseau privé) quand Windows le demande.\n");
+}
+
 if (require.main === module) {
-  app.listen(PORT, () => console.log(`Archfield écoute sur http://localhost:${PORT}`));
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Archfield écoute sur http://localhost:${PORT}`);
+    if (!PROD) showPhoneAccess();
+  });
   cleanup();
   setInterval(cleanup, 60 * 60e3);
   if (process.env.REPORTS !== "off") startScheduler();

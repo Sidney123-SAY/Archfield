@@ -47,6 +47,18 @@ Comptes de démo (mot de passe `archfield-demo`) :
 
 `npm test` lance le parcours complet de l'API sur une base temporaire.
 
+### Ouvrir le site sur son téléphone
+
+Au démarrage (`npm start`), le terminal affiche l'adresse à ouvrir sur un téléphone connecté **au même Wi-Fi**, par exemple `http://192.168.1.20:3000`, et un QR code à scanner avec l'appareil photo.
+
+- Sous Windows, la première fois, autorisez Node.js dans le pare-feu pour les **réseaux privés**. Si la fenêtre n'est pas apparue : Paramètres → Confidentialité et sécurité → Sécurité Windows → Pare-feu → Autoriser une application → cochez Node.js (Privé).
+- Le Wi-Fi de l'ordinateur doit être en profil « Privé » (Paramètres → Réseau et Internet → Wi-Fi → propriétés du réseau).
+- Le téléphone ne doit pas être sur la 4G ni sur un Wi-Fi invité.
+
+### Captures de la page d'accueil
+
+Les images de `public/img` sont de vraies captures de l'application (français et anglais, clair et sombre). Après un changement d'interface : `npm run seed`, `npm start`, puis dans un autre terminal `npm run screenshots` (nécessite Playwright : `npx playwright install chromium`).
+
 ### Ce que fait le MVP
 
 - **Artisan** : inscription avec 2 mois d'essai, création de chantiers avec étapes et durées prévues (modèles construction ou rénovation), publication de photos datées et d'une phrase depuis le téléphone (photos allégées dans le navigateur avant l'envoi), étapes à démarrer, terminer ou rouvrir, devis et factures, lien privé à copier ou envoyer par WhatsApp, accusé « Vu par … », chantier livré.

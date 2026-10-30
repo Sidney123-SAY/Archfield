@@ -16,7 +16,9 @@ for (const f of ["ui.js", "app.js", "client.js", "auth.js"]) {
 }
 for (const f of fs.readdirSync(path.join(root, "public")).filter((x) => x.endsWith(".html"))) {
   const src = fs.readFileSync(path.join(root, "public", f), "utf8");
-  for (const m of src.matchAll(/<(\w+)[^>]*\sdata-i18n(?:="")?[^>]*>([\s\S]*?)<\/\1>/g)) keys.add(m[2].trim().replace(/\s+/g, " "));
+  for (const m of src.matchAll(/<(\w+)[^>]*\sdata-i18n(?:="")?(?=[\s>])[^>]*>([\s\S]*?)<\/\1>/g)) keys.add(m[2].trim().replace(/\s+/g, " "));
+  for (const m of src.matchAll(/<[^>]*\saria-label="([^"]+)"[^>]*\sdata-i18n-label[^>]*>/g)) keys.add(m[1]);
+  for (const m of src.matchAll(/<[^>]*\salt="([^"]+)"[^>]*\sdata-i18n-alt[^>]*>/g)) keys.add(m[1]);
   const title = src.match(/<title>(.*?)<\/title>/); if (title) title[1].split(" · ").forEach((p) => keys.add(p));
 }
 const { COUNTRIES } = require(path.join(root, "server/company.js"));

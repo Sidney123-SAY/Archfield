@@ -9,6 +9,7 @@
     "dev": "node --no-warnings --watch server/server.js",
     "seed": "node --no-warnings server/seed.js",
     "activate": "node --no-warnings server/activate.js",
+    "screenshots": "node tools/screenshots.js",
     "test": "node --no-warnings --test test/*.test.js"
   },
   "engines": {
@@ -19,6 +20,7 @@
     "express": "4.21.2",
     "heic-convert": "2.1.0",
     "multer": "1.4.5-lts.1",
-    "nodemailer": "6.9.16"
+    "nodemailer": "6.9.16",
+    "qrcode-terminal": "0.12.0"
   }
 }

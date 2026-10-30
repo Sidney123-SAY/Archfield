@@ -3,55 +3,202 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#14263D">
+<meta name="theme-color" content="#0E1A2A">
 <title>Archfield</title>
 <meta name="description" content="Archfield permet à n'importe quel client de suivre son chantier à distance, en toute transparence, et transforme chaque chantier en données utiles.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <script src="/js/theme.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="/css/app.css">
+<link rel="stylesheet" href="/css/landing.css">
 </head>
-<body>
-<header class="hero gutter">
-  <div class="in">
-    <nav><span class="logo" id="logo" style="font-size:1.25rem">Archfield</span>
-      <div class="links"><div data-prefs class="on-dark"></div><a class="btn light" href="/connexion" data-i18n>Se connecter</a><a class="btn primary" href="/inscription" data-i18n>Essai gratuit</a></div></nav>
-    <div style="display:grid;gap:18px">
-      <h1 data-i18n>Votre chantier, comme si vous y étiez.</h1>
-      <p class="lead" data-i18n>L'artisan publie l'avancement depuis son téléphone en 30 secondes : quelques photos datées et une phrase. Son client suit tout par un lien privé, sans créer de compte.</p>
-      <div class="cta"><a class="btn primary" href="/inscription" style="min-height:44px" data-i18n>Essayer 2 mois gratuitement</a><a class="btn light" href="/c/demo-saly-awa" id="demo-link" hidden style="min-height:44px" data-i18n>Voir un chantier de démo</a></div>
+<body class="lp">
+
+<!-- Barre de navigation translucide, collée en haut -->
+<header class="lp-nav">
+  <div class="lp-wrap lp-nav-in">
+    <a class="logo" href="/" id="logo" aria-label="Archfield">Archfield</a>
+    <nav class="lp-links" aria-label="Sections" data-i18n-label>
+      <a href="#fonctionnalites" data-i18n>Fonctionnalités</a>
+      <a href="#comment" data-i18n>Comment ça marche</a>
+      <a href="#tarifs" data-i18n>Tarifs</a>
+      <a href="#faq" data-i18n>Questions</a>
+    </nav>
+    <div class="lp-nav-r">
+      <div data-prefs class="on-dark lp-prefs"></div>
+      <a class="lp-signin" href="/connexion" data-i18n>Se connecter</a>
+      <a class="btn primary lp-cta-sm" href="/inscription" data-i18n>Essai gratuit</a>
     </div>
   </div>
 </header>
-<main class="landing gutter">
-  <section style="display:grid;gap:14px">
-    <h2 style="font-size:1.4rem" data-i18n>Ce que voit le client</h2>
-    <div class="cols3">
-      <div class="card"><h3 data-i18n>Le journal en photos</h3><p data-i18n>Chaque mise à jour arrive avec ses photos datées. Plus besoin d'appeler l'artisan pour savoir où en est le chantier.</p></div>
-      <div class="card"><h3 data-i18n>Les étapes à valider</h3><p data-i18n>Fondations, murs, toiture : le client valide chaque étape terminée avant de payer la suivante.</p></div>
-      <div class="card"><h3 data-i18n>Devis, factures et rapport du lundi</h3><p data-i18n>Tout est au même endroit, et un résumé de la semaine part automatiquement chaque lundi matin.</p></div>
+
+<main>
+  <!-- Bandeau d'ouverture -->
+  <section class="lp-hero">
+    <div class="lp-glow" aria-hidden="true"></div>
+    <div class="lp-wrap lp-hero-in">
+      <p class="lp-eyebrow" data-i18n>Suivi de chantier à distance</p>
+      <h1 class="lp-h1"><span data-i18n>Votre chantier,</span> <span class="lp-dim" data-i18n>comme si vous y étiez.</span></h1>
+      <p class="lp-lead" data-i18n>L'artisan publie l'avancement depuis son téléphone en 30 secondes : quelques photos datées et une phrase. Son client suit tout par un lien privé, sans créer de compte.</p>
+      <div class="lp-ctas">
+        <a class="btn primary lp-cta" href="/inscription" data-i18n>Essayer 2 mois gratuitement</a>
+        <a class="lp-textlink" href="/c/demo-saly-awa" id="demo-link" hidden><span data-i18n>Voir un chantier de démo</span> <span aria-hidden="true">›</span></a>
+      </div>
+      <p class="lp-fine" data-i18n>Sans carte bancaire · 19 € ou 9 900 FCFA par mois ensuite · Sans engagement</p>
+
+      <div class="lp-stage" aria-hidden="true">
+        <div class="lp-laptop">
+          <div class="lp-laptop-screen">
+            <img class="shot shot-light" data-shot="dashboard" alt="" src="/img/dashboard-fr-light.jpg" width="2040" height="1290">
+            <img class="shot shot-dark" data-shot="dashboard" data-dark alt="" src="/img/dashboard-fr-dark.jpg" width="2040" height="1290" loading="lazy">
+          </div>
+          <div class="lp-laptop-base"></div>
+        </div>
+        <div class="lp-phone lp-phone-hero">
+          <img class="shot shot-light" data-shot="phone-client" alt="" src="/img/phone-client-fr-light.jpg" width="780" height="1688">
+          <img class="shot shot-dark" data-shot="phone-client" data-dark alt="" src="/img/phone-client-fr-dark.jpg" width="780" height="1688" loading="lazy">
+        </div>
+      </div>
     </div>
   </section>
-  <section style="display:grid;gap:14px">
-    <h2 style="font-size:1.4rem" data-i18n>Ce que gagne l'artisan</h2>
-    <div class="cols3">
-      <div class="card"><h3 data-i18n>Des alertes avant l'inquiétude</h3><p data-i18n>Archfield signale l'étape qui dépasse de plus de 20 % sa durée prévue, avant que le client ne s'en aperçoive.</p></div>
-      <div class="card"><h3 data-i18n>Ses vraies durées</h3><p data-i18n>Le tableau de bord montre quelles étapes prennent plus de temps que prévu, chantier après chantier.</p></div>
-      <div class="card"><h3 data-i18n>Un indice de fiabilité</h3><p data-i18n>Calculé sur les chantiers réellement livrés, pas sur des avis. Un argument pour signer les prochains clients.</p></div>
+
+  <!-- Chiffres clés -->
+  <section class="lp-stats" aria-label="En bref" data-i18n-label>
+    <div class="lp-wrap lp-stats-in">
+      <div><b>30 s</b><span data-i18n>pour publier une mise à jour</span></div>
+      <div><b>0</b><span data-i18n>compte à créer pour le client</span></div>
+      <div><b data-i18n>Chaque lundi</b><span data-i18n>un rapport envoyé au client</span></div>
+      <div><b>+20 %</b><span data-i18n>de retard sur une étape : vous êtes alerté</span></div>
     </div>
   </section>
-  <section style="display:grid;gap:14px">
-    <h2 style="font-size:1.4rem" data-i18n>Tarif</h2>
-    <p class="muted" data-i18n>C'est l'artisan qui s'abonne. Le client ne paie rien. 2 mois gratuits pour commencer.</p>
-    <div class="price-row">
-      <div class="card"><span class="muted" data-i18n>Europe</span><span class="amt">19 € <small class="muted" style="font-size:.9rem;font-weight:500" data-i18n>/ mois</small></span><p class="muted" data-i18n>Pour les artisans et leurs clients pressés ou à distance.</p></div>
-      <div class="card"><span class="muted" data-i18n>Afrique de l'Ouest</span><span class="amt">9 900 FCFA <small class="muted" style="font-size:.9rem;font-weight:500" data-i18n>/ mois</small></span><p class="muted" data-i18n>Pour les entreprises du BTP qui construisent pour la diaspora.</p></div>
+
+  <!-- Cartes qui défilent -->
+  <section class="lp-section" id="fonctionnalites">
+    <div class="lp-wrap">
+      <div class="lp-head-row">
+        <h2 class="lp-h2"><span data-i18n>Tout le chantier.</span> <span class="lp-dim2" data-i18n>Au même endroit.</span></h2>
+        <div class="lp-arrows"><button type="button" class="lp-arrow" data-scroll="-1" aria-label="Précédent" data-i18n-label>‹</button><button type="button" class="lp-arrow" data-scroll="1" aria-label="Suivant" data-i18n-label>›</button></div>
+      </div>
+    </div>
+    <div class="lp-rail" id="rail" tabindex="0" aria-label="Fonctionnalités" data-i18n-label>
+      <article class="lp-tile t-orange"><p class="lp-tile-k" data-i18n>Journal</p><h3 data-i18n>Des photos datées, pas des promesses.</h3><p data-i18n>Chaque mise à jour arrive avec ses photos horodatées. Le client voit le chantier avancer, jour après jour.</p></article>
+      <article class="lp-tile t-ink"><p class="lp-tile-k" data-i18n>Étapes</p><h3 data-i18n>Le client valide chaque étape.</h3><p data-i18n>Fondations, murs, toiture : une étape terminée attend sa validation avant de passer à la suivante.</p></article>
+      <article class="lp-tile t-green"><p class="lp-tile-k" data-i18n>Devis et factures</p><h3 data-i18n>Ce qui est payé, ce qui reste.</h3><p data-i18n>Devis signés, factures payées ou à régler : le client voit où en sont les paiements par rapport aux travaux.</p></article>
+      <article class="lp-tile t-amber"><p class="lp-tile-k" data-i18n>Rapport du lundi</p><h3 data-i18n>Le résumé de la semaine, tout seul.</h3><p data-i18n>Chaque lundi matin, le client reçoit l'avancement, les photos de la semaine et la prochaine étape.</p></article>
+      <article class="lp-tile t-ink"><p class="lp-tile-k" data-i18n>Alertes</p><h3 data-i18n>Prévenu avant que le client ne s'inquiète.</h3><p data-i18n>Une étape dépasse sa durée prévue de plus de 20 % : Archfield vous le signale, pour prévenir votre client à temps.</p></article>
+      <article class="lp-tile t-orange"><p class="lp-tile-k" data-i18n>Fiabilité</p><h3 data-i18n>Une réputation fondée sur des faits.</h3><p data-i18n>Votre indice de fiabilité se calcule sur vos chantiers livrés, pas sur des avis. Vos clients le voient.</p></article>
     </div>
   </section>
-  <footer class="site-foot"><span>Archfield · <span data-i18n>suivi de chantier à distance</span></span><div data-footer-links></div></footer>
+
+  <!-- Pour le client -->
+  <section class="lp-section lp-split">
+    <div class="lp-wrap lp-split-in">
+      <div class="lp-copy">
+        <p class="lp-eyebrow2" data-i18n>Pour le client</p>
+        <h2 class="lp-h2" data-i18n>Suivre sa maison depuis Paris, Montréal ou le bureau.</h2>
+        <p class="lp-p" data-i18n>Le client ouvre un lien privé, sans application ni mot de passe. Il voit les photos du jour, valide les étapes terminées et suit ses paiements. Plus besoin d'appeler l'artisan pour savoir où en est le chantier.</p>
+        <ul class="lp-checks"><li data-i18n>Photos datées à chaque mise à jour</li><li data-i18n>Validation des étapes en un clic</li><li data-i18n>Devis, factures et rapports au même endroit</li></ul>
+      </div>
+      <div class="lp-visual">
+        <div class="lp-phone">
+          <img class="shot shot-light" data-shot="phone-client" alt="Page du client sur téléphone" data-i18n-alt src="/img/phone-client-fr-light.jpg" width="780" height="1688" loading="lazy">
+          <img class="shot shot-dark" data-shot="phone-client" data-dark alt="" src="/img/phone-client-fr-dark.jpg" width="780" height="1688" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pour l'artisan -->
+  <section class="lp-section lp-split lp-alt">
+    <div class="lp-wrap lp-split-in rev">
+      <div class="lp-copy">
+        <p class="lp-eyebrow2" data-i18n>Pour l'artisan</p>
+        <h2 class="lp-h2" data-i18n>30 secondes depuis le chantier. Des données pour toute l'année.</h2>
+        <p class="lp-p" data-i18n>Une photo, une phrase, c'est publié. Chaque étape et chaque date deviennent des données : vous voyez quelles étapes prennent plus de temps que prévu, chantier après chantier.</p>
+        <ul class="lp-checks"><li data-i18n>Accusé « Vu par » à chaque publication</li><li data-i18n>Alertes de dérive et durées réelles par étape</li><li data-i18n>Lien à envoyer par WhatsApp en un clic</li></ul>
+      </div>
+      <div class="lp-visual">
+        <div class="lp-phone">
+          <img class="shot shot-light" data-shot="phone-artisan" alt="Application de l'artisan sur téléphone" data-i18n-alt src="/img/phone-artisan-fr-light.jpg" width="780" height="1688" loading="lazy">
+          <img class="shot shot-dark" data-shot="phone-artisan" data-dark alt="" src="/img/phone-artisan-fr-dark.jpg" width="780" height="1688" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comment ça marche : vraie séquence, donc numérotée -->
+  <section class="lp-section" id="comment">
+    <div class="lp-wrap">
+      <h2 class="lp-h2 lp-center"><span data-i18n>Prêt en trois étapes.</span> <span class="lp-dim2" data-i18n>Sans formation.</span></h2>
+      <ol class="lp-steps">
+        <li><span class="lp-num">1</span><h3 data-i18n>Créez le chantier</h3><p data-i18n>Le client et les étapes prévues, avec leurs durées. Des modèles construction et rénovation sont prêts.</p></li>
+        <li><span class="lp-num">2</span><h3 data-i18n>Envoyez le lien</h3><p data-i18n>Par WhatsApp, SMS ou e-mail. Le client l'ouvre tout de suite, sans compte à créer.</p></li>
+        <li><span class="lp-num">3</span><h3 data-i18n>Publiez depuis le chantier</h3><p data-i18n>Quelques photos et une phrase. Le client est prévenu, le rapport du lundi se fait tout seul.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- Deux marchés -->
+  <section class="lp-section lp-alt">
+    <div class="lp-wrap">
+      <h2 class="lp-h2 lp-center" data-i18n>Ici et au pays.</h2>
+      <div class="lp-markets">
+        <article class="lp-market"><p class="lp-tile-k" data-i18n>Europe</p><h3 data-i18n>Pour les artisans et leurs clients pressés.</h3><p data-i18n>Rénovation d'un appartement dans une autre ville, travaux pendant les heures de bureau : le client suit sans se déplacer.</p></article>
+        <article class="lp-market dark"><p class="lp-tile-k" data-i18n>Afrique de l'Ouest</p><h3 data-i18n>Pour construire au pays depuis l'étranger.</h3><p data-i18n>Les entreprises du BTP rassurent leurs clients de la diaspora avec des preuves datées, et se démarquent de la concurrence.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tarifs -->
+  <section class="lp-section" id="tarifs">
+    <div class="lp-wrap">
+      <h2 class="lp-h2 lp-center"><span data-i18n>Un prix simple.</span> <span class="lp-dim2" data-i18n>Le client ne paie rien.</span></h2>
+      <div class="lp-prices">
+        <article class="lp-price"><p class="lp-tile-k" data-i18n>Europe</p><p class="lp-amt">19 €<small data-i18n>/ mois</small></p><ul class="lp-checks"><li data-i18n>2 mois gratuits, sans carte bancaire</li><li data-i18n>Chantiers et clients illimités</li><li data-i18n>Rapport du lundi et alertes</li></ul><a class="btn primary lp-cta" href="/inscription" data-i18n>Commencer l'essai gratuit</a></article>
+        <article class="lp-price"><p class="lp-tile-k" data-i18n>Afrique de l'Ouest</p><p class="lp-amt">9 900 FCFA<small data-i18n>/ mois</small></p><ul class="lp-checks"><li data-i18n>2 mois gratuits, sans carte bancaire</li><li data-i18n>Chantiers et clients illimités</li><li data-i18n>Paiement Orange Money et Wave bientôt disponible</li></ul><a class="btn primary lp-cta" href="/inscription" data-i18n>Commencer l'essai gratuit</a></article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Questions fréquentes -->
+  <section class="lp-section lp-alt" id="faq">
+    <div class="lp-wrap lp-narrow">
+      <h2 class="lp-h2 lp-center" data-i18n>Questions fréquentes</h2>
+      <div class="lp-faq">
+        <details><summary data-i18n>Le client doit-il créer un compte ?</summary><p data-i18n>Non. Il reçoit un lien privé et l'ouvre dans son navigateur, sur téléphone ou ordinateur. Vous pouvez changer ce lien à tout moment.</p></details>
+        <details><summary data-i18n>Est-ce que ça marche avec une connexion lente ?</summary><p data-i18n>Oui. Les photos sont allégées sur le téléphone avant l'envoi : quelques centaines de Ko au lieu de plusieurs Mo.</p></details>
+        <details><summary data-i18n>Que se passe-t-il à la fin de l'essai ?</summary><p data-i18n>Vous gardez l'accès à vos chantiers et vos clients aussi. Pour publier de nouvelles mises à jour, il suffit d'activer l'abonnement.</p></details>
+        <details><summary data-i18n>Qui peut voir les photos ?</summary><p data-i18n>Seulement vous et le client qui a le lien du chantier. Les photos ne sont jamais publiques.</p></details>
+        <details><summary data-i18n>Faut-il un numéro d'entreprise ?</summary><p data-i18n>En France, le SIRET est demandé à l'inscription. En Afrique de l'Ouest, le NINEA ou le RCCM est facultatif.</p></details>
+        <details><summary data-i18n>Puis-je supprimer mes données ?</summary><p data-i18n>Oui, à tout moment : vous pouvez télécharger toutes vos données, supprimer un chantier ou votre compte depuis l'application.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <!-- Dernier appel -->
+  <section class="lp-final">
+    <div class="lp-wrap lp-center">
+      <h2 class="lp-h2" data-i18n>Montrez à vos clients que le chantier avance.</h2>
+      <p class="lp-lead" data-i18n>Créez votre premier chantier en deux minutes.</p>
+      <div class="lp-ctas lp-ctas-c"><a class="btn primary lp-cta" href="/inscription" data-i18n>Essayer 2 mois gratuitement</a></div>
+    </div>
+  </section>
 </main>
+
+<footer class="lp-footer">
+  <div class="lp-wrap">
+    <div class="lp-foot-grid">
+      <div class="lp-foot-brand"><span class="logo" id="logo-foot">Archfield</span><p data-i18n>Votre chantier, comme si vous y étiez.</p><div data-prefs></div></div>
+      <div><h3 data-i18n>Produit</h3><a href="#fonctionnalites" data-i18n>Fonctionnalités</a><a href="#tarifs" data-i18n>Tarifs</a><a href="/inscription" data-i18n>Essai gratuit</a><a href="/connexion" data-i18n>Se connecter</a></div>
+      <div><h3 data-i18n>Archfield</h3><a href="/a-propos" data-i18n>À propos</a><a href="#faq" data-i18n>Questions</a></div>
+      <div><h3 data-i18n>Légal</h3><a href="/mentions-legales" data-i18n>Mentions légales</a><a href="/confidentialite" data-i18n>Confidentialité</a><a href="#" data-cookies data-i18n>Gérer les cookies</a></div>
+    </div>
+    <p class="lp-copyright">© <span id="year">2026</span> Archfield</p>
+  </div>
+</footer>
+
 <script src="/js/i18n-en.js"></script>
 <script src="/js/ui.js"></script>
 <script src="/js/home.js"></script>

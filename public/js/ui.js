@@ -33,6 +33,7 @@
     root.querySelectorAll("[data-i18n]").forEach((el) => { const k = el.dataset.i18n || el.innerHTML.trim().replace(/\s+/g, " "); if (EN[k] !== undefined) el.innerHTML = EN[k]; });
     root.querySelectorAll("[data-i18n-ph]").forEach((el) => { el.placeholder = t(el.getAttribute("placeholder")); });
     root.querySelectorAll("[data-i18n-label]").forEach((el) => { el.setAttribute("aria-label", t(el.getAttribute("aria-label"))); });
+    root.querySelectorAll("[data-i18n-alt]").forEach((el) => { el.alt = t(el.getAttribute("alt")); });
     if (document.title) document.title = document.title.split(" · ").map((p) => t(p)).join(" · ");
   }
   function setLang(l) { store.set("af-lang", l); location.reload(); }
