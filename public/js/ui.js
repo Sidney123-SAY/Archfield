@@ -136,7 +136,7 @@
     const sum = (f) => docs.filter(f).reduce((a, d) => a + d.amount, 0);
     const devis = sum((d) => d.kind === "devis" && d.status === "signe"), paye = sum((d) => d.status === "payee"), du = sum((d) => d.status === "a_regler");
     const chip = { signe: '<span class="chip idle">Signé</span>', en_attente: '<span class="chip wait">À signer</span>', payee: '<span class="chip ok">Payée</span>', a_regler: '<span class="chip warn">À régler</span>' };
-    return `<div class="tbl-wrap"><table>
+    return `<div class="tbl-wrap"><table class="docs">
       <thead><tr><th>Date</th><th>Document</th><th>Objet</th><th class="r">Montant</th><th>Statut</th>${editable ? "<th></th>" : ""}</tr></thead>
       <tbody>${docs.map((d) => `<tr><td class="num">${dShort(d.doc_date)}</td><td>${d.kind === "devis" ? "Devis" : "Facture"} · ${esc(d.ref)}</td><td>${esc(d.label)}</td><td class="r">${money(d.amount, currency)}</td><td>${chip[d.status]}</td>${editable ? `<td>${d.status === "a_regler" ? `<button type="button" class="btn ghost" data-doc-paid="${d.id}">Marquer payée</button>` : d.status === "en_attente" ? `<button type="button" class="btn ghost" data-doc-signed="${d.id}">Marquer signé</button>` : ""} <button type="button" class="btn ghost" data-doc-del="${d.id}" aria-label="Supprimer">${ic("x", 14)}</button></td>` : ""}</tr>`).join("")}</tbody>
       <tfoot><tr><td colspan="3">Total des devis signés</td><td class="r">${money(devis, currency)}</td><td colspan="${editable ? 2 : 1}"></td></tr>

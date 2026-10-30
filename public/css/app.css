@@ -399,3 +399,23 @@ a { color: var(--orange); }
 .legal p, .legal li { color: var(--ink); max-width: 70ch; }
 .legal ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
 .draft { background: var(--ambre-soft); color: var(--ambre-ink); border-radius: 10px; padding: 10px 14px; font-size: .86rem; }
+
+/* Les enfants des grilles de page peuvent rétrécir : un tableau large défile dans sa carte au lieu d'élargir la page. */
+.client > *, .phone > *, .content-in > *, .card { min-width: 0; }
+
+/* Devis et factures sur téléphone : une ligne par document, montant et statut à droite. */
+@media (max-width: 560px) {
+  table.docs thead { display: none; }
+  table.docs tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  table.docs tbody tr:last-child { border-bottom: 0; }
+  table.docs td { border: 0; padding: 0; white-space: normal; }
+  table.docs td:nth-child(1) { grid-column: 1; font-size: .74rem; color: var(--muted); }
+  table.docs td:nth-child(2) { grid-column: 1; font-weight: 600; }
+  table.docs td:nth-child(3) { grid-column: 1; color: var(--muted); font-size: .8rem; }
+  table.docs td:nth-child(4) { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-weight: 600; }
+  table.docs td:nth-child(5) { grid-column: 2; grid-row: 3; justify-self: end; }
+  table.docs td:nth-child(6) { grid-column: 1 / -1; padding-top: 6px; }
+  table.docs tfoot tr { display: flex; justify-content: space-between; gap: 12px; border-top: 1px solid var(--line); }
+  table.docs tfoot td { border: 0; padding: 8px 0 0; white-space: normal; }
+  table.docs tfoot td:empty { display: none; }
+}
