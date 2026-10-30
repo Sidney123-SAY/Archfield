@@ -32,8 +32,11 @@ L'artisan s'abonne, pas le client : 2 mois gratuits, puis 19 €/mois en Europe 
 
 `prototype/index.html` est une maquette cliquable en un seul fichier, avec des données d'exemple et sans backend. Ouvrez-la dans un navigateur.
 
-- **Vue Artisan** : tableau de bord (alertes, chantiers, indice de fiabilité, écart par étape, abonnement) et bouton « Publier l'avancement » (photos, phrase, étape, chronomètre).
+Identité : logo en arche, couleurs encre `#14263D`, orange `#C2410C`, béton `#F1F3F5`, vert `#26774B`, ambre `#D99A2B` ; titres en Archivo, interface en Inter.
+
+- **Vue Artisan sur ordinateur** : barre latérale (tableau de bord, chantiers, journal, clients, abonnement), indicateurs, alertes de dérive, durée prévue et réelle par type d'étape, indice de fiabilité, tableau des chantiers en cours, export CSV.
+- **Vue Artisan sur téléphone** : carte du chantier, bouton « Nouvelle mise à jour », journal avec accusé « Vu par … », onglets Chantiers / Journal / Photos / Compte.
 - **Vue Client** : lien privé avec journal photo, étapes à valider, devis et factures, rapport du lundi.
-- Le sélecteur « Marché » bascule entre un exemple au Sénégal (FCFA) et un exemple à Bordeaux (€).
+- Le sélecteur « Marché » bascule entre un artisan à Lyon (€) et une entreprise à Saly au Sénégal (FCFA).
 
 Les publications et validations restent en mémoire dans la page : elles disparaissent au rechargement.
