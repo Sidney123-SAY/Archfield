@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F1F3F5">
+<title>Connexion · Archfield</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<main class="auth gutter">
+  <div class="box">
+    <a class="logo" href="/" style="color:var(--encre);font-size:1.4rem;justify-self:center" id="logo">Archfield</a>
+
+    <form class="card form" id="login" hidden>
+      <h1 style="font-size:1.4rem">Connexion</h1>
+      <div class="field"><label for="li-email">E-mail</label><input id="li-email" name="email" type="email" autocomplete="email" required></div>
+      <div class="field"><label for="li-password">Mot de passe</label><input id="li-password" name="password" type="password" autocomplete="current-password" required></div>
+      <div class="error-box" hidden></div>
+      <button class="btn primary" type="submit" style="min-height:44px">Se connecter</button>
+    </form>
+
+    <form class="card form" id="signup" hidden>
+      <div><h1 style="font-size:1.4rem">Créer votre compte</h1><p class="muted" style="font-size:.86rem">2 mois gratuits, sans carte bancaire.</p></div>
+      <div class="field"><span class="fl">Où travaillez-vous ?</span><div class="seg-choice">
+        <label><input type="radio" name="market" value="eu" checked><b>Europe</b><span>19 € par mois</span></label>
+        <label><input type="radio" name="market" value="af"><b>Afrique de l'Ouest</b><span>9 900 FCFA par mois</span></label></div></div>
+      <div class="field"><label for="su-company">Nom de l'entreprise</label><input id="su-company" name="company" required maxlength="120" autocomplete="organization"></div>
+      <div class="form row2" style="gap:12px">
+        <div class="field"><label for="su-contact">Votre nom</label><input id="su-contact" name="contact_name" required maxlength="120" autocomplete="name"></div>
+        <div class="field"><label for="su-city">Ville</label><input id="su-city" name="city" maxlength="120" autocomplete="address-level2"></div>
+      </div>
+      <div class="field"><label for="su-email">E-mail</label><input id="su-email" name="email" type="email" required autocomplete="email"></div>
+      <div class="field"><label for="su-password">Mot de passe</label><input id="su-password" name="password" type="password" required minlength="8" autocomplete="new-password"><span class="hint">8 caractères au moins.</span></div>
+      <div class="error-box" hidden></div>
+      <button class="btn primary" type="submit" style="min-height:44px">Commencer l'essai gratuit</button>
+    </form>
+
+    <p class="switch" id="switch"></p>
+    <p class="demo-note" id="demo">Compte de démo : <code>demo@archfield.app</code> (Lyon, €) ou <code>demo-afrique@archfield.app</code> (Saly, FCFA), mot de passe <code>archfield-demo</code>.</p>
+  </div>
+</main>
+<script src="/js/ui.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { LOGO, api } = window.AF;
+  const signup = location.pathname === "/inscription";
+  document.getElementById("logo").insertAdjacentHTML("afterbegin", LOGO(30) + " ");
+  document.getElementById(signup ? "signup" : "login").hidden = false;
+  document.title = (signup ? "Inscription" : "Connexion") + " · Archfield";
+  document.getElementById("switch").innerHTML = signup ? 'Déjà un compte ? <a href="/connexion">Se connecter</a>' : 'Pas encore de compte ? <a href="/inscription">Essayer gratuitement</a>';
+  document.querySelectorAll("form").forEach((f) => f.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = f.querySelector("[type=submit]"), err = f.querySelector(".error-box");
+    btn.disabled = true; err.hidden = true;
+    try { await api(f.id === "signup" ? "/api/signup" : "/api/login", { method: "POST", body: Object.fromEntries(new FormData(f)), authRedirect: false }); location.href = "/app"; }
+    catch (x) { err.textContent = x.message; err.hidden = false; btn.disabled = false; }
+  }));
+})();
+</script>
+</body>
+</html>

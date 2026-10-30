@@ -1,0 +1,20 @@
+{
+  "name": "archfield",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Suivi de chantier à distance : l'artisan publie, le client suit par un lien privé.",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node --no-warnings server/server.js",
+    "dev": "node --no-warnings --watch server/server.js",
+    "seed": "node --no-warnings server/seed.js",
+    "test": "node --no-warnings --test test/*.test.js"
+  },
+  "engines": { "node": ">=22.13" },
+  "dependencies": {
+    "bcryptjs": "2.4.3",
+    "express": "4.21.2",
+    "multer": "1.4.5-lts.1",
+    "nodemailer": "6.9.16"
+  }
+}
