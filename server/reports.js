@@ -1,11 +1,7 @@
 // Rapport hebdomadaire : généré chaque lundi à 7 h UTC (8 h à Paris en hiver, 7 h à Dakar) pour chaque chantier actif.
-const nodemailer = require("nodemailer");
 const { all, get, run } = require("./db");
 const { siteWithSummary, DAY } = require("./analytics");
-
-const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
-const transport = process.env.SMTP_URL ? nodemailer.createTransport(process.env.SMTP_URL) : null;
-const MAIL_FROM = process.env.MAIL_FROM || "Archfield <rapports@archfield.app>";
+const { sendMail, BASE_URL } = require("./mail");
 
 function lastMonday(now = Date.now()) {
   const d = new Date(now);
@@ -62,14 +58,10 @@ async function sendReport(site, force = false, now = Date.now()) {
     site.id, start.toISOString(), end.toISOString(), JSON.stringify(data), new Date(now).toISOString());
   if (!r.changes) return null;
   const id = Number(r.lastInsertRowid);
-  if (transport && site.client_email) {
+  if (site.client_email) {
     const artisan = get("SELECT * FROM artisans WHERE id = ?", site.artisan_id);
-    try {
-      await transport.sendMail({ from: MAIL_FROM, to: site.client_email, subject: `${site.name} : votre semaine de chantier`, text: reportText(site, artisan, data) });
+    if (await sendMail({ to: site.client_email, subject: `${site.name} : votre semaine de chantier`, text: reportText(site, artisan, data) }))
       run("UPDATE reports SET emailed = 1 WHERE id = ?", id);
-    } catch (e) {
-      console.error(`Rapport ${id} : l'e-mail n'est pas parti (${e.message})`);
-    }
   }
   return id;
 }

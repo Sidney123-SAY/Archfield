@@ -1,7 +1,7 @@
 // Application artisan : tableau de bord, chantiers, journal, photos, clients, compte.
 (function () {
   "use strict";
-  const { LOGO, ic, esc, fmt, time, dShort, nf, money, cap, rel, api, upload, shrink, toast, copy, STATUS_CHIP, healthChip, siteCard, journal, docsTable } = window.AF;
+  const { LOGO, ic, esc, themeControl, fmt, time, dShort, nf, money, cap, rel, api, upload, shrink, toast, copy, STATUS_CHIP, healthChip, siteCard, journal, docsTable } = window.AF;
   const $ = (s, el) => (el || document).querySelector(s);
   const app = $("#app");
 
@@ -16,23 +16,24 @@
   /* ---------- Coquille ---------- */
   const NAV = [["tableau-de-bord", "Tableau de bord", "dash"], ["chantiers", "Chantiers", "home"], ["journal", "Journal", "list"], ["clients", "Clients", "users"], ["compte", "Abonnement", "card"]];
   const TABS = [["chantiers", "Chantiers", "home"], ["journal", "Journal", "list"], ["photos", "Photos", "photo"], ["compte", "Compte", "user"]];
-  const trialLeft = () => Math.max(0, Math.ceil((Date.parse(me.trial_ends_at) - Date.now()) / 864e5));
+  const planLabel = () => (me.access.status === "paid" ? `Abonnement actif jusqu'au ${dShort(me.access.until)}` : me.access.status === "trial" ? `Essai gratuit : encore ${me.access.days_left} jour${me.access.days_left > 1 ? "s" : ""}` : "Essai terminé");
+  const waLink = (phoneNumber, text) => `https://wa.me/${(phoneNumber || "").replace(/[^\d]/g, "")}?text=${encodeURIComponent(text)}`;
   const initials = (n) => n.split(/\s+/).map((x) => x[0]).join("").slice(0, 2).toUpperCase();
 
   function shell(section, body) {
     const tabOn = (k) => k === section || (k === "chantiers" && ["tableau-de-bord", "nouveau-chantier", "clients"].includes(section)) || (k === "journal" && section === "chantier");
     app.innerHTML = `<div class="shell">
       <aside class="side">
-        <a class="logo" href="#tableau-de-bord">${LOGO(24, true)} Archfield</a>
+        <a class="logo" href="#tableau-de-bord">${LOGO(24)} Archfield</a>
         <nav aria-label="Menu">${NAV.map(([k, l, i]) => `<button type="button" data-go="${k}" ${k === section || (k === "journal" && section === "chantier") || (k === "chantiers" && section === "nouveau-chantier") ? 'aria-current="page"' : ""}>${ic(i, 17)} ${l}</button>`).join("")}</nav>
         <div class="who">
-          <div class="plan-card"><b>${esc(me.company)}</b><span>${trialLeft() > 0 ? `Essai gratuit : encore ${trialLeft()} jours` : "Essai terminé"}</span></div>
+          <div class="plan-card"><b>${esc(me.company)}</b><span>${planLabel()}</span></div>
           <button type="button" class="logout" data-logout>Se déconnecter</button>
         </div>
       </aside>
       <div class="content">
         <div class="mhead"><a class="logo" href="#journal">${LOGO(30)} Archfield</a><a class="avatar" href="#compte" title="${esc(me.contact_name)}" style="text-decoration:none">${esc(initials(me.contact_name))}</a></div>
-        <div class="content-in">${body}</div>
+        <div class="content-in">${me.access.active ? "" : `<div class="expired">${ic("warn", 18)}<span>Votre essai gratuit est terminé. Vous pouvez consulter vos chantiers, mais plus publier. <a href="#compte">Activer l'abonnement</a></span></div>`}${body}</div>
       </div>
       <nav class="tabbar" aria-label="Onglets">${TABS.map(([k, l, i]) => `<button type="button" data-go="${k}" ${tabOn(k) ? 'aria-current="page"' : ""}>${ic(i, 24)}<span>${l}</span></button>`).join("")}</nav>
     </div>`;
@@ -70,7 +71,7 @@
       ${d.alerts.map((a) => `<div class="banner">${ic("warn", 18)}<div><b>${esc(a.site)}${a.location ? " — " + esc(a.location.split(",")[0]) : ""} : ${esc(a.step.toLowerCase())} dérape</b><br>${nf(a.actual)} jours au lieu de ${nf(a.planned)} prévus, soit ${a.overPct} % de plus. Prévenez ${esc(a.client_short)} avant le rapport de lundi.</div><button type="button" class="btn" data-publish="${a.site_id}">Prévenir</button></div>`).join("")}
       <div class="duo">
         <section class="card card-p"><div class="card-h"><h2>Durée par type d'étape, en jours</h2>
-          <div class="legend"><span><i style="background:var(--gris-barre)"></i>Prévu</span><span><i style="background:var(--encre)"></i>Réel</span><span><i style="background:var(--orange)"></i>Réel, +20 % ou plus</span></div></div>
+          <div class="legend"><span><i style="background:var(--gris-barre)"></i>Prévu</span><span><i style="background:var(--ink)"></i>Réel</span><span><i style="background:var(--orange)"></i>Réel, +20 % ou plus</span></div></div>
           <div class="chart">${chart}<p class="chart-foot">Moyenne des étapes terminées sur les 12 derniers mois.</p></div></section>
         <section class="navy"><h2>Indice de fiabilité</h2>
           ${rel_.pct == null ? `<p>Il apparaîtra après votre premier chantier livré. Il se calcule sur vos chantiers réels, pas sur des avis.</p>` : `<span class="big">${rel_.pct} %</span><p>des étapes livrées dans les délais, sur ${rel_.delivered} chantier${rel_.delivered > 1 ? "s" : ""} terminé${rel_.delivered > 1 ? "s" : ""}.</p>`}
@@ -122,8 +123,9 @@
         </div>
         <div class="row2">
           <div class="field"><label for="ns-email">E-mail du client</label><input id="ns-email" name="client_email" type="email" maxlength="200" placeholder="pour le rapport du lundi"></div>
-          <div class="field"><label for="ns-city">Ville du client</label><input id="ns-city" name="client_city" maxlength="120" placeholder="Paris"></div>
+          <div class="field"><label for="ns-phone">WhatsApp du client</label><input id="ns-phone" name="client_phone" type="tel" maxlength="30" placeholder="+221 77 123 45 67" autocomplete="off"><span class="hint">Avec l'indicatif du pays.</span></div>
         </div>
+        <div class="field" style="max-width:360px"><label for="ns-city">Ville du client</label><input id="ns-city" name="client_city" maxlength="120" placeholder="Paris"></div>
         <div class="field" style="max-width:260px"><label for="ns-budget">Montant du devis (${me.currency === "XOF" ? "FCFA" : "€"})</label><input id="ns-budget" name="budget" type="number" min="0" step="1" inputmode="numeric"></div>
         <div class="field"><span class="fl">Étapes et durées prévues (jours)</span><div class="step-rows" id="ns-steps"></div>
           <button type="button" class="btn ghost" id="ns-add" style="justify-self:start">${ic("plus", 14)} Ajouter une étape</button></div>
@@ -145,7 +147,7 @@
     $("#new-site").addEventListener("submit", async (e) => {
       e.preventDefault();
       const f = new FormData(e.target), btn = e.target.querySelector("[type=submit]");
-      const body = Object.fromEntries(["name", "location", "kind", "client_name", "client_short", "client_email", "client_city", "budget"].map((k) => [k, f.get(k) || ""]));
+      const body = Object.fromEntries(["name", "location", "kind", "client_name", "client_short", "client_email", "client_phone", "client_city", "budget"].map((k) => [k, f.get(k) || ""]));
       body.start_now = f.get("start_now") === "on";
       body.steps = [...rows.children].map((r) => { const [n, d] = r.querySelectorAll("input"); return { name: n.value, planned_days: Number(d.value) }; });
       btn.disabled = true;
@@ -194,16 +196,18 @@
       body = `<section class="card card-p share"><h2>Lien privé du client</h2>
           <p class="muted" style="font-size:.86rem">${esc(s.client_name)} ouvre ce lien sans créer de compte. Envoyez-le par WhatsApp, SMS ou e-mail.</p>
           <div class="link"><code>${esc(url)}</code><button type="button" class="btn ghost" data-copy-link="${esc(s.client_token)}">Copier</button></div>
-          <div class="row-acts"><a class="btn ghost" href="https://wa.me/?text=${encodeURIComponent(`Bonjour ${s.client_short}, suivez l'avancement de votre chantier ici : ${url}`)}" target="_blank" rel="noopener">Envoyer par WhatsApp</a><a class="btn ghost" href="/c/${esc(s.client_token)}" target="_blank" rel="noopener">Voir la page du client</a><button type="button" class="btn ghost" data-new-link>Changer de lien</button></div>
+          <div class="row-acts"><a class="btn wa" href="${waLink(s.client_phone, `Bonjour ${s.client_short}, suivez l'avancement de votre chantier ici : ${url}`)}" target="_blank" rel="noopener">Envoyer par WhatsApp</a><a class="btn ghost" href="/c/${esc(s.client_token)}" target="_blank" rel="noopener">Voir la page du client</a><button type="button" class="btn ghost" data-new-link>Changer de lien</button></div>
           <p class="muted" style="font-size:.78rem">Dernière visite du client : ${s.last_client_visit_at ? rel(s.last_client_visit_at).toLowerCase() : "pas encore"}.</p></section>
         <section class="card card-p share"><div class="card-h" style="margin:0"><h2>Rapports du lundi</h2><button type="button" class="btn" data-send-report>Envoyer un rapport maintenant</button></div>
           <p class="muted" style="font-size:.86rem">Un rapport part automatiquement chaque lundi matin${s.client_email ? " à " + esc(s.client_email) : ". Ajoutez l'e-mail du client pour qu'il le reçoive aussi par e-mail"}. Il est toujours visible sur le lien privé.</p>
           ${s.reports.length ? `<div class="tbl-wrap"><table><thead><tr><th>Semaine</th><th>Envoyé</th><th>Lu par le client</th></tr></thead><tbody>${s.reports.map((r) => `<tr><td>${dShort(r.period_start)} au ${dShort(r.period_end)}</td><td>${rel(r.sent_at)}${r.emailed ? " · e-mail" : ""}</td><td>${r.opened_at ? `<span class="chip ok">Lu ${rel(r.opened_at).toLowerCase()}</span>` : '<span class="chip idle">Pas encore</span>'}</td></tr>`).join("")}</tbody></table></div>` : `<p class="muted">Aucun rapport envoyé pour l'instant.</p>`}</section>
         <form class="card card-p form" id="edit-client"><h2>Client</h2>
           <div class="row2"><div class="field"><label for="ec-name">Nom</label><input id="ec-name" name="client_name" required value="${esc(s.client_name)}"></div><div class="field"><label for="ec-short">Comment l'appeler</label><input id="ec-short" name="client_short" required value="${esc(s.client_short)}"></div></div>
-          <div class="row2"><div class="field"><label for="ec-email">E-mail</label><input id="ec-email" name="client_email" type="email" value="${esc(s.client_email)}"></div><div class="field"><label for="ec-city">Ville</label><input id="ec-city" name="client_city" value="${esc(s.client_city)}"></div></div>
+          <div class="row2"><div class="field"><label for="ec-email">E-mail</label><input id="ec-email" name="client_email" type="email" value="${esc(s.client_email)}"><span class="hint">Pour les e-mails de mise à jour et le rapport du lundi.</span></div><div class="field"><label for="ec-phone">WhatsApp</label><input id="ec-phone" name="client_phone" type="tel" value="${esc(s.client_phone)}" placeholder="+33 6 12 34 56 78"></div></div>
+          <div class="field" style="max-width:360px"><label for="ec-city">Ville</label><input id="ec-city" name="client_city" value="${esc(s.client_city)}"></div>
           <div><button class="btn" type="submit">Enregistrer</button></div></form>
-        ${s.status === "active" ? `<section class="card card-p share"><h2>Fin de chantier</h2><p class="muted" style="font-size:.86rem">Quand toutes les étapes sont validées par le client, marquez le chantier comme livré. Il compte alors dans votre indice de fiabilité.</p><div><button type="button" class="btn" data-deliver>Marquer comme livré</button></div></section>` : ""}`;
+        ${s.status === "active" ? `<section class="card card-p share"><h2>Fin de chantier</h2><p class="muted" style="font-size:.86rem">Quand toutes les étapes sont validées par le client, marquez le chantier comme livré. Il compte alors dans votre indice de fiabilité.</p><div><button type="button" class="btn" data-deliver>Marquer comme livré</button></div></section>` : ""}
+        <section class="card card-p share"><h2>Supprimer le chantier</h2><p class="muted" style="font-size:.86rem">Le journal, les photos, les documents et les rapports sont effacés définitivement, et le lien du client cesse de marcher.</p><div><button type="button" class="btn danger" data-del-site="${s.id}">Supprimer ce chantier</button></div></section>`;
     }
     shell("chantier", `<div class="phone" style="max-width:${siteTab === "journal" ? 560 : 760}px">
       <button type="button" class="back" data-go="chantiers">${ic("left", 16)} Chantiers</button>
@@ -265,26 +269,45 @@
   async function pageAccount() {
     loading("compte");
     const d = await api("/api/dashboard");
-    const left = trialLeft();
+    const acc = me.access;
     shell("compte", `<div class="pagehead"><div><p class="sub">${esc(me.email)}</p><h1>Abonnement et compte</h1></div></div>
       <section class="card card-p planbox">
-        <div class="card-h" style="margin:0"><h2>Archfield Artisan</h2><span class="chip ${left > 0 ? "wait" : "warn"}">${left > 0 ? `Essai gratuit : encore ${left} jours` : "Essai terminé"}</span></div>
-        <span class="track"><span style="width:${Math.round(((61 - Math.min(61, left)) / 61) * 100)}%"></span></span>
-        <p>2 mois offerts, puis :</p>
+        <div class="card-h" style="margin:0"><h2>Archfield Artisan</h2><span class="chip ${acc.status === "paid" ? "ok" : acc.status === "trial" ? "wait" : "warn"}">${planLabel()}</span></div>
+        ${acc.status === "trial" ? `<span class="track"><span style="width:${Math.round(((61 - Math.min(61, acc.days_left)) / 61) * 100)}%"></span></span><p>2 mois offerts, puis :</p>` : ""}
         <div class="price">${esc(me.price)} <small>par mois, sans engagement</small></div>
         <ul><li>Chantiers et clients illimités</li><li>Un lien privé par client, sans compte</li><li>Rapport automatique chaque lundi</li><li>Alertes de dérive et indice de fiabilité</li></ul>
-        <p class="muted" style="font-size:.8rem">Le paiement en ligne (carte, Orange Money, Wave) arrive dans une prochaine version. Votre essai continue d'ici là.</p>
+        <p class="muted" style="font-size:.8rem">${acc.status === "expired" ? "Pour activer votre abonnement, écrivez-nous depuis l'adresse de votre compte : nous l'activons sous 24 h. Le paiement en ligne (carte, Orange Money, Wave) arrive bientôt." : "Le paiement en ligne (carte, Orange Money, Wave) arrive bientôt. D'ici là, nous activons les abonnements sur demande."}</p>
       </section>
+      <section class="card card-p planbox"><h2>Apparence</h2><p class="muted" style="font-size:.86rem">« Système » suit le réglage clair ou sombre de votre téléphone ou de votre ordinateur.</p><div>${themeControl()}</div></section>
       <form class="card card-p form" id="profile" style="max-width:560px"><h2>Votre entreprise</h2>
         <div class="field"><label for="pf-company">Nom de l'entreprise</label><input id="pf-company" name="company" required value="${esc(me.company)}"></div>
         <div class="row2"><div class="field"><label for="pf-contact">Votre nom</label><input id="pf-contact" name="contact_name" required value="${esc(me.contact_name)}"></div>
         <div class="field"><label for="pf-city">Ville</label><input id="pf-city" name="city" value="${esc(me.city)}"></div></div>
         <div><button class="btn" type="submit">Enregistrer</button></div></form>
+      <form class="card card-p form" id="password" style="max-width:560px"><h2>Mot de passe</h2>
+        <div class="row2"><div class="field"><label for="pw-current">Mot de passe actuel</label><input id="pw-current" name="current" type="password" required autocomplete="current-password"></div>
+        <div class="field"><label for="pw-new">Nouveau mot de passe</label><input id="pw-new" name="password" type="password" required minlength="8" autocomplete="new-password"></div></div>
+        <div><button class="btn" type="submit">Changer le mot de passe</button></div></form>
       <section class="navy" style="max-width:560px"><h2>Votre indice de fiabilité</h2>${d.reliability.pct == null ? "<p>Il apparaîtra après votre premier chantier livré.</p>" : `<span class="big">${d.reliability.pct} %</span><p>des étapes livrées dans les délais, sur ${d.reliability.delivered} chantiers terminés. Vos clients le voient sur leur lien privé.</p>`}</section>
+      <section class="card card-p planbox"><h2>Vos données</h2>
+        <p class="muted" style="font-size:.86rem">Téléchargez toutes les données de votre compte : chantiers, étapes, journal, documents et rapports. Voir la <a href="/confidentialite" target="_blank" rel="noopener">politique de confidentialité</a>.</p>
+        <div><a class="btn" href="/api/me/export" download>Télécharger mes données</a></div></section>
+      <form class="card card-p form" id="delete-account" style="max-width:560px"><h2>Supprimer le compte</h2>
+        <p class="muted" style="font-size:.86rem">Tous vos chantiers, photos et documents sont effacés définitivement, et les liens de vos clients cessent de marcher. Téléchargez vos données avant.</p>
+        <div class="field"><label for="del-password">Votre mot de passe, pour confirmer</label><input id="del-password" name="password" type="password" required autocomplete="current-password"></div>
+        <div><button class="btn danger" type="submit">Supprimer définitivement mon compte</button></div></form>
       <div><button type="button" class="btn ghost" data-logout>Se déconnecter</button></div>`);
     $("#profile").addEventListener("submit", async (e) => {
       e.preventDefault();
       try { me = await api("/api/me", { method: "PATCH", body: Object.fromEntries(new FormData(e.target)) }); toast("Profil enregistré."); route(); } catch (err) { toast(err.message); }
+    });
+    $("#password").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try { await api("/api/me/password", { method: "POST", body: Object.fromEntries(new FormData(e.target)) }); e.target.reset(); toast("Mot de passe changé. Vos autres appareils sont déconnectés."); } catch (err) { toast(err.message); }
+    });
+    $("#delete-account").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try { await api("/api/me", { method: "DELETE", body: Object.fromEntries(new FormData(e.target)) }); location.href = "/"; } catch (err) { toast(err.message); }
     });
   }
 
@@ -335,12 +358,18 @@
         const btn = $("#cmp-send"), st = $("#cmp-state");
         btn.disabled = true; st.hidden = false;
         try {
-          await upload(`/api/sites/${site.id}/updates`, form, (p) => { st.textContent = `Envoi… ${Math.round(p * 100)} %`; });
+          const r = await upload(`/api/sites/${site.id}/updates`, form, (p) => { st.textContent = `Envoi… ${Math.round(p * 100)} %`; });
           const secs = Math.max(1, Math.round((Date.now() - t0) / 1000));
-          closeComposer();
+          clearInterval(timer);
           lastSiteId = site.id; siteTab = "journal";
           if (location.hash === "#chantier-" + site.id) route(); else location.hash = "chantier-" + site.id;
-          toast(`Publié en ${secs} s. ${site.client_name} le voit sur son lien.`);
+          const msg = `Bonjour ${site.client_short}, nouvelle mise à jour sur votre chantier : « ${text} » Les photos : ${clientUrl(site.client_token)}`;
+          ov.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="cmp-done-title"><div class="done">
+            <span class="ok-ic">${ic("check", 44)}</span><h2 id="cmp-done-title">Publié en ${secs} s</h2>
+            <p class="muted">${r.notified ? `${esc(site.client_short)} a reçu un e-mail avec le lien.` : `${esc(site.client_name)} le voit sur son lien privé.`} Vous pouvez aussi envoyer le lien sur WhatsApp.</p>
+            <div class="row-acts"><a class="btn wa" href="${waLink(site.client_phone, msg)}" target="_blank" rel="noopener">Prévenir sur WhatsApp</a><button type="button" class="btn ghost" id="cmp-close">Fermer</button></div>
+          </div></div>`;
+          $("#cmp-close").addEventListener("click", closeComposer);
         } catch (err) { st.textContent = err.message; btn.disabled = false; }
       });
       $("#cmp-text").focus();
@@ -384,6 +413,10 @@
     else if (d.docSigned) act(() => api("/api/documents/" + d.docSigned, { method: "PATCH", body: { status: "signe" } }), "Devis marqué signé.");
     else if (d.docDel !== undefined) act(() => api("/api/documents/" + d.docDel, { method: "DELETE" }), "Document supprimé.");
     else if (d.sendReport !== undefined) act(() => api(`/api/sites/${lastSiteId}/report`, { method: "POST" }), "Rapport envoyé. Le client le voit sur son lien.");
+    else if (d.delSite) {
+      if (!b.dataset.armed) { b.dataset.armed = "1"; b.textContent = "Confirmer : tout effacer définitivement"; setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = "Supprimer ce chantier"; } }, 5000); }
+      else { try { await api("/api/sites/" + d.delSite, { method: "DELETE" }); lastSiteId = null; try { localStorage.removeItem("af-last-site"); } catch (err) {} toast("Chantier supprimé."); location.hash = "chantiers"; } catch (err) { toast(err.message); } }
+    }
     else if (d.deliver !== undefined) act(() => api(`/api/sites/${lastSiteId}/deliver`, { method: "POST" }), "Chantier livré. Bravo !");
     else if (d.newLink !== undefined) {
       if (!pendingNewLink) { pendingNewLink = true; b.textContent = "Confirmer : l'ancien lien cessera de marcher"; setTimeout(() => { pendingNewLink = false; if (b.isConnected) b.textContent = "Changer de lien"; }, 5000); }

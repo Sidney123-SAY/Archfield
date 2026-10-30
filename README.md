@@ -34,7 +34,7 @@ Il faut Node.js 22.13 ou plus récent (la base SQLite est intégrée à Node, au
 
 ```bash
 npm install
-npm run seed     # crée deux comptes de démo avec chantiers, photos, devis et rapports
+npm run seed     # crée deux comptes de démo avec chantiers, photos, devis et rapports (développement uniquement)
 npm start        # http://localhost:3000
 ```
 
@@ -53,6 +53,11 @@ Comptes de démo (mot de passe `archfield-demo`) :
 - **Client** : lien privé sans compte, journal photo, validation des étapes (l'étape suivante démarre alors toute seule), devis et factures, rapports du lundi.
 - **Données** : alertes quand l'étape en cours dépasse de plus de 20 % sa durée prévue, durée prévue et réelle par type d'étape sur 12 mois, indice de fiabilité calculé sur les chantiers livrés (étape dans les délais à 10 % près), taux de lecture des rapports, export CSV.
 - **Rapport du lundi** : généré chaque lundi à 7 h UTC pour chaque chantier actif, envoyé par e-mail si `SMTP_URL` est configuré, toujours visible sur le lien du client.
+- **Client prévenu** : e-mail à chaque mise à jour (au plus un toutes les 3 heures) si son e-mail est renseigné, et bouton « Prévenir sur WhatsApp » après chaque publication.
+- **Compte** : mot de passe oublié (lien valable une heure), changement de mot de passe, export de toutes les données (JSON), suppression du chantier ou du compte avec effacement des photos.
+- **Abonnement** : à la fin des 2 mois d'essai, l'artisan peut encore consulter ses chantiers mais plus publier ; ses clients gardent l'accès. En attendant le paiement en ligne, un abonnement s'active à la main : `npm run activate -- artisan@example.com 1` (1 mois).
+- **Sécurité** : photos visibles seulement par l'artisan du chantier et par le lien du client, photos d'iPhone (HEIC) converties en JPEG, en-têtes de sécurité (CSP, anti-iframe), limites de requêtes, refus des requêtes venant d'autres sites.
+- **Thème** : clair, sombre, ou celui du système (par défaut), au choix dans « Abonnement et compte » et en bas de chaque page.
 
 ### Organisation du code
 
@@ -62,8 +67,10 @@ Comptes de démo (mot de passe `archfield-demo`) :
 | `server/db.js` | Schéma SQLite |
 | `server/analytics.js` | Avancement, dérive, durées par étape, indice de fiabilité |
 | `server/reports.js` | Rapport hebdomadaire et e-mail |
+| `server/mail.js` | Envoi des e-mails (SMTP) |
 | `server/seed.js` | Données de démo |
-| `public/` | Pages : accueil, connexion, app artisan (`/app`), page client (`/c/<lien>`) |
+| `server/activate.js` | Activation manuelle d'un abonnement |
+| `public/` | Pages : accueil, connexion, app artisan (`/app`), page client (`/c/<lien>`), confidentialité |
 | `prototype/` | Première maquette cliquable, sans serveur |
 
 ### Mettre en ligne
@@ -77,12 +84,18 @@ docker run -p 3000:3000 -v archfield-data:/data -e BASE_URL=https://votre-domain
 
 Render, Railway ou Fly.io conviennent : un service web à partir du `Dockerfile`, plus un volume monté sur `/data`. Voir `.env.example` pour les variables.
 
-### Pas encore dans le MVP
+### Avant d'ouvrir au public
+
+- Compléter et faire relire `public/confidentialite.html` (raison sociale, hébergeur, contact), et ajouter mentions légales et CGV.
+- Configurer `SMTP_URL` (Brevo, Resend ou Postmark) : sans lui, ni le mot de passe oublié ni les e-mails aux clients ne partent.
+- Mettre `DEMO=off` et ne pas lancer `npm run seed` en production.
+- Sauvegarder chaque jour le dossier `DATA_DIR` (base et photos).
+
+### Pas encore fait
 
 - Paiement de l'abonnement (Stripe en Europe, Orange Money et Wave en Afrique de l'Ouest).
-- Notifications WhatsApp ou SMS au client à chaque mise à jour.
-- Photos servies par adresse non devinable mais sans contrôle d'accès : à passer derrière le lien du client avant d'ouvrir au public.
-- Plusieurs comptes par entreprise (offre Équipe).
+- Notifications WhatsApp automatiques (l'artisan envoie le message lui-même en un clic).
+- Plusieurs comptes par entreprise (offre Équipe), installation comme une app et envoi hors connexion.
 
 ## Prototype
 

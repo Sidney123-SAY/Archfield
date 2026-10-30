@@ -1,7 +1,7 @@
 // Page du client : lien privé, sans compte. Journal, étapes à valider, devis et factures, rapports du lundi.
 (function () {
   "use strict";
-  const { LOGO, ic, esc, dShort, dLong, nf, api, toast, STATUS_CHIP, siteCard, journal, docsTable } = window.AF;
+  const { LOGO, ic, esc, dShort, dLong, nf, api, toast, STATUS_CHIP, siteCard, journal, docsTable, themeControl } = window.AF;
   const app = document.getElementById("app");
   const token = location.pathname.split("/").pop();
   let tab = "journal";
@@ -9,7 +9,7 @@
 
   async function load() {
     try { s = await api("/api/c/" + encodeURIComponent(token), { authRedirect: false }); render(); }
-    catch (e) { app.innerHTML = `<div class="chead"><span class="logo" style="color:var(--encre)">${LOGO(28)} Archfield</span></div><section class="card empty"><h2>Lien indisponible</h2><p>${esc(e.message)}</p></section>`; }
+    catch (e) { app.innerHTML = `<div class="chead"><span class="logo" style="color:var(--ink)">${LOGO(28)} Archfield</span></div><section class="card empty"><h2>Lien indisponible</h2><p>${esc(e.message)}</p></section>`; }
   }
 
   function render() {
@@ -42,12 +42,13 @@
     }
     const rel_ = s.artisan.reliability;
     app.innerHTML = `
-      <div class="chead"><span class="logo" style="color:var(--encre)">${LOGO(28)} Archfield</span><span class="priv">${ic("lock", 14)} Lien privé</span></div>
+      <div class="chead"><span class="logo" style="color:var(--ink)">${LOGO(28)} Archfield</span><span class="priv">${ic("lock", 14)} Lien privé</span></div>
       ${siteCard(s, "Réalisé par " + s.artisan.company)}
       ${rel_.pct != null ? `<p class="muted" style="font-size:.8rem">${esc(s.artisan.company)} : ${rel_.pct} % des étapes livrées dans les délais sur ${rel_.delivered} chantier${rel_.delivered > 1 ? "s" : ""} terminé${rel_.delivered > 1 ? "s" : ""} avec Archfield.</p>` : ""}
       <div class="tabs" role="tablist">${tabs.map(([k, l, n]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${tab === k}">${l}${n ? `<span class="n">${n}</span>` : ""}</button>`).join("")}</div>
       ${body}
-      <p class="muted" style="font-size:.74rem;text-align:center">Ce lien est personnel. Ne le partagez qu'avec les personnes qui suivent le chantier avec vous.</p>`;
+      <p class="muted" style="font-size:.74rem;text-align:center">Ce lien est personnel. Ne le partagez qu'avec les personnes qui suivent le chantier avec vous. <a href="/confidentialite">Confidentialité</a></p>
+      <div class="foot-tools">${themeControl()}</div>`;
   }
 
   app.addEventListener("click", async (e) => {

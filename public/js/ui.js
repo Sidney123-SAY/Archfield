@@ -2,7 +2,8 @@
 (function () {
   "use strict";
 
-  const LOGO = (s, dark) => `<svg width="${s}" height="${s}" viewBox="0 0 32 32" aria-hidden="true"><path d="M7 27V15a9 9 0 0 1 18 0v12" fill="none" stroke="#C2410C" stroke-width="4"/><rect x="11" y="21" width="2.6" height="6" fill="${dark ? "#fff" : "#14263D"}"/><rect x="14.7" y="18" width="2.6" height="9" fill="${dark ? "#fff" : "#14263D"}"/><rect x="18.4" y="15" width="2.6" height="12" fill="${dark ? "#fff" : "#14263D"}"/><rect x="3" y="27" width="26" height="2.4" rx="1" fill="${dark ? "#fff" : "#14263D"}"/></svg>`;
+  // Arche orange, barres et socle dans la couleur du texte qui l'entoure (encre en clair, blanc en sombre).
+  const LOGO = (s) => `<svg width="${s}" height="${s}" viewBox="0 0 32 32" aria-hidden="true"><path d="M7 27V15a9 9 0 0 1 18 0v12" fill="none" stroke="#C2410C" stroke-width="4"/><g fill="currentColor"><rect x="11" y="21" width="2.6" height="6"/><rect x="14.7" y="18" width="2.6" height="9"/><rect x="18.4" y="15" width="2.6" height="12"/><rect x="3" y="27" width="26" height="2.4" rx="1"/></g></svg>`;
   const I = {
     dash: '<path d="M3 15h12M5 12V8M9 12V4M13 12V9" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/>',
     home: '<path d="M3 8.5 9 3.5l6 5V15H11v-4H7v4H3z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/>',
@@ -143,5 +144,15 @@
     </table></div>`;
   }
 
-  window.AF = { LOGO, ic, esc, fmt, time, dShort, dLong, nf, money, cap, rel, api, upload, shrink, toast, copy, STATUS_CHIP, healthChip, siteCard, journal, docsTable };
+  // Choix du thème : système (par défaut), clair ou sombre. Gardé dans ce navigateur.
+  function getTheme() { try { return localStorage.getItem("af-theme") || "system"; } catch (e) { return "system"; } }
+  function setTheme(t) {
+    try { t === "system" ? localStorage.removeItem("af-theme") : localStorage.setItem("af-theme", t); } catch (e) {}
+    t === "system" ? document.documentElement.removeAttribute("data-theme") : document.documentElement.setAttribute("data-theme", t);
+    document.querySelectorAll("[data-theme-set]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.themeSet === t)));
+  }
+  const themeControl = () => `<div class="theme-seg" role="group" aria-label="Apparence">${[["system", "Système"], ["light", "Clair"], ["dark", "Sombre"]].map(([k, l]) => `<button type="button" data-theme-set="${k}" aria-pressed="${getTheme() === k}">${l}</button>`).join("")}</div>`;
+  document.addEventListener("click", (e) => { const b = e.target.closest("[data-theme-set]"); if (b) setTheme(b.dataset.themeSet); });
+
+  window.AF = { themeControl, setTheme, LOGO, ic, esc, fmt, time, dShort, dLong, nf, money, cap, rel, api, upload, shrink, toast, copy, STATUS_CHIP, healthChip, siteCard, journal, docsTable };
 })();

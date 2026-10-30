@@ -97,6 +97,23 @@ CREATE INDEX IF NOT EXISTS idx_updates_site ON updates(site_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_photos_update ON photos(update_id);
 `);
 
+db.exec(`
+CREATE TABLE IF NOT EXISTS password_resets (
+  token_hash TEXT PRIMARY KEY,
+  artisan_id INTEGER NOT NULL REFERENCES artisans(id) ON DELETE CASCADE,
+  expires_at TEXT NOT NULL,
+  used_at TEXT
+);
+`);
+
+// Colonnes ajoutées après la première version : ajoutées à la volée sur une base existante.
+function addColumn(table, column, def) {
+  if (!db.prepare(`PRAGMA table_info(${table})`).all().some((c) => c.name === column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${def}`);
+}
+addColumn("artisans", "paid_until", "TEXT");
+addColumn("sites", "client_phone", "TEXT NOT NULL DEFAULT ''");
+addColumn("sites", "last_notified_at", "TEXT");
+
 const all = (sql, ...p) => db.prepare(sql).all(...p);
 const get = (sql, ...p) => db.prepare(sql).get(...p);
 const run = (sql, ...p) => db.prepare(sql).run(...p);
