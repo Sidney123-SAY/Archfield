@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Archfield · visuels réseaux sociaux</title>
+<!-- Visuels pour Instagram et WhatsApp. Chaque <section class="art"> est exporté en PNG par marketing/export.js. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  :root { --navy: #0B1522; --ink: #14263D; --orange: #C2410C; --orange-l: #F0A27A; --muted: #8FA0B5; --beton: #F1F3F5; --green: #26774B; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #444; display: grid; gap: 40px; padding: 40px; justify-content: center; font-family: "Inter", system-ui, sans-serif; }
+  .art { position: relative; overflow: hidden; color: #fff; background: var(--navy); }
+  .post { width: 1080px; height: 1350px; }
+  .story { width: 1080px; height: 1920px; }
+  .glow { position: absolute; inset: 0; background:
+    radial-gradient(45% 35% at 50% 18%, rgba(234, 106, 50, .38), transparent 70%),
+    radial-gradient(40% 35% at 5% 70%, rgba(70, 110, 190, .32), transparent 70%),
+    radial-gradient(35% 30% at 100% 85%, rgba(38, 119, 75, .25), transparent 70%); }
+  .brand { position: absolute; display: flex; align-items: center; gap: 16px; font: 800 46px "Archivo", sans-serif; letter-spacing: -.01em; }
+  .tag { position: absolute; border: 2px solid var(--orange-l); color: var(--orange-l); border-radius: 999px; padding: 10px 24px; font: 600 26px "Inter"; letter-spacing: .04em; text-transform: uppercase; }
+  /* Titre et texte suivent le flux : le texte ne peut plus passer sous le titre. */
+  .text { position: absolute; display: grid; gap: 30px; }
+  h1 { margin: 0; font: 900 84px/1 "Archivo", sans-serif; letter-spacing: -.035em; white-space: nowrap; }
+  h1 .dim { color: var(--muted); }
+  .lead { margin: 0; font: 400 32px/1.42 "Inter"; color: #C9D2DD; }
+
+  /* Téléphone */
+  .phone { position: absolute; border-radius: 74px; padding: 18px; background: #0D0F12; box-shadow: 0 60px 120px rgba(0,0,0,.55), inset 0 0 0 3px #2A2F36; }
+  .phone::before { content: ""; position: absolute; top: 34px; left: 50%; width: 32%; height: 38px; transform: translateX(-50%); background: #0D0F12; border-radius: 999px; z-index: 2; }
+  .phone .screen { height: 100%; border-radius: 58px; overflow: hidden; background: #F1F3F5; padding-top: 66px; }
+  .phone img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+
+  /* Bulles de notification */
+  .note { position: absolute; display: flex; gap: 20px; align-items: center; background: rgba(255,255,255,.96); color: var(--ink); border-radius: 30px; padding: 22px 28px; box-shadow: 0 24px 60px rgba(0,0,0,.35); font: 500 27px/1.3 "Inter"; }
+  .note b { display: block; font-weight: 700; font-size: 29px; }
+  .note .ic { flex: none; width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; }
+  .note .muted { color: #5E6A7A; }
+  .ic.o { background: #FBEAE2; color: var(--orange); }
+  .ic.g { background: #E2F1E7; color: var(--green); }
+  .ic.b { background: #E3EAF6; color: #2B5BA8; }
+
+  .chips { position: absolute; display: flex; gap: 14px; flex-wrap: wrap; }
+  .chips span { border-radius: 999px; padding: 14px 24px; font: 600 26px "Inter"; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18); color: #fff; }
+  .foot { position: absolute; font: 500 28px "Inter"; color: var(--muted); }
+  .foot b { color: #fff; font-weight: 600; }
+
+  /* Version claire (diaspora) */
+  .light { background: var(--beton); color: var(--ink); }
+  .light .glow { background: radial-gradient(45% 35% at 85% 20%, rgba(234, 106, 50, .22), transparent 70%), radial-gradient(40% 35% at 0% 90%, rgba(70, 110, 190, .14), transparent 70%); }
+  .light h1 .dim { color: #6A7787; }
+  .light .lead { color: #4A5664; }
+  .light .tag { border-color: var(--orange); color: var(--orange); }
+  .light .note { background: #fff; }
+  .code { position: absolute; background: #fff; border-radius: 28px; padding: 26px 32px; box-shadow: 0 24px 60px rgba(20,38,61,.15); }
+  .code span { display: block; font: 600 22px "Inter"; letter-spacing: .08em; text-transform: uppercase; color: #5E6A7A; }
+  .code b { display: block; font: 700 46px ui-monospace, Menlo, Consolas, monospace; letter-spacing: .05em; color: var(--ink); margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<!-- 1. Post Instagram 4:5 — l'idée en une image -->
+<section class="art post" id="post-apercu">
+  <div class="glow"></div>
+  <div class="brand" style="left:72px;top:68px"><span class="logo"></span>Archfield</div>
+  <div class="tag" style="right:72px;top:74px">Aperçu</div>
+  <div class="text" style="left:72px;top:184px;width:936px">
+    <h1>Votre chantier,<br><span class="dim">comme si vous y étiez.</span></h1>
+    <p class="lead" style="width:500px">L'artisan publie photos et avancement en 30 secondes. Vous suivez tout, même à des milliers de kilomètres.</p>
+  </div>
+  <div class="phone" style="left:624px;top:420px;width:396px;height:860px"><div class="screen"><img src="../public/img/phone-client-fr-light.jpg" alt=""></div></div>
+  <div class="note" style="left:72px;top:700px;width:560px"><span class="ic o" data-ic="cam"></span><span><b>Nouvelle mise à jour</b><span class="muted">Villa Ndiaye · 3 photos ajoutées</span></span></div>
+  <div class="note" style="left:72px;top:850px;width:520px"><span class="ic g" data-ic="check"></span><span><b>Fondations validées</b><span class="muted">Étape 2 sur 7, dans les temps</span></span></div>
+  <div class="note" style="left:72px;top:1000px;width:480px"><span class="ic b" data-ic="cal"></span><span><b>Rapport du lundi</b><span class="muted">Votre semaine de chantier</span></span></div>
+  <div class="foot" style="left:72px;bottom:64px;width:520px;line-height:1.45"><b>Bientôt disponible</b><br>Europe et Afrique de l'Ouest</div>
+</section>
+
+<!-- 2. Story Instagram / statut WhatsApp 9:16 -->
+<section class="art story" id="story-apercu">
+  <div class="glow"></div>
+  <div class="brand" style="left:80px;top:110px"><span class="logo"></span>Archfield</div>
+  <div class="tag" style="right:80px;top:116px">Bientôt</div>
+  <div class="text" style="left:80px;top:250px;width:920px;gap:36px">
+    <h1 style="font-size:96px">Construire au pays.<br><span class="dim">Suivre depuis Paris.</span></h1>
+    <p class="lead" style="font-size:38px">Photos datées, étapes à valider, devis et rapport chaque lundi. Sans appeler l'artisan.</p>
+  </div>
+  <div class="phone" style="left:300px;top:640px;width:480px;height:1060px"><div class="screen"><img src="../public/img/phone-client-fr-light.jpg" alt=""></div></div>
+  <div class="note" style="left:40px;top:1010px;width:430px"><span class="ic o" data-ic="cam"></span><span><b>3 nouvelles photos</b><span class="muted">Aujourd'hui, 14:32</span></span></div>
+  <div class="note" style="left:560px;top:1250px;width:480px"><span class="ic g" data-ic="check"></span><span><b>Soubassement terminé</b><span class="muted">À valider par vous</span></span></div>
+  <div class="note" style="left:40px;top:1500px;width:520px"><span class="ic b" data-ic="eye"></span><span><b>Vu par Awa à 15:05</b><span class="muted">L'artisan sait que vous suivez</span></span></div>
+  <div class="chips" style="left:80px;bottom:80px"><span>Europe</span><span>Afrique de l'Ouest</span><span>Français · English</span></div>
+</section>
+
+<!-- 3. Post Instagram 4:5 — la diaspora et le proche sur place -->
+<section class="art post light" id="post-diaspora">
+  <div class="glow"></div>
+  <div class="brand" style="left:72px;top:68px;color:#14263D"><span class="logo"></span>Archfield</div>
+  <div class="tag" style="right:72px;top:74px">Pour la diaspora</div>
+  <div class="text" style="left:72px;top:184px;width:936px">
+    <h1 style="font-size:80px">Vous construisez<br>au pays&nbsp;?<br><span class="dim">Tout votre chantier<br>dans votre poche.</span></h1>
+    <p class="lead" style="width:500px">Votre entreprise ou un proche sur place publie l'avancement. Vous suivez chaque étape, où que vous soyez.</p>
+  </div>
+  <div class="phone" style="left:624px;top:540px;width:396px;height:780px"><div class="screen"><img src="../public/img/phone-artisan-fr-light.jpg" alt=""></div></div>
+  <div class="code" style="left:72px;top:850px"><span>Numéro de suivi</span><b>ARC-SALY-2026</b></div>
+  <div class="note" style="left:72px;top:1020px;width:560px"><span class="ic o" data-ic="users"></span><span><b>Ousmane publie pour vous</b><span class="muted">Votre frère, sur place à Thiès</span></span></div>
+  <div class="foot" style="left:72px;bottom:56px;color:#5E6A7A"><b style="color:#14263D">Bientôt disponible</b> · Suivre est gratuit</div>
+</section>
+
+<script>
+  // Logo et icônes : mêmes dessins que l'application.
+  const LOGO = (s, ink) => `<svg width="${s}" height="${s}" viewBox="0 0 32 32"><path d="M7 27V15a9 9 0 0 1 18 0v12" fill="none" stroke="#C2410C" stroke-width="4"/><g fill="${ink}"><rect x="11" y="21" width="2.6" height="6"/><rect x="14.7" y="18" width="2.6" height="9"/><rect x="18.4" y="15" width="2.6" height="12"/><rect x="3" y="27" width="26" height="2.4" rx="1"/></g></svg>`;
+  const I = {
+    cam: '<path d="M2.5 6h3l1.4-2h4.2L12.5 6h3v9h-13z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><circle cx="9" cy="10.2" r="2.6" stroke="currentColor" stroke-width="1.6" fill="none"/>',
+    check: '<circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="m5.8 9.2 2.2 2.2 4.2-4.6" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+    cal: '<rect x="2.5" y="3.5" width="13" height="12" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M2.5 7.5h13M6 2v3M12 2v3" stroke="currentColor" stroke-width="1.5"/>',
+    eye: '<path d="M1.5 9S4.2 4 9 4s7.5 5 7.5 5-2.7 5-7.5 5S1.5 9 1.5 9z" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="9" cy="9" r="2.2" stroke="currentColor" stroke-width="1.5" fill="none"/>',
+    users: '<circle cx="7" cy="6.5" r="2.5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M2.5 15c.5-2.6 2.2-4 4.5-4s4 1.4 4.5 4M12 4.3a2.4 2.4 0 0 1 0 4.5M13.5 11c1.2.5 2 1.8 2.3 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>'
+  };
+  document.querySelectorAll(".logo").forEach((el) => { el.innerHTML = LOGO(56, el.closest(".light") ? "#14263D" : "#fff"); });
+  document.querySelectorAll("[data-ic]").forEach((el) => { el.innerHTML = `<svg width="34" height="34" viewBox="0 0 18 18">${I[el.dataset.ic]}</svg>`; });
+</script>
+</body>
+</html>
