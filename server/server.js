@@ -10,6 +10,7 @@ const { all, get, run, tx, UPLOAD_DIR } = require("./db");
 const { siteWithSummary, dashboard, stepStatus, DAY } = require("./analytics");
 const { sendReport, startScheduler } = require("./reports");
 const { sendMail, BASE_URL } = require("./mail");
+const { checkCompany, publicCountries, siret: checkSiret } = require("./company");
 
 const PORT = Number(process.env.PORT || 3000);
 const PROD = process.env.NODE_ENV === "production";
@@ -93,7 +94,7 @@ function cookies(req) {
   return Object.fromEntries((req.headers.cookie || "").split(";").map((c) => c.trim().split("=")).filter((p) => p[0]).map(([k, ...v]) => [k, decodeURIComponent(v.join("="))]));
 }
 function setSession(res, t, maxAge) {
-  res.setHeader("Set-Cookie", `af_session=${t}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${PROD ? "; Secure" : ""}`);
+  res.append("Set-Cookie", `af_session=${t}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${PROD ? "; Secure" : ""}`);
 }
 function access(a) {
   const now = Date.now(), trial = Date.parse(a.trial_ends_at), paid = a.paid_until ? Date.parse(a.paid_until) : 0;
@@ -101,7 +102,8 @@ function access(a) {
   if (trial > now) return { status: "trial", active: true, until: a.trial_ends_at, days_left: Math.ceil((trial - now) / DAY) };
   return { status: "expired", active: false, until: a.paid_until || a.trial_ends_at, days_left: 0 };
 }
-const publicArtisan = (a) => ({ id: a.id, email: a.email, company: a.company, contact_name: a.contact_name, city: a.city, market: a.market, currency: a.currency, price: MARKETS[a.market].price, trial_ends_at: a.trial_ends_at, access: access(a), created_at: a.created_at });
+const hasPassword = (a) => !a.password_hash.startsWith("!");
+const publicArtisan = (a) => ({ id: a.id, email: a.email, company: a.company, contact_name: a.contact_name, city: a.city, country: a.country, company_id: a.company_id, market: a.market, currency: a.currency, price: MARKETS[a.market].price, trial_ends_at: a.trial_ends_at, access: access(a), google: !!a.google_sub, has_password: hasPassword(a), created_at: a.created_at });
 function removeFiles(files) { files.forEach((f) => fs.rm(path.join(UPLOAD_DIR, path.basename(f)), { force: true }, () => {})); }
 
 /* ---------- Authentification ---------- */
@@ -133,17 +135,30 @@ function throttle(key) {
 }
 const passwordOk = (p) => { const s = str(p, 200, "mot de passe"); if (s.length < 8) fail(400, "Le mot de passe doit faire au moins 8 caractères."); return s; };
 
+// Inscription : par e-mail et mot de passe, ou après « Continuer avec Google » (google_token).
 app.post("/api/signup", limit("signup", 10, 60 * 60e3), wrap(async (req, res) => {
   const b = req.body || {};
-  const mail = email(b.email, "e-mail", true);
-  const password = passwordOk(b.password);
-  const market = b.market === "af" ? "af" : "eu";
+  const co = checkCompany(b.country, b.company_id);
+  if (co.error) fail(400, co.error);
+  let mail, hash, googleSub = null;
+  if (b.google_token) {
+    const p = get("SELECT * FROM oauth_pending WHERE token_hash = ? AND expires_at > ?", sha256(String(b.google_token)), nowIso());
+    if (!p) fail(400, "La connexion Google a expiré. Cliquez à nouveau sur « Continuer avec Google ».");
+    mail = p.email; googleSub = p.subject; hash = "!google";
+  } else {
+    mail = email(b.email, "e-mail", true);
+    hash = await bcrypt.hash(passwordOk(b.password), 10);
+  }
   if (get("SELECT 1 FROM artisans WHERE email = ?", mail)) fail(409, "Un compte existe déjà avec cet e-mail. Connectez-vous.");
-  const r = run(
-    `INSERT INTO artisans (email, password_hash, company, contact_name, city, market, currency, trial_ends_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    mail, await bcrypt.hash(password, 10), str(b.company, 120, "entreprise"), str(b.contact_name, 120, "nom"), str(b.city, 120, "ville", false),
-    market, MARKETS[market].currency, new Date(Date.now() + TRIAL_DAYS * DAY).toISOString(), nowIso());
-  openSession(res, Number(r.lastInsertRowid));
+  const id = tx(() => {
+    const r = run(
+      `INSERT INTO artisans (email, password_hash, company, contact_name, city, country, company_id, market, currency, google_sub, trial_ends_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      mail, hash, str(b.company, 120, "entreprise"), str(b.contact_name, 120, "nom"), str(b.city, 120, "ville", false), co.country, co.company_id,
+      co.market, MARKETS[co.market].currency, googleSub, new Date(Date.now() + TRIAL_DAYS * DAY).toISOString(), nowIso());
+    if (b.google_token) run("DELETE FROM oauth_pending WHERE token_hash = ?", sha256(String(b.google_token)));
+    return Number(r.lastInsertRowid);
+  });
+  openSession(res, id);
   res.status(201).json({ ok: true });
 }));
 
@@ -151,10 +166,40 @@ app.post("/api/login", wrap(async (req, res) => {
   const mail = str(req.body?.email, 200, "e-mail").toLowerCase();
   const t = throttle(req.ip + "|" + mail);
   const a = get("SELECT * FROM artisans WHERE email = ?", mail);
+  if (a && !hasPassword(a)) fail(400, "Ce compte se connecte avec Google. Cliquez sur « Continuer avec Google ».");
   if (!a || !(await bcrypt.compare(String(req.body?.password || ""), a.password_hash))) { t.failed(); fail(401, "E-mail ou mot de passe incorrect."); }
   t.ok();
   openSession(res, a.id);
   res.json({ ok: true });
+}));
+
+// Comptes de démo en un clic (seulement si DEMO=on, ou hors production).
+const DEMO_ON = process.env.DEMO === "on" || (!PROD && process.env.DEMO !== "off");
+const DEMO_ACCOUNTS = { eu: "demo@archfield.app", af: "demo-afrique@archfield.app" };
+app.post("/api/demo-login", (req, res) => {
+  if (!DEMO_ON) fail(404, "La démo n'est pas disponible.");
+  const a = get("SELECT * FROM artisans WHERE email = ?", DEMO_ACCOUNTS[req.body?.account] || "");
+  if (!a) fail(404, "Les données de démo ne sont pas chargées. Lancez « npm run seed » puis réessayez.");
+  openSession(res, a.id);
+  res.json({ ok: true });
+});
+
+// Vérification d'un SIRET auprès de l'annuaire public des entreprises (recherche-entreprises.api.gouv.fr).
+app.get("/api/entreprise/:siret", limit("siret", 30, 10 * 60e3), wrap(async (req, res) => {
+  const n = checkSiret(req.params.siret);
+  if (!n) fail(400, "SIRET invalide : vérifiez les chiffres (14 chiffres, sur votre extrait Kbis ou avis de situation Insee).");
+  let data;
+  try {
+    const r = await fetch(`https://recherche-entreprises.api.gouv.fr/search?q=${n}&per_page=1`, { signal: AbortSignal.timeout(5000), headers: { Accept: "application/json" } });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    data = await r.json();
+  } catch (e) {
+    return res.status(503).json({ error: "Vérification du SIRET indisponible pour le moment. Vous pouvez continuer l'inscription." });
+  }
+  const e = data.results?.[0];
+  const etab = e && [e.siege, ...(e.matching_etablissements || [])].find((x) => x && x.siret === n);
+  if (!e || !etab) return res.status(404).json({ error: "Ce SIRET n'existe pas dans l'annuaire des entreprises. Vérifiez-le." });
+  res.json({ siret: n, name: e.nom_complet, city: etab.libelle_commune || "", active: etab.etat_administratif !== "F" });
 }));
 
 app.post("/api/logout", (req, res) => {
@@ -195,7 +240,66 @@ app.post("/api/password/reset", limit("reset", 20, 60 * 60e3), wrap(async (req, 
 }));
 
 // Les comptes de démo ne sont affichés sur la page de connexion que si DEMO=on.
-app.get("/api/config", (req, res) => res.json({ demo: process.env.DEMO === "on" || !PROD }));
+app.get("/api/config", (req, res) => res.json({ demo: DEMO_ON, google: GOOGLE.enabled, countries: publicCountries() }));
+
+/* ---------- Connexion avec Google (OpenID Connect) ---------- */
+const GOOGLE = {
+  id: process.env.GOOGLE_CLIENT_ID, secret: process.env.GOOGLE_CLIENT_SECRET,
+  authUrl: process.env.GOOGLE_AUTH_URL || "https://accounts.google.com/o/oauth2/v2/auth",
+  tokenUrl: process.env.GOOGLE_TOKEN_URL || "https://oauth2.googleapis.com/token",
+  userUrl: process.env.GOOGLE_USERINFO_URL || "https://openidconnect.googleapis.com/v1/userinfo"
+};
+GOOGLE.enabled = !!(GOOGLE.id && GOOGLE.secret);
+const googleRedirect = () => `${BASE_URL}/auth/google/callback`;
+const oauthCookie = (res, v, maxAge) => res.append("Set-Cookie", `af_oauth=${v}; Path=/auth; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${PROD ? "; Secure" : ""}`);
+
+app.get("/auth/google", limit("oauth", 30, 10 * 60e3), (req, res) => {
+  if (!GOOGLE.enabled) return res.redirect("/connexion?erreur=google-indisponible");
+  const state = token(24);
+  oauthCookie(res, state, 600);
+  const q = new URLSearchParams({ client_id: GOOGLE.id, redirect_uri: googleRedirect(), response_type: "code", scope: "openid email profile", state, prompt: "select_account" });
+  res.redirect(`${GOOGLE.authUrl}?${q}`);
+});
+
+app.get("/auth/google/callback", limit("oauth", 30, 10 * 60e3), wrap(async (req, res) => {
+  const back = (code) => res.redirect("/connexion?erreur=" + code);
+  const state = cookies(req).af_oauth;
+  oauthCookie(res, "", 0);
+  if (!GOOGLE.enabled || !state || req.query.state !== state || !req.query.code) return back("google");
+  let user;
+  try {
+    const tr = await fetch(GOOGLE.tokenUrl, {
+      method: "POST", signal: AbortSignal.timeout(8000), headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ code: String(req.query.code), client_id: GOOGLE.id, client_secret: GOOGLE.secret, redirect_uri: googleRedirect(), grant_type: "authorization_code" })
+    });
+    const tok = await tr.json();
+    if (!tr.ok || !tok.access_token) throw new Error("jeton refusé");
+    const ur = await fetch(GOOGLE.userUrl, { signal: AbortSignal.timeout(8000), headers: { Authorization: "Bearer " + tok.access_token } });
+    user = await ur.json();
+    if (!ur.ok || !user.sub || !user.email) throw new Error("profil illisible");
+  } catch (e) {
+    console.error("Connexion Google échouée :", e.message);
+    return back("google");
+  }
+  if (!user.email_verified) return back("google-email");
+  const mail = String(user.email).toLowerCase();
+  const a = get("SELECT * FROM artisans WHERE google_sub = ?", user.sub) || get("SELECT * FROM artisans WHERE email = ?", mail);
+  if (a) {
+    if (!a.google_sub) run("UPDATE artisans SET google_sub = ? WHERE id = ?", user.sub, a.id);
+    openSession(res, a.id);
+    return res.redirect("/app");
+  }
+  // Nouveau compte : on garde l'identité Google 30 minutes, le temps de remplir l'entreprise et le pays.
+  const t = token(24);
+  run("INSERT INTO oauth_pending (token_hash, provider, subject, email, name, expires_at) VALUES (?, 'google', ?, ?, ?, ?)", sha256(t), user.sub, mail, String(user.name || ""), new Date(Date.now() + 30 * 60e3).toISOString());
+  res.redirect(`/inscription?google=${t}`);
+}));
+
+app.get("/api/oauth-pending/:token", (req, res) => {
+  const p = get("SELECT email, name FROM oauth_pending WHERE token_hash = ? AND expires_at > ?", sha256(req.params.token), nowIso());
+  if (!p) fail(404, "La connexion Google a expiré. Cliquez à nouveau sur « Continuer avec Google ».");
+  res.json(p);
+});
 
 /* ---------- Artisan ---------- */
 const api = express.Router();
@@ -235,7 +339,7 @@ api.patch("/me", (req, res) => {
   res.json(publicArtisan(get("SELECT * FROM artisans WHERE id = ?", a.id)));
 });
 api.post("/me/password", wrap(async (req, res) => {
-  if (!(await bcrypt.compare(String(req.body?.current || ""), req.artisan.password_hash))) fail(400, "Le mot de passe actuel est incorrect.");
+  if (hasPassword(req.artisan) && !(await bcrypt.compare(String(req.body?.current || ""), req.artisan.password_hash))) fail(400, "Le mot de passe actuel est incorrect.");
   const hash = await bcrypt.hash(passwordOk(req.body?.password), 10);
   const current = cookies(req).af_session;
   tx(() => {
@@ -260,7 +364,8 @@ api.get("/me/export", (req, res) => {
   res.json({ exported_at: nowIso(), account: publicArtisan(a), sites });
 });
 api.delete("/me", wrap(async (req, res) => {
-  if (!(await bcrypt.compare(String(req.body?.password || ""), req.artisan.password_hash))) fail(400, "Mot de passe incorrect : le compte n'a pas été supprimé.");
+  const ok = hasPassword(req.artisan) ? await bcrypt.compare(String(req.body?.password || ""), req.artisan.password_hash) : String(req.body?.password || "").trim().toLowerCase() === req.artisan.email;
+  if (!ok) fail(400, hasPassword(req.artisan) ? "Mot de passe incorrect : le compte n'a pas été supprimé." : "Tapez l'adresse e-mail du compte pour confirmer la suppression.");
   const files = all("SELECT p.file FROM photos p JOIN updates u ON u.id = p.update_id JOIN sites si ON si.id = u.site_id WHERE si.artisan_id = ?", req.artisan.id).map((p) => p.file);
   run("DELETE FROM artisans WHERE id = ?", req.artisan.id);
   removeFiles(files);
@@ -570,6 +675,8 @@ const page = (f) => (req, res) => res.sendFile(path.join(PUBLIC, f));
 app.get("/", page("index.html"));
 app.get(["/connexion", "/inscription", "/mot-de-passe-oublie", "/reinitialiser"], page("auth.html"));
 app.get("/confidentialite", page("confidentialite.html"));
+app.get("/a-propos", page("a-propos.html"));
+app.get("/mentions-legales", page("mentions-legales.html"));
 app.get("/app", page("app.html"));
 app.get("/c/:token", page("client.html"));
 app.use(express.static(PUBLIC, { index: false, maxAge: PROD ? "1h" : 0 }));
@@ -587,6 +694,7 @@ function cleanup() {
   const now = nowIso();
   run("DELETE FROM sessions WHERE expires_at < ?", now);
   run("DELETE FROM password_resets WHERE expires_at < ?", now);
+  run("DELETE FROM oauth_pending WHERE expires_at < ?", now);
 }
 
 if (require.main === module) {

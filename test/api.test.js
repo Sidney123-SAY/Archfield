@@ -35,13 +35,13 @@ test.after(() => { server.close(); fs.rmSync(process.env.DATA_DIR, { recursive: 
 test("parcours artisan et client", async () => {
   assert.equal((await call("GET", "/api/me")).status, 401);
 
-  const su = await call("POST", "/api/signup", { email: "Test@Example.com", password: "motdepasse", company: "Ndiaye BTP", contact_name: "Ousmane Ndiaye", city: "Thiès", market: "af" });
+  const su = await call("POST", "/api/signup", { country: "SN", email: "Test@Example.com", password: "motdepasse", company: "Ndiaye BTP", contact_name: "Ousmane Ndiaye", city: "Thiès", market: "af" });
   assert.equal(su.status, 201);
   const me = (await call("GET", "/api/me")).data;
   assert.equal(me.email, "test@example.com");
   assert.equal(me.currency, "XOF");
 
-  assert.equal((await call("POST", "/api/signup", { email: "test@example.com", password: "motdepasse", company: "X", contact_name: "Y" })).status, 409);
+  assert.equal((await call("POST", "/api/signup", { country: "SN", email: "test@example.com", password: "motdepasse", company: "X", contact_name: "Y" })).status, 409);
 
   const created = await call("POST", "/api/sites", {
     name: "Villa Diallo", location: "Thiès", kind: "ext", client_name: "Aminata Diallo", client_email: "a@example.com", budget: 18500000, start_now: true,
@@ -119,7 +119,7 @@ test("parcours artisan et client", async () => {
   // Un autre artisan ne voit pas ce chantier.
   const mine = cookie;
   cookie = "";
-  await call("POST", "/api/signup", { email: "autre@example.com", password: "motdepasse", company: "Autre", contact_name: "Autre" });
+  await call("POST", "/api/signup", { country: "SN", email: "autre@example.com", password: "motdepasse", company: "Autre", contact_name: "Autre" });
   assert.equal((await call("GET", `/api/sites/${site.id}`)).status, 404);
   cookie = mine;
 
@@ -142,7 +142,7 @@ test("rapport hebdomadaire : un seul par chantier et par semaine", async () => {
 test("mot de passe oublié puis nouveau mot de passe", async () => {
   const { outbox } = require("../server/mail");
   cookie = "";
-  await call("POST", "/api/signup", { email: "oubli@example.com", password: "ancienmdp", company: "Oubli", contact_name: "Awa" });
+  await call("POST", "/api/signup", { country: "SN", email: "oubli@example.com", password: "ancienmdp", company: "Oubli", contact_name: "Awa" });
   cookie = "";
   assert.equal((await call("POST", "/api/password/forgot", { email: "inconnu@example.com" })).status, 200);
   assert.equal(outbox.filter((m) => m.to === "inconnu@example.com").length, 0);
@@ -162,7 +162,7 @@ test("photos protégées, notification du client, fin d'essai, suppression et ex
   const { outbox } = require("../server/mail");
   const { run, get } = require("../server/db");
   cookie = "";
-  await call("POST", "/api/signup", { email: "photos@example.com", password: "motdepasse", company: "Photos BTP", contact_name: "Moussa" });
+  await call("POST", "/api/signup", { country: "SN", email: "photos@example.com", password: "motdepasse", company: "Photos BTP", contact_name: "Moussa" });
   const site = (await call("POST", "/api/sites", { name: "Villa", client_name: "Fatou Sow", client_email: "fatou@example.com", client_phone: "+221 77 123 45 67", steps: [{ name: "Murs", planned_days: 10 }], start_now: true })).data;
   assert.equal(site.client_phone, "+221771234567");
   assert.equal((await call("POST", "/api/sites", { name: "X", client_name: "Y", client_phone: "abc", steps: [{ name: "A", planned_days: 1 }] })).status, 400);

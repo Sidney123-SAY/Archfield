@@ -139,8 +139,9 @@ function delivered(template, bias, opts) {
 async function main() {
   const hash = await bcrypt.hash(PASSWORD, 10);
   const accounts = [
-    { email: "demo@archfield.app", company: "Atelier Rhône Rénovation", contact: "Marc Soler", city: "Lyon", market: "eu", currency: "EUR" },
-    { email: "demo-afrique@archfield.app", company: "Sarr Construction", contact: "Moussa Sarr", city: "Saly, Sénégal", market: "af", currency: "XOF" }
+    // SIRET fictif, mais à la clé valide : il n'appartient à aucune entreprise réelle.
+    { email: "demo@archfield.app", company: "Atelier Rhône Rénovation", contact: "Marc Soler", city: "Lyon", country: "FR", companyId: "90012345600007", market: "eu", currency: "EUR" },
+    { email: "demo-afrique@archfield.app", company: "Sarr Construction", contact: "Moussa Sarr", city: "Saly, Sénégal", country: "SN", companyId: "", market: "af", currency: "XOF" }
   ];
   const ids = tx(() => {
     for (const a of accounts) {
@@ -149,8 +150,8 @@ async function main() {
       run("DELETE FROM artisans WHERE email = ?", a.email);
     }
     return accounts.map((a) => Number(run(
-      "INSERT INTO artisans (email, password_hash, company, contact_name, city, market, currency, trial_ends_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      a.email, hash, a.company, a.contact, a.city, a.market, a.currency, iso(NOW + 41 * DAY), iso(NOW - 400 * DAY)).lastInsertRowid));
+      "INSERT INTO artisans (email, password_hash, company, contact_name, city, country, company_id, market, currency, trial_ends_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      a.email, hash, a.company, a.contact, a.city, a.country, a.companyId, a.market, a.currency, iso(NOW + 41 * DAY), iso(NOW - 400 * DAY)).lastInsertRowid));
   });
   const [eu, af] = ids;
 

@@ -59,6 +59,18 @@ Comptes de démo (mot de passe `archfield-demo`) :
 - **Sécurité** : photos visibles seulement par l'artisan du chantier et par le lien du client, photos d'iPhone (HEIC) converties en JPEG, en-têtes de sécurité (CSP, anti-iframe), limites de requêtes, refus des requêtes venant d'autres sites.
 - **Thème** : clair, sombre, ou celui du système (par défaut), au choix dans « Abonnement et compte » et en bas de chaque page.
 
+### Inscription, langues, thème et cookies
+
+- **Inscription** : pays de l'entreprise obligatoire. En France, le SIRET est exigé, sa clé est vérifiée et il est contrôlé dans l'annuaire public des entreprises (nom et ville remplis tout seuls). Belgique : numéro BCE, Suisse : IDE, Luxembourg : RCS. En Afrique de l'Ouest (Sénégal, Côte d'Ivoire, Mali, Burkina Faso, Bénin, Togo, Niger), le numéro (NINEA, RCCM…) est facultatif. Le pays fixe la devise et le tarif.
+- **Connexion avec Google** : bouton « Continuer avec Google » sur la connexion et l'inscription, dès que `GOOGLE_CLIENT_ID` et `GOOGLE_CLIENT_SECRET` sont renseignés.
+  1. Sur https://console.cloud.google.com, créez un projet, puis **API et services → Identifiants → Créer des identifiants → ID client OAuth** (type « Application Web »).
+  2. URI de redirection autorisée : `<BASE_URL>/auth/google/callback`, par exemple `http://localhost:3000/auth/google/callback` en local.
+  3. Copiez l'ID client et le code secret dans `GOOGLE_CLIENT_ID` et `GOOGLE_CLIENT_SECRET`.
+- **Langues** : français et anglais, au choix en haut de chaque page (le navigateur décide la première fois). Les textes anglais sont dans `public/js/i18n-en.js` ; `npm test` signale toute phrase sans traduction. Les e-mails partent encore en français.
+- **Thème** : soleil (clair), lune (sombre), écran (suit le système, par défaut).
+- **Cookies** : bandeau au premier passage (tout accepter, tout refuser, personnaliser), lien « Gérer les cookies » en bas de chaque page. Aujourd'hui seul le cookie de connexion est utilisé ; un outil de mesure d'audience ne devra se charger que si `AF.consent().analytics` vaut `true`.
+- **Démo** : hors production, boutons « Démo Lyon » et « Démo Saly » sur la page de connexion (après `npm run seed`).
+
 ### Organisation du code
 
 | Dossier | Rôle |
@@ -68,9 +80,12 @@ Comptes de démo (mot de passe `archfield-demo`) :
 | `server/analytics.js` | Avancement, dérive, durées par étape, indice de fiabilité |
 | `server/reports.js` | Rapport hebdomadaire et e-mail |
 | `server/mail.js` | Envoi des e-mails (SMTP) |
+| `server/company.js` | Pays, SIRET et autres numéros d'entreprise |
 | `server/seed.js` | Données de démo |
 | `server/activate.js` | Activation manuelle d'un abonnement |
-| `public/` | Pages : accueil, connexion, app artisan (`/app`), page client (`/c/<lien>`), confidentialité |
+| `public/` | Pages : accueil, connexion, app artisan (`/app`), page client (`/c/<lien>`), à propos, mentions légales, confidentialité |
+| `public/js/i18n-en.js` | Traduction anglaise |
+| `tools/i18n-keys.js` | Liste des phrases à traduire (utilisé par les tests) |
 | `prototype/` | Première maquette cliquable, sans serveur |
 
 ### Mettre en ligne
@@ -86,7 +101,7 @@ Render, Railway ou Fly.io conviennent : un service web à partir du `Dockerfile`
 
 ### Avant d'ouvrir au public
 
-- Compléter et faire relire `public/confidentialite.html` (raison sociale, hébergeur, contact), et ajouter mentions légales et CGV.
+- Compléter et faire relire `public/confidentialite.html` et `public/mentions-legales.html` (éléments entre crochets), et ajouter des CGV.
 - Configurer `SMTP_URL` (Brevo, Resend ou Postmark) : sans lui, ni le mot de passe oublié ni les e-mails aux clients ne partent.
 - Mettre `DEMO=off` et ne pas lancer `npm run seed` en production.
 - Sauvegarder chaque jour le dossier `DATA_DIR` (base et photos).

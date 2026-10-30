@@ -113,6 +113,22 @@ function addColumn(table, column, def) {
 addColumn("artisans", "paid_until", "TEXT");
 addColumn("sites", "client_phone", "TEXT NOT NULL DEFAULT ''");
 addColumn("sites", "last_notified_at", "TEXT");
+addColumn("artisans", "country", "TEXT NOT NULL DEFAULT ''");
+addColumn("artisans", "company_id", "TEXT NOT NULL DEFAULT ''");
+addColumn("artisans", "google_sub", "TEXT");
+
+// Inscription commencée avec Google, en attente du nom de l'entreprise et du pays.
+db.exec(`
+CREATE TABLE IF NOT EXISTS oauth_pending (
+  token_hash TEXT PRIMARY KEY,
+  provider TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  email TEXT NOT NULL,
+  name TEXT NOT NULL DEFAULT '',
+  expires_at TEXT NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_artisans_google ON artisans(google_sub) WHERE google_sub IS NOT NULL;
+`);
 
 const all = (sql, ...p) => db.prepare(sql).all(...p);
 const get = (sql, ...p) => db.prepare(sql).get(...p);

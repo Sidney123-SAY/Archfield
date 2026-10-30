@@ -14,56 +14,66 @@
 <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
+<header class="pub-head gutter"><a class="logo" href="/" id="logo">Archfield</a><div data-prefs></div></header>
 <main class="auth gutter">
   <div class="box">
-    <a class="logo" href="/" style="color:var(--ink);font-size:1.4rem;justify-self:center" id="logo">Archfield</a>
+    <div class="error-box" id="query-error" hidden></div>
 
     <form class="card form" id="login" data-api="/api/login" hidden>
-      <h1 style="font-size:1.4rem">Connexion</h1>
-      <div class="field"><label for="li-email">E-mail</label><input id="li-email" name="email" type="email" autocomplete="email" required></div>
-      <div class="field"><label for="li-password">Mot de passe</label><input id="li-password" name="password" type="password" autocomplete="current-password" required>
-        <a class="hint" href="/mot-de-passe-oublie">Mot de passe oublié ?</a></div>
+      <h1 style="font-size:1.4rem" data-i18n>Connexion</h1>
+      <div class="google-zone" hidden><a class="btn google" href="/auth/google"><span class="g-ic"></span><span data-i18n>Continuer avec Google</span></a><p class="or"><span data-i18n>ou avec votre e-mail</span></p></div>
+      <div class="field"><label for="li-email" data-i18n>E-mail</label><input id="li-email" name="email" type="email" autocomplete="email" required></div>
+      <div class="field"><label for="li-password" data-i18n>Mot de passe</label><input id="li-password" name="password" type="password" autocomplete="current-password" required>
+        <a class="hint" href="/mot-de-passe-oublie" data-i18n>Mot de passe oublié ?</a></div>
       <div class="error-box" hidden></div>
-      <button class="btn primary" type="submit" style="min-height:44px">Se connecter</button>
+      <button class="btn primary" type="submit" style="min-height:44px" data-i18n>Se connecter</button>
     </form>
 
     <form class="card form" id="signup" data-api="/api/signup" hidden>
-      <div><h1 style="font-size:1.4rem">Créer votre compte</h1><p class="muted" style="font-size:.86rem">2 mois gratuits, sans carte bancaire.</p></div>
-      <div class="field"><span class="fl">Où travaillez-vous ?</span><div class="seg-choice">
-        <label><input type="radio" name="market" value="eu" checked><b>Europe</b><span>19 € par mois</span></label>
-        <label><input type="radio" name="market" value="af"><b>Afrique de l'Ouest</b><span>9 900 FCFA par mois</span></label></div></div>
-      <div class="field"><label for="su-company">Nom de l'entreprise</label><input id="su-company" name="company" required maxlength="120" autocomplete="organization"></div>
+      <div><h1 style="font-size:1.4rem" data-i18n>Créer votre compte</h1><p class="muted" style="font-size:.86rem" data-i18n>2 mois gratuits, sans carte bancaire.</p></div>
+      <div class="google-zone" hidden><a class="btn google" href="/auth/google"><span class="g-ic"></span><span data-i18n>Continuer avec Google</span></a><p class="or"><span data-i18n>ou avec votre e-mail</span></p></div>
+      <div class="okbox" id="google-pending" hidden></div>
+      <div class="field"><label for="su-country" data-i18n>Pays de l'entreprise</label><select id="su-country" name="country" required></select>
+        <span class="hint" id="su-price"></span></div>
+      <div class="field"><label for="su-company-id" id="su-company-id-label">SIRET</label><input id="su-company-id" name="company_id" autocomplete="off" inputmode="numeric">
+        <span class="hint" id="su-company-id-hint"></span><span class="hint" id="su-siret-check" aria-live="polite"></span></div>
+      <div class="field"><label for="su-company" data-i18n>Nom de l'entreprise</label><input id="su-company" name="company" required maxlength="120" autocomplete="organization"></div>
       <div class="row2">
-        <div class="field"><label for="su-contact">Votre nom</label><input id="su-contact" name="contact_name" required maxlength="120" autocomplete="name"></div>
-        <div class="field"><label for="su-city">Ville</label><input id="su-city" name="city" maxlength="120" autocomplete="address-level2"></div>
+        <div class="field"><label for="su-contact" data-i18n>Votre nom</label><input id="su-contact" name="contact_name" required maxlength="120" autocomplete="name"></div>
+        <div class="field"><label for="su-city" data-i18n>Ville</label><input id="su-city" name="city" maxlength="120" autocomplete="address-level2"></div>
       </div>
-      <div class="field"><label for="su-email">E-mail</label><input id="su-email" name="email" type="email" required autocomplete="email"></div>
-      <div class="field"><label for="su-password">Mot de passe</label><input id="su-password" name="password" type="password" required minlength="8" autocomplete="new-password"><span class="hint">8 caractères au moins.</span></div>
+      <div class="field email-pw"><label for="su-email" data-i18n>E-mail</label><input id="su-email" name="email" type="email" required autocomplete="email"></div>
+      <div class="field email-pw"><label for="su-password" data-i18n>Mot de passe</label><input id="su-password" name="password" type="password" required minlength="8" autocomplete="new-password"><span class="hint" data-i18n>8 caractères au moins.</span></div>
       <div class="error-box" hidden></div>
-      <button class="btn primary" type="submit" style="min-height:44px">Commencer l'essai gratuit</button>
-      <p class="hint muted">En créant un compte, vous acceptez la <a href="/confidentialite">politique de confidentialité</a>.</p>
+      <button class="btn primary" type="submit" style="min-height:44px" data-i18n>Commencer l'essai gratuit</button>
+      <p class="hint muted" data-i18n>En créant un compte, vous acceptez la <a href="/confidentialite">politique de confidentialité</a>.</p>
     </form>
 
     <form class="card form" id="forgot" data-api="/api/password/forgot" hidden>
-      <div><h1 style="font-size:1.4rem">Mot de passe oublié</h1><p class="muted" style="font-size:.86rem">Indiquez l'e-mail de votre compte. Vous recevrez un lien valable une heure pour choisir un nouveau mot de passe.</p></div>
-      <div class="field"><label for="fg-email">E-mail</label><input id="fg-email" name="email" type="email" autocomplete="email" required></div>
+      <div><h1 style="font-size:1.4rem" data-i18n>Mot de passe oublié</h1><p class="muted" style="font-size:.86rem" data-i18n>Indiquez l'e-mail de votre compte. Vous recevrez un lien valable une heure pour choisir un nouveau mot de passe.</p></div>
+      <div class="field"><label for="fg-email" data-i18n>E-mail</label><input id="fg-email" name="email" type="email" autocomplete="email" required></div>
       <div class="error-box" hidden></div>
-      <div class="okbox" hidden>Si un compte existe avec cet e-mail, le lien vient de partir. Pensez à regarder dans les courriers indésirables.</div>
-      <button class="btn primary" type="submit" style="min-height:44px">Recevoir le lien</button>
+      <div class="okbox" hidden data-i18n>Si un compte existe avec cet e-mail, le lien vient de partir. Pensez à regarder dans les courriers indésirables.</div>
+      <button class="btn primary" type="submit" style="min-height:44px" data-i18n>Recevoir le lien</button>
     </form>
 
     <form class="card form" id="reset" data-api="/api/password/reset" hidden>
-      <h1 style="font-size:1.4rem">Nouveau mot de passe</h1>
-      <div class="field"><label for="rs-password">Nouveau mot de passe</label><input id="rs-password" name="password" type="password" required minlength="8" autocomplete="new-password"><span class="hint">8 caractères au moins.</span></div>
+      <h1 style="font-size:1.4rem" data-i18n>Nouveau mot de passe</h1>
+      <div class="field"><label for="rs-password" data-i18n>Nouveau mot de passe</label><input id="rs-password" name="password" type="password" required minlength="8" autocomplete="new-password"><span class="hint" data-i18n>8 caractères au moins.</span></div>
       <div class="error-box" hidden></div>
-      <button class="btn primary" type="submit" style="min-height:44px">Enregistrer et me connecter</button>
+      <button class="btn primary" type="submit" style="min-height:44px" data-i18n>Enregistrer et me connecter</button>
     </form>
 
     <p class="switch" id="switch"></p>
-    <p class="demo-note" id="demo" hidden>Compte de démo : <code>demo@archfield.app</code> (Lyon, €) ou <code>demo-afrique@archfield.app</code> (Saly, FCFA), mot de passe <code>archfield-demo</code>.</p>
-    <div class="foot-tools" id="theme"></div>
+    <section class="card demo-box" id="demo" hidden>
+      <h2 data-i18n>Essayer avec un compte de démo</h2>
+      <p class="muted" data-i18n>Des chantiers, photos et factures d'exemple, sans rien saisir.</p>
+      <div class="row-acts"><button type="button" class="btn" data-demo="eu" data-i18n>Démo Lyon (€)</button><button type="button" class="btn" data-demo="af" data-i18n>Démo Saly, Sénégal (FCFA)</button></div>
+    </section>
+    <div data-footer-links class="foot-tools"></div>
   </div>
 </main>
+<script src="/js/i18n-en.js"></script>
 <script src="/js/ui.js"></script>
 <script src="/js/auth.js"></script>
 </body>
