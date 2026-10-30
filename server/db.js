@@ -130,6 +130,41 @@ CREATE TABLE IF NOT EXISTS oauth_pending (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_artisans_google ON artisans(google_sub) WHERE google_sub IS NOT NULL;
 `);
 
+// Espace client : comptes « client » (propriétaire) et « proche » (particulier qui publie pour le client),
+// numéro de suivi par chantier, invitations à gérer un chantier.
+addColumn("artisans", "account_type", "TEXT NOT NULL DEFAULT 'pro'");
+addColumn("artisans", "plan", "TEXT NOT NULL DEFAULT 'free'");
+addColumn("sites", "owner_id", "INTEGER REFERENCES artisans(id) ON DELETE SET NULL");
+addColumn("sites", "tracking_code", "TEXT");
+db.exec(`
+CREATE UNIQUE INDEX IF NOT EXISTS idx_sites_tracking ON sites(tracking_code) WHERE tracking_code IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_sites_owner ON sites(owner_id);
+CREATE TABLE IF NOT EXISTS invitations (
+  id INTEGER PRIMARY KEY,
+  code TEXT NOT NULL UNIQUE,
+  site_id INTEGER NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('pro', 'proche')),
+  invitee_name TEXT NOT NULL DEFAULT '',
+  created_by INTEGER NOT NULL REFERENCES artisans(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL,
+  accepted_by INTEGER REFERENCES artisans(id) ON DELETE SET NULL,
+  accepted_at TEXT,
+  revoked_at TEXT
+);
+`);
+
+// Codes lisibles à dicter ou recopier : sans 0/O, 1/I/L. 31^8 combinaisons par code.
+const ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
+function readableCode(prefix) {
+  const bytes = require("node:crypto").randomBytes(8);
+  const c = [...bytes].map((b) => ALPHABET[b % ALPHABET.length]).join("");
+  return `${prefix}-${c.slice(0, 4)}-${c.slice(4)}`;
+}
+function newTrackingCode() {
+  for (;;) { const c = readableCode("ARC"); if (!db.prepare("SELECT 1 FROM sites WHERE tracking_code = ?").get(c)) return c; }
+}
+for (const s of db.prepare("SELECT id FROM sites WHERE tracking_code IS NULL").all()) db.prepare("UPDATE sites SET tracking_code = ? WHERE id = ?").run(newTrackingCode(), s.id);
+
 const all = (sql, ...p) => db.prepare(sql).all(...p);
 const get = (sql, ...p) => db.prepare(sql).get(...p);
 const run = (sql, ...p) => db.prepare(sql).run(...p);
@@ -138,4 +173,4 @@ function tx(fn) {
   try { const r = fn(); db.exec("COMMIT"); return r; } catch (e) { db.exec("ROLLBACK"); throw e; }
 }
 
-module.exports = { db, all, get, run, tx, DATA_DIR, UPLOAD_DIR };
+module.exports = { db, all, get, run, tx, DATA_DIR, UPLOAD_DIR, readableCode, newTrackingCode };

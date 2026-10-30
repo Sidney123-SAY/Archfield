@@ -10,7 +10,9 @@ const { all, get, run, tx, UPLOAD_DIR } = require("./db");
 const { siteWithSummary, dashboard, stepStatus, DAY } = require("./analytics");
 const { sendReport, startScheduler } = require("./reports");
 const { sendMail, BASE_URL } = require("./mail");
-const { checkCompany, publicCountries, siret: checkSiret } = require("./company");
+const { checkCompany, publicCountries, siret: checkSiret, COUNTRIES } = require("./company");
+const space = require("./space");
+const { newTrackingCode } = require("./db");
 
 const PORT = Number(process.env.PORT || 3000);
 const PROD = process.env.NODE_ENV === "production";
@@ -103,7 +105,15 @@ function access(a) {
   return { status: "expired", active: false, until: a.paid_until || a.trial_ends_at, days_left: 0 };
 }
 const hasPassword = (a) => !a.password_hash.startsWith("!");
-const publicArtisan = (a) => ({ id: a.id, email: a.email, company: a.company, contact_name: a.contact_name, city: a.city, country: a.country, company_id: a.company_id, market: a.market, currency: a.currency, price: MARKETS[a.market].price, trial_ends_at: a.trial_ends_at, access: access(a), google: !!a.google_sub, has_password: hasPassword(a), created_at: a.created_at });
+// Propriétaires qui confient un chantier à ce proche (ils paient pour lui).
+const sponsorsOf = (a) => all("SELECT DISTINCT o.contact_name FROM sites s JOIN artisans o ON o.id = s.owner_id WHERE s.artisan_id = ? AND s.owner_id <> ?", a.id, a.id).map((x) => x.contact_name);
+const publicArtisan = (a) => ({
+  id: a.id, email: a.email, account_type: a.account_type, company: a.company, contact_name: a.contact_name, city: a.city, country: a.country, company_id: a.company_id,
+  market: a.market, currency: a.currency, price: MARKETS[a.market].price, trial_ends_at: a.trial_ends_at, google: !!a.google_sub, has_password: hasPassword(a), created_at: a.created_at,
+  access: a.account_type === "pro" ? access(a) : { status: "included", active: true, until: null, days_left: 0 },
+  client: a.account_type === "client" ? space.clientInfo(a) : undefined,
+  sponsors: a.account_type === "proche" ? sponsorsOf(a) : undefined
+});
 function removeFiles(files) { files.forEach((f) => fs.rm(path.join(UPLOAD_DIR, path.basename(f)), { force: true }, () => {})); }
 
 /* ---------- Authentification ---------- */
@@ -119,7 +129,8 @@ function auth(req, res, next) {
 }
 // Essai terminé et abonnement non payé : lecture possible, mais plus de nouveau chantier ni de publication.
 function requireActive(req, res, next) {
-  if (access(req.artisan).active) return next();
+  // Les clients et les proches ne paient pas l'abonnement artisan ; le droit de publier d'un proche se vérifie par chantier.
+  if (req.artisan.account_type !== "pro" || access(req.artisan).active) return next();
   res.status(402).json({ error: "Votre essai gratuit est terminé. Activez votre abonnement pour publier à nouveau. Vos clients gardent l'accès à leurs chantiers." });
 }
 function openSession(res, artisanId) {
@@ -138,7 +149,17 @@ const passwordOk = (p) => { const s = str(p, 200, "mot de passe"); if (s.length 
 // Inscription : par e-mail et mot de passe, ou après « Continuer avec Google » (google_token).
 app.post("/api/signup", limit("signup", 10, 60 * 60e3), wrap(async (req, res) => {
   const b = req.body || {};
-  const co = checkCompany(b.country, b.company_id);
+  const invite = b.invite_code ? spaceApi.findInvitation(b.invite_code) : null;
+  const type = invite ? (invite.kind === "pro" ? "pro" : "proche") : b.account_type === "client" ? "client" : "pro";
+  if (b.account_type === "proche" && !invite) fail(400, "Un compte « proche » se crée avec le lien d'invitation reçu.");
+  let co;
+  if (type === "pro") co = checkCompany(b.country, b.company_id);
+  else {
+    // Client ou proche : pas de numéro d'entreprise ; la zone (euros ou FCFA) suit le pays, ou l'inviteur pour un proche.
+    const owner = invite ? get("SELECT market, country FROM artisans WHERE id = ?", invite.created_by) : null;
+    const country = COUNTRIES[b.country] ? b.country : "";
+    co = { country, company_id: "", market: owner ? owner.market : COUNTRIES[country]?.market || "eu" };
+  }
   if (co.error) fail(400, co.error);
   let mail, hash, googleSub = null;
   if (b.google_token) {
@@ -150,14 +171,16 @@ app.post("/api/signup", limit("signup", 10, 60 * 60e3), wrap(async (req, res) =>
     hash = await bcrypt.hash(passwordOk(b.password), 10);
   }
   if (get("SELECT 1 FROM artisans WHERE email = ?", mail)) fail(409, "Un compte existe déjà avec cet e-mail. Connectez-vous.");
+  const contact = str(b.contact_name, 120, "nom");
   const id = tx(() => {
     const r = run(
-      `INSERT INTO artisans (email, password_hash, company, contact_name, city, country, company_id, market, currency, google_sub, trial_ends_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      mail, hash, str(b.company, 120, "entreprise"), str(b.contact_name, 120, "nom"), str(b.city, 120, "ville", false), co.country, co.company_id,
-      co.market, MARKETS[co.market].currency, googleSub, new Date(Date.now() + TRIAL_DAYS * DAY).toISOString(), nowIso());
+      `INSERT INTO artisans (email, password_hash, account_type, company, contact_name, city, country, company_id, market, currency, google_sub, trial_ends_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      mail, hash, type, type === "pro" ? str(b.company, 120, "entreprise") : contact, contact, str(b.city, 120, "ville", false), co.country, co.company_id,
+      co.market, MARKETS[co.market].currency, googleSub, new Date(Date.now() + (type === "client" ? space.CLIENT_TRIAL_DAYS : TRIAL_DAYS) * DAY).toISOString(), nowIso());
     if (b.google_token) run("DELETE FROM oauth_pending WHERE token_hash = ?", sha256(String(b.google_token)));
     return Number(r.lastInsertRowid);
   });
+  if (invite) spaceApi.acceptInvitation(invite.code, get("SELECT * FROM artisans WHERE id = ?", id));
   openSession(res, id);
   res.status(201).json({ ok: true });
 }));
@@ -175,7 +198,7 @@ app.post("/api/login", wrap(async (req, res) => {
 
 // Comptes de démo en un clic (seulement si DEMO=on, ou hors production).
 const DEMO_ON = process.env.DEMO === "on" || (!PROD && process.env.DEMO !== "off");
-const DEMO_ACCOUNTS = { eu: "demo@archfield.app", af: "demo-afrique@archfield.app" };
+const DEMO_ACCOUNTS = { eu: "demo@archfield.app", af: "demo-afrique@archfield.app", client: "demo-client@archfield.app", proche: "demo-proche@archfield.app" };
 app.post("/api/demo-login", (req, res) => {
   if (!DEMO_ON) fail(404, "La démo n'est pas disponible.");
   const a = get("SELECT * FROM artisans WHERE email = ?", DEMO_ACCOUNTS[req.body?.account] || "");
@@ -366,6 +389,7 @@ api.get("/me/export", (req, res) => {
 api.delete("/me", wrap(async (req, res) => {
   const ok = hasPassword(req.artisan) ? await bcrypt.compare(String(req.body?.password || ""), req.artisan.password_hash) : String(req.body?.password || "").trim().toLowerCase() === req.artisan.email;
   if (!ok) fail(400, hasPassword(req.artisan) ? "Mot de passe incorrect : le compte n'a pas été supprimé." : "Tapez l'adresse e-mail du compte pour confirmer la suppression.");
+  run("UPDATE sites SET artisan_id = owner_id WHERE artisan_id = ? AND owner_id IS NOT NULL AND owner_id <> ?", req.artisan.id, req.artisan.id);
   const files = all("SELECT p.file FROM photos p JOIN updates u ON u.id = p.update_id JOIN sites si ON si.id = u.site_id WHERE si.artisan_id = ?", req.artisan.id).map((p) => p.file);
   run("DELETE FROM artisans WHERE id = ?", req.artisan.id);
   removeFiles(files);
@@ -398,6 +422,7 @@ api.get("/sites", (req, res) => {
 });
 
 api.post("/sites", requireActive, (req, res) => {
+  if (req.artisan.account_type !== "pro") fail(403, "Seule une entreprise crée des chantiers ici. Les clients créent les leurs dans leur espace.");
   const b = req.body || {};
   const steps = Array.isArray(b.steps) ? b.steps : [];
   if (!steps.length) fail(400, "Ajoutez au moins une étape.");
@@ -405,10 +430,10 @@ api.post("/sites", requireActive, (req, res) => {
   const clientName = str(b.client_name, 120, "client");
   const id = tx(() => {
     const r = run(
-      `INSERT INTO sites (artisan_id, name, location, kind, client_name, client_short, client_email, client_phone, client_city, client_token, budget, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO sites (artisan_id, name, location, kind, client_name, client_short, client_email, client_phone, client_city, client_token, tracking_code, budget, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       req.artisan.id, str(b.name, 120, "nom du chantier"), str(b.location, 120, "lieu", false), b.kind === "ext" ? "ext" : "int",
       clientName, str(b.client_short, 60, "prénom du client", false) || clientName.split(" ")[0], email(b.client_email, "e-mail du client", false), phone(b.client_phone),
-      str(b.client_city, 120, "ville du client", false), token(16), Math.round(num(b.budget || 0, "budget")), nowIso());
+      str(b.client_city, 120, "ville du client", false), token(16), newTrackingCode(), Math.round(num(b.budget || 0, "budget")), nowIso());
     const siteId = Number(r.lastInsertRowid);
     steps.forEach((s, i) => run("INSERT INTO steps (site_id, position, name, planned_days, started_at) VALUES (?, ?, ?, ?, ?)",
       siteId, i + 1, str(s.name, 80, "étape"), num(s.planned_days, "durée prévue", 0.5, 365), i === 0 && b.start_now ? nowIso() : null));
@@ -419,8 +444,10 @@ api.post("/sites", requireActive, (req, res) => {
 
 api.get("/sites/:id", (req, res) => {
   const s = ownSite(req, req.params.id);
+  const owner = s.owner_id && s.owner_id !== s.artisan_id ? get("SELECT contact_name FROM artisans WHERE id = ?", s.owner_id) : null;
   res.json({
     ...siteWithSummary(s),
+    owner: owner ? owner.contact_name : null,
     updates: updatesOf(s.id, "/media/"),
     documents: all("SELECT * FROM documents WHERE site_id = ? ORDER BY doc_date, id", s.id),
     reports: all("SELECT id, period_start, period_end, sent_at, emailed, opened_at FROM reports WHERE site_id = ? ORDER BY period_end DESC", s.id)
@@ -440,9 +467,18 @@ api.patch("/sites/:id", (req, res) => {
 
 api.delete("/sites/:id", (req, res) => {
   const s = ownSite(req, req.params.id);
+  if (s.owner_id && s.owner_id !== req.artisan.id) fail(409, "Ce chantier appartient à votre client : vous pouvez arrêter de le gérer, mais pas le supprimer.");
   const files = siteFiles(s.id);
   run("DELETE FROM sites WHERE id = ?", s.id);
   removeFiles(files);
+  res.json({ ok: true });
+});
+
+// Le gestionnaire (entreprise ou proche) rend le chantier à son propriétaire.
+api.post("/sites/:id/release", (req, res) => {
+  const s = ownSite(req, req.params.id);
+  if (!s.owner_id || s.owner_id === req.artisan.id) fail(409, "Ce chantier n'a pas de propriétaire à qui le rendre.");
+  run("UPDATE sites SET artisan_id = owner_id WHERE id = ?", s.id);
   res.json({ ok: true });
 });
 
@@ -541,6 +577,7 @@ api.post("/sites/:id/updates", requireActive, limit("upload", 60, 60 * 60e3, (re
   const files = req.files || [];
   try {
     const s = ownSite(req, req.params.id);
+    if (req.artisan.account_type === "proche" && !space.prochePublishAllowed(s)) fail(402, "Le propriétaire du chantier doit activer l'offre Basic ou Premium pour que vous puissiez publier.");
     const text = str(req.body.text, 500, "message");
     const st = req.body.step_id ? get("SELECT * FROM steps WHERE id = ? AND site_id = ?", Number(req.body.step_id), s.id) : null;
     if (req.body.step_id && !st) fail(400, "Étape inconnue pour ce chantier.");
@@ -611,7 +648,9 @@ api.get("/photos", (req, res) => {
     WHERE u.site_id = ? ORDER BY p.taken_at DESC, p.id DESC`, s.id).map((p) => ({ ...p, url: "/media/" + p.file })));
 });
 
-app.use("/api", (req, res, next) => (req.path.startsWith("/c/") ? next() : api(req, res, next)));
+const spaceApi = space.mount(app, api, { fail, str, num, wrap, limit, nowIso, token });
+// Routes publiques sous /api : lien du client et lecture d'une invitation.
+app.use("/api", (req, res, next) => (req.path.startsWith("/c/") || (req.method === "GET" && req.path.startsWith("/invitations/")) ? next() : api(req, res, next)));
 
 /* ---------- Client (lien privé, sans compte) ---------- */
 function bySiteToken(t) {
@@ -673,7 +712,7 @@ app.get("/c/:token/media/:file", limit("client-media", 600, 60e3), (req, res) =>
 /* ---------- Pages ---------- */
 const page = (f) => (req, res) => res.sendFile(path.join(PUBLIC, f));
 app.get("/", page("index.html"));
-app.get(["/connexion", "/inscription", "/mot-de-passe-oublie", "/reinitialiser"], page("auth.html"));
+app.get(["/connexion", "/inscription", "/mot-de-passe-oublie", "/reinitialiser", "/invitation/:code"], page("auth.html"));
 app.get("/confidentialite", page("confidentialite.html"));
 app.get("/a-propos", page("a-propos.html"));
 app.get("/mentions-legales", page("mentions-legales.html"));

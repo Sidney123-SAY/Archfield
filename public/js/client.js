@@ -7,6 +7,8 @@
   const days = (n) => t("{n} j", { n: nf(n) });
   let tab = "journal";
   let s = null;
+  let viewer = null; // compte client connecté, s'il y en a un
+  api("/api/me", { authRedirect: false }).then((m) => { viewer = m; if (s) render(); }).catch(() => {});
   const head = (right = "") => `<div class="chead"><span class="logo" style="color:var(--ink)">${LOGO(28)} Archfield</span><span class="chead-r">${prefs()}${right}</span></div>`;
 
   async function load() {
@@ -44,12 +46,17 @@
       }).join("") : `<section class="card empty"><h3>${t("Pas encore de rapport")}</h3><p>${t("Un rapport de la semaine arrive ici chaque lundi matin.")}</p></section>`;
     }
     const rl = s.artisan.reliability;
+    const isClient = viewer && viewer.account_type === "client";
     app.innerHTML = `
+      ${isClient ? `<a class="back" href="/app#mes-chantiers">${ic("left", 16)} ${t("Mes chantiers")}</a>` : ""}
       ${head(`<span class="priv">${ic("lock", 14)} ${t("Lien privé")}</span>`)}
       ${siteCard(s, t("Réalisé par {company}", { company: s.artisan.company }))}
       ${rl.pct != null ? `<p class="muted" style="font-size:.8rem">${plural(rl.delivered, "{company} : {pct} % des étapes livrées dans les délais sur {n} chantier terminé avec Archfield.", "{company} : {pct} % des étapes livrées dans les délais sur {n} chantiers terminés avec Archfield.").replace("{company}", esc(s.artisan.company)).replace("{pct}", rl.pct)}</p>` : ""}
       <div class="tabs" role="tablist">${tabs.map(([k, l, n]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${tab === k}">${t(l)}${n ? `<span class="n">${n}</span>` : ""}</button>`).join("")}</div>
       ${body}
+      ${s.tracking_code && !isClient ? `<section class="card card-p cl-space"><div><p class="label">${t("Numéro de suivi")}</p><b class="cl-code">${esc(s.tracking_code)}</b></div>
+        <p class="muted">${t("Vous suivez plusieurs chantiers ? Créez votre espace gratuit et ajoutez-les avec leur numéro de suivi : tout au même endroit, sans garder les liens.")}</p>
+        <div class="row-acts"><a class="btn primary" href="/inscription">${t("Créer mon espace gratuit")}</a><a class="btn ghost" href="/connexion">${t("J'ai déjà un compte")}</a></div></section>` : ""}
       <p class="muted" style="font-size:.74rem;text-align:center">${t("Ce lien est personnel. Ne le partagez qu'avec les personnes qui suivent le chantier avec vous.")}</p>
       <div class="foot-tools">${footerLinks()}</div>`;
   }

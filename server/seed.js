@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 const bcrypt = require("bcryptjs");
-const { all, run, tx, UPLOAD_DIR } = require("./db");
+const { all, run, tx, UPLOAD_DIR, newTrackingCode } = require("./db");
 const { scene } = require("./scenes");
 const { buildReport } = require("./reports");
 
@@ -68,11 +68,11 @@ function makeSite(artisanId, d) {
     if (s.state === "f") continue;
     s.end = t; s.start = t - s.actual * DAY; t = s.start - (rand() < 0.3 ? DAY : 0);
   }
-  const startedAt = Math.min(...steps.filter((s) => s.start).map((s) => s.start));
-  const createdAt = startedAt - 6 * DAY;
+  const started = steps.filter((s) => s.start).map((s) => s.start);
+  const createdAt = started.length ? Math.min(...started) - 6 * DAY : NOW - 2 * DAY;
   const r = run(
-    `INSERT INTO sites (artisan_id, name, location, kind, client_name, client_short, client_email, client_city, client_token, budget, status, created_at, delivered_at, last_client_visit_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    artisanId, d.name, d.location, d.kind, d.client, d.short, d.email || "", d.city, d.token || tok(16), d.budget,
+    `INSERT INTO sites (artisan_id, owner_id, name, location, kind, client_name, client_short, client_email, client_city, client_token, tracking_code, budget, status, created_at, delivered_at, last_client_visit_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    artisanId, d.ownerId || null, d.name, d.location, d.kind, d.client, d.short, d.email || "", d.city, d.token || tok(16), d.tracking || newTrackingCode(), d.budget,
     d.deliveredDaysAgo != null ? "delivered" : "active", iso(createdAt), d.deliveredDaysAgo != null ? iso(anchor + DAY) : null, iso(NOW - (d.lastVisitH || 2) * H));
   const siteId = Number(r.lastInsertRowid);
 
@@ -100,7 +100,13 @@ function makeSite(artisanId, d) {
     if (validated) run("INSERT INTO updates (site_id, step_id, kind, created_at, seen_at) VALUES (?, ?, 'step_validated', ?, ?)", siteId, s.id, iso(Math.min(validated, NOW - H)), iso(Math.min(validated, NOW - H)));
   });
 
-  // Devis, acompte, situations par paires d'étapes validées.
+  // Devis, acompte, situations par paires d'étapes validées (pas de devis pour un chantier sans montant).
+  if (d.budget) addDocuments(siteId, d, steps, createdAt);
+  addReports(siteId, d, createdAt);
+  return siteId;
+}
+
+function addDocuments(siteId, d, steps, createdAt) {
   const day = (t) => iso(t).slice(0, 10);
   const pfx = d.currency === "XOF" ? ["DV", "FA"] : ["D", "F"];
   const year = new Date(createdAt).getFullYear();
@@ -115,7 +121,10 @@ function makeSite(artisanId, d) {
       siteId, `${pfx[1]}-${year}-${201 + siteId * 3 + i}`, `Situation : ${done[i - 1].name.toLowerCase()} et ${done[i].name.toLowerCase()}`, Math.round(d.budget * 0.7 * share), last ? "a_regler" : "payee", day(done[i].end + DAY));
   }
 
-  // Rapports des lundis passés (8 dernières semaines au plus).
+}
+
+// Rapports des lundis passés (8 dernières semaines au plus).
+function addReports(siteId, d, createdAt) {
   if (d.deliveredDaysAgo == null) {
     const site = all("SELECT * FROM sites WHERE id = ?", siteId)[0];
     const monday = new Date(NOW); monday.setUTCHours(7, 0, 0, 0); monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
@@ -141,7 +150,10 @@ async function main() {
   const accounts = [
     // SIRET fictif, mais à la clé valide : il n'appartient à aucune entreprise réelle.
     { email: "demo@archfield.app", company: "Atelier Rhône Rénovation", contact: "Marc Soler", city: "Lyon", country: "FR", companyId: "90012345600007", market: "eu", currency: "EUR" },
-    { email: "demo-afrique@archfield.app", company: "Sarr Construction", contact: "Moussa Sarr", city: "Saly, Sénégal", country: "SN", companyId: "", market: "af", currency: "XOF" }
+    { email: "demo-afrique@archfield.app", company: "Sarr Construction", contact: "Moussa Sarr", city: "Saly, Sénégal", country: "SN", companyId: "", market: "af", currency: "XOF" },
+    // Espace client : Awa, à Paris, suit sa villa (Sarr Construction) et la maison familiale confiée à son frère.
+    { email: "demo-client@archfield.app", type: "client", company: "Awa Ndiaye", contact: "Awa Ndiaye", city: "Paris", country: "FR", companyId: "", market: "eu", currency: "EUR" },
+    { email: "demo-proche@archfield.app", type: "proche", company: "Ousmane Ndiaye", contact: "Ousmane Ndiaye", city: "Thiès, Sénégal", country: "SN", companyId: "", market: "eu", currency: "EUR" }
   ];
   const ids = tx(() => {
     for (const a of accounts) {
@@ -150,10 +162,10 @@ async function main() {
       run("DELETE FROM artisans WHERE email = ?", a.email);
     }
     return accounts.map((a) => Number(run(
-      "INSERT INTO artisans (email, password_hash, company, contact_name, city, country, company_id, market, currency, trial_ends_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      a.email, hash, a.company, a.contact, a.city, a.country, a.companyId, a.market, a.currency, iso(NOW + 41 * DAY), iso(NOW - 400 * DAY)).lastInsertRowid));
+      "INSERT INTO artisans (email, password_hash, account_type, company, contact_name, city, country, company_id, market, currency, trial_ends_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      a.email, hash, a.type || "pro", a.company, a.contact, a.city, a.country, a.companyId, a.market, a.currency, iso(NOW + 41 * DAY), iso(NOW - 400 * DAY)).lastInsertRowid));
   });
-  const [eu, af] = ids;
+  const [eu, af, client, proche] = ids;
 
   tx(() => {
     /* ---- Lyon : rénovation intérieure ---- */
@@ -196,7 +208,7 @@ async function main() {
     ];
     afDone.forEach(([name, location, client, short, city, budget, ago]) => makeSite(af, delivered(EXT, afBias, { name, location, kind: "ext", client, short, city, budget, deliveredDaysAgo: ago, currency: "XOF", quoteLabel: "Gros œuvre et finitions" })));
     const afActive = [
-      { name: "Villa Ndiaye", location: "Saly, Sénégal", kind: "ext", client: "Awa Ndiaye", short: "Awa", city: "Paris", budget: 21700000, token: "demo-saly-awa", quoteLabel: "Gros œuvre complet", readRate: 1,
+      { name: "Villa Ndiaye", location: "Saly, Sénégal", kind: "ext", client: "Awa Ndiaye", short: "Awa", city: "Paris", budget: 21700000, token: "demo-saly-awa", tracking: "ARC-SALY-2026", ownerId: client, quoteLabel: "Gros œuvre complet", readRate: 1,
         steps: [["Terrassement", 6, 6, "v"], ["Fondations", 14, 15, "v"], ["Soubassement", 7, 7, "a"], ["Élévation des murs", 14, 17, "c"], ["Dalle et chaînage", 12, 0, "f"], ["Toiture", 9, 0, "f"], ["Finitions", 20, 0, "f"]],
         latest: [{ hAgo: 0.8, text: "Murs du salon montés à 2,10 m. On attaque la chambre principale demain.", photos: 3, seenAfterH: 0.5 }, { hAgo: 20, text: "Livraison de 400 parpaings, stockés à l'abri.", photos: 0, seenAfterH: 1.5 }, { hAgo: 70, text: "Premières rangées montées sur tout le périmètre.", photos: 2, seenAfterH: 3 }] },
       { name: "Immeuble R+1", location: "Thiès, Sénégal", kind: "ext", client: "Ibrahima Kane", short: "Ibrahima", city: "Montréal", budget: 41000000, readRate: 0.8,
@@ -210,11 +222,23 @@ async function main() {
         latest: [{ hAgo: 50, text: "Implantation faite avec le géomètre, terrassement commencé.", photos: 2, seenAfterH: 1 }] }
     ];
     afActive.forEach((s) => makeSite(af, { ...s, currency: "XOF" }));
+
+    /* ---- Espace client d'Awa ---- */
+    // Maison familiale confiée à Ousmane, son frère sur place : il publie, Awa paie l'offre (ici, l'essai Premium).
+    makeSite(proche, { name: "Maison familiale", location: "Thiès, Sénégal", kind: "ext", client: "Awa Ndiaye", short: "Awa", email: "demo-client@archfield.app", city: "Paris", budget: 0, ownerId: client, tracking: "ARC-THES-FAM2", currency: "EUR",
+      steps: [["Terrassement", 5, 5, "v"], ["Fondations", 12, 14, "c"], ["Élévation des murs", 16, 0, "f"], ["Dalle et chaînage", 10, 0, "f"], ["Toiture", 8, 0, "f"]],
+      latest: [{ hAgo: 3, text: "Le ferrailleur a fini côté cour. Coulage des semelles demain si le camion arrive.", photos: 2, seenAfterH: 0.4 }, { hAgo: 50, text: "Fouilles terminées, j'ai vérifié les niveaux avec le maçon.", photos: 2, seenAfterH: 2 }] });
+    // Extension pas encore confiée : Awa a invité une entreprise, en attente de réponse.
+    const ext = makeSite(client, { name: "Extension", location: "Rufisque, Sénégal", kind: "ext", client: "Awa Ndiaye", short: "Awa", email: "demo-client@archfield.app", city: "Paris", budget: 0, ownerId: client, tracking: "ARC-RUFQ-EXT3", currency: "EUR",
+      steps: [["Terrassement", 4, 0, "f"], ["Fondations", 10, 0, "f"], ["Élévation des murs", 12, 0, "f"], ["Toiture", 7, 0, "f"]] });
+    run("INSERT INTO invitations (code, site_id, kind, invitee_name, created_by, created_at) VALUES ('INV-DEMO-RUFQ', ?, 'pro', 'Entreprise Diallo BTP', ?, ?)", ext, client, iso(NOW - 26 * H));
   });
 
   console.log(`Données de démo prêtes.
   Lyon (€)      : demo@archfield.app / ${PASSWORD}   · lien client : /c/demo-lyon-claire
-  Saly (FCFA)   : demo-afrique@archfield.app / ${PASSWORD}   · lien client : /c/demo-saly-awa`);
+  Saly (FCFA)   : demo-afrique@archfield.app / ${PASSWORD}   · lien client : /c/demo-saly-awa
+  Client        : demo-client@archfield.app / ${PASSWORD}   · Awa, 3 chantiers dans son espace
+  Proche        : demo-proche@archfield.app / ${PASSWORD}   · Ousmane, gère la maison familiale d'Awa`);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

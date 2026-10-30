@@ -60,6 +60,10 @@
     plus: '<path d="M9 3.5v11M3.5 9h11" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
     x: '<path d="m4.5 4.5 9 9M13.5 4.5l-9 9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
     left: '<path d="M11 4 6 9l5 5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+    tool: '<path d="M10.5 3.5 14.5 7.5M12.5 5.5 4 14l-1.5-1.5L11 4M9 2.5h4.5V7" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+    globe: '<circle cx="9" cy="9" r="6.8" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M2.4 9h13.2M9 2.2c2 2.1 2.9 4.3 2.9 6.8S11 13.7 9 15.8C7 13.7 6.1 11.5 6.1 9S7 4.3 9 2.2z" stroke="currentColor" stroke-width="1.4" fill="none"/>',
+    phone: '<rect x="5" y="1.8" width="8" height="14.4" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M8 13.6h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
+    key: '<circle cx="6" cy="9" r="3.2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M9.2 9H16M13.5 9v2.5M15.8 9v1.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
     sun: '<circle cx="9" cy="9" r="3.2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M9 1.8v1.8M9 14.4v1.8M1.8 9h1.8M14.4 9h1.8M3.9 3.9l1.3 1.3M12.8 12.8l1.3 1.3M3.9 14.1l1.3-1.3M12.8 5.2l1.3-1.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
     moon: '<path d="M14.8 11.2A6.5 6.5 0 0 1 6.8 3.2a6.5 6.5 0 1 0 8 8z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>',
     screen: '<rect x="2" y="3" width="14" height="9.5" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M6.5 15.5h5M9 12.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
@@ -81,7 +85,14 @@
   /* ---------- Cookies ---------- */
   // Aujourd'hui : un cookie de connexion (indispensable) et des préférences locales. La mesure d'audience
   // n'est chargée que si consent().analytics vaut true : rien n'est déposé avant l'accord.
-  function consent() { try { return JSON.parse(store.get("af-consent")) || null; } catch (e) { return null; } }
+  // Le choix est gardé 6 mois (durée recommandée par la CNIL), puis le bandeau revient.
+  const CONSENT_DAYS = 182;
+  function consent() {
+    try {
+      const c = JSON.parse(store.get("af-consent"));
+      return c && c.date && Date.now() - Date.parse(c.date) < CONSENT_DAYS * 864e5 ? c : null;
+    } catch (e) { return null; }
+  }
   function saveConsent(analytics) {
     store.set("af-consent", JSON.stringify({ necessary: true, analytics: !!analytics, date: new Date().toISOString(), version: 1 }));
     document.getElementById("cookie-banner")?.remove();
@@ -93,16 +104,21 @@
     const el = document.createElement("section");
     el.id = "cookie-banner"; el.className = "cookie-banner"; el.setAttribute("role", "dialog"); el.setAttribute("aria-labelledby", "cookie-title");
     el.innerHTML = `<div class="cb-in">
-      <div class="cb-text"><h2 id="cookie-title">${t("Vos cookies, votre choix")}</h2>
-        <p>${t("Archfield utilise un cookie indispensable pour vous garder connecté, et garde vos préférences (langue, thème) sur cet appareil. Avec votre accord, nous mesurerons aussi l'audience du site pour l'améliorer. Vous pouvez changer d'avis à tout moment depuis « Gérer les cookies ».")} <a href="/confidentialite">${t("En savoir plus")}</a></p></div>
-      ${detailed ? `<div class="cb-detail">
-        <label class="cb-row"><span><b>${t("Indispensables")}</b><br><span class="muted">${t("Connexion à votre compte, sécurité, préférences de langue et de thème.")}</span></span><input type="checkbox" checked disabled aria-label="${t("Indispensables, toujours actifs")}"></label>
-        <label class="cb-row"><span><b>${t("Mesure d'audience")}</b><br><span class="muted">${t("Statistiques anonymes de visite pour améliorer le site.")}</span></span><input type="checkbox" id="cb-analytics" ${c && c.analytics ? "checked" : ""}></label>
-      </div>` : ""}
+      <div class="cb-body">
+        <span class="cb-mark" aria-hidden="true">${LOGO(40)}</span>
+        <h2 id="cookie-title">${t("Les cookies")}</h2>
+        <p>${t("Archfield utilise un cookie indispensable pour vous garder connecté, et garde vos préférences (langue, thème) sur cet appareil. Avec votre accord, nous mesurerons aussi l'audience du site pour l'améliorer.")}</p>
+        <p>${t("Refuser ne change rien à votre accès à Archfield, et vous pouvez changer d'avis quand vous voulez avec le lien « Gérer les cookies » en bas de page.")}</p>
+        ${detailed ? `<div class="cb-detail">
+          <label class="cb-row"><span><b>${t("Indispensables")}</b><br><span class="muted">${t("Connexion à votre compte, sécurité, préférences de langue et de thème.")}</span></span><input type="checkbox" checked disabled aria-label="${t("Indispensables, toujours actifs")}"></label>
+          <label class="cb-row"><span><b>${t("Mesure d'audience")}</b><br><span class="muted">${t("Statistiques anonymes de visite pour améliorer le site.")}</span></span><input type="checkbox" id="cb-analytics" ${c && c.analytics ? "checked" : ""}></label>
+        </div>` : ""}
+        <p class="cb-links"><a href="/confidentialite">${t("Lire la politique de confidentialité")}</a><a href="/confidentialite#cookies">${t("Déclaration de cookies")}</a></p>
+      </div>
       <div class="cb-acts">
-        ${detailed ? `<button type="button" class="btn" data-cookies-save>${t("Enregistrer mes choix")}</button>` : `<button type="button" class="btn ghost" data-cookies-custom>${t("Personnaliser")}</button>`}
-        <button type="button" class="btn" data-cookies-refuse>${t("Tout refuser")}</button>
-        <button type="button" class="btn primary" data-cookies-accept>${t("Tout accepter")}</button>
+        <button type="button" data-cookies-refuse>${t("Tout refuser")}</button>
+        ${detailed ? `<button type="button" data-cookies-save>${t("Enregistrer")}</button>` : `<button type="button" data-cookies-custom>${t("Paramètres")}</button>`}
+        <button type="button" class="cb-accept" data-cookies-accept>${t("Tout accepter")}</button>
       </div></div>`;
     document.body.appendChild(el);
   }

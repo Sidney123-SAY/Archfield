@@ -462,11 +462,16 @@ a { color: var(--orange); }
 /* Formulaire d'ajout d'étape */
 .inline-add input { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--surface); min-width: 0; }
 
-/* ---------- Bandeau cookies ---------- */
-.cookie-banner { position: fixed; z-index: 40; left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); display: flex; justify-content: center; pointer-events: none; }
-.cookie-banner .cb-in { pointer-events: auto; width: 100%; max-width: 720px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 12px 40px rgba(10, 19, 30, .22); padding: 18px; display: grid; gap: 14px; max-height: calc(100vh - 32px); overflow-y: auto; }
-.cookie-banner h2 { font-size: 1.02rem; }
-.cookie-banner p { font-size: .84rem; color: var(--muted); margin-top: 4px; }
+/* ---------- Bandeau cookies : carte en bas à gauche, trois boutons égaux ---------- */
+.cookie-banner { position: fixed; z-index: 40; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); width: min(440px, calc(100vw - 32px)); }
+.cookie-banner .cb-in { background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 18px 50px rgba(10, 19, 30, .28); overflow: hidden; max-height: calc(100vh - 32px); display: flex; flex-direction: column; }
+.cb-body { position: relative; padding: 24px 24px 14px; display: grid; gap: 10px; overflow-y: auto; }
+.cb-body::before { content: ""; position: absolute; top: -40px; right: -40px; width: 170px; height: 150px; border-radius: 50%; background: radial-gradient(circle at 40% 60%, rgba(234, 106, 50, .35), rgba(234, 106, 50, 0) 70%); pointer-events: none; }
+.cb-mark { position: absolute; top: 18px; right: 22px; color: var(--ink); }
+.cookie-banner h2 { font-family: var(--f-title); font-size: 1.6rem; letter-spacing: -.02em; margin: 0 0 2px; }
+.cookie-banner p { font-size: .88rem; color: var(--muted); margin: 0; line-height: 1.55; }
+.cb-links { display: flex; gap: 16px; flex-wrap: wrap; padding-top: 4px; }
+.cb-links a { color: var(--muted); font-size: .82rem; }
 .cb-detail { display: grid; gap: 8px; }
 .cb-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; font-size: .84rem; cursor: pointer; }
 .cb-row .muted { font-size: .78rem; }
@@ -475,12 +480,49 @@ a { color: var(--orange); }
 .cb-row input:checked { background: var(--vert); }
 .cb-row input:checked::after { transform: translateX(18px); }
 .cb-row input:disabled { opacity: .6; cursor: default; }
-.cb-acts { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.cb-acts { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); }
+.cb-acts button { border: 0; background: none; padding: 16px 8px; font-size: .95rem; color: var(--ink); cursor: pointer; }
+.cb-acts button + button { border-left: 1px solid var(--line); }
+.cb-acts button:hover { background: var(--hover); }
+.cb-acts .cb-accept { font-weight: 600; color: var(--orange); }
 @media (max-width: 760px) {
-  .cookie-banner { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
-  .cb-acts .btn { flex: 1 1 auto; }
+  .cookie-banner { bottom: calc(12px + env(safe-area-inset-bottom, 0px)); left: max(12px, env(safe-area-inset-left, 0px)); width: calc(100vw - 24px); }
   .mhead .theme-toggle button { width: 28px; height: 28px; }
 }
 @media (max-width: 460px) {
   .pub-head .lang-pick select { padding: 6px 24px 6px 10px; }
+}
+
+/* ---------- Espace client ---------- */
+.sp-narrow { max-width: 720px; width: 100%; margin: 0 auto; display: grid; gap: 16px; }
+.sp-card { padding: 18px; display: grid; gap: 10px; align-content: start; }
+.sp-top { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+.sp-top > div { min-width: 0; }
+.sp-card .meta { font-size: .8rem; color: var(--muted); margin: 0; }
+.sp-mgr { font-size: .84rem; }
+.mgr { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); font-weight: 500; }
+.sp-empty { padding: 28px; }
+.sp-track input { font: 600 1.4rem/1.2 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .06em; text-transform: uppercase; padding: 14px 16px; }
+.sp-code { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--beton); border-radius: 12px; padding: 10px 14px; }
+.sp-code span { font-size: .74rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.sp-code b { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 1.05rem; letter-spacing: .04em; margin-right: auto; }
+.sp-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.sp-choice { display: grid; gap: 6px; justify-items: start; text-align: left; border: 1.5px solid var(--line); background: var(--surface); border-radius: 14px; padding: 16px; color: var(--ink); }
+.sp-choice svg { color: var(--orange); }
+.sp-choice span { color: var(--muted); font-size: .84rem; line-height: 1.45; }
+.sp-choice:hover { border-color: var(--orange); }
+.sp-choice[data-locked] { opacity: .75; }
+.sp-invite { display: grid; gap: 12px; }
+.sp-plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.sp-plan { display: grid; gap: 10px; align-content: start; }
+.sp-plan.current { box-shadow: 0 0 0 2px var(--orange); }
+.sp-price { font-family: var(--f-title); font-weight: 800; font-size: 1.8rem; margin: 0; }
+.sp-price small { font: 500 .9rem var(--f-ui); color: var(--muted); }
+.sp-plan ul { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; font-size: .9rem; }
+.sitecard .bigbtn { text-decoration: none; }
+.cl-space { display: grid; gap: 10px; }
+.cl-code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 1.2rem; letter-spacing: .05em; }
+.label { font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+@media (max-width: 760px) {
+  .sp-choices, .sp-plans { grid-template-columns: minmax(0, 1fr); }
 }

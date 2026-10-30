@@ -71,6 +71,15 @@ Les images de `public/img` sont de vraies captures de l'application (français e
 - **Sécurité** : photos visibles seulement par l'artisan du chantier et par le lien du client, photos d'iPhone (HEIC) converties en JPEG, en-têtes de sécurité (CSP, anti-iframe), limites de requêtes, refus des requêtes venant d'autres sites.
 - **Thème** : clair, sombre, ou celui du système (par défaut), au choix dans « Abonnement et compte » et en bas de chaque page.
 
+### Espace client, numéro de suivi et proches
+
+- **Trois types de compte** : entreprise ou artisan (publie, paie 19 € ou 9 900 FCFA par mois), client (suit ses chantiers, gratuit) et proche (particulier invité par un client, publie gratuitement).
+- **Numéro de suivi** : chaque chantier a un numéro du type `ARC-7K3Q-9XW2`. Le client l'ajoute dans son espace (« Ajouter avec un numéro de suivi ») et retrouve tous ses chantiers au même endroit, quel que soit l'artisan.
+- **Confier un chantier** : le client crée son chantier, puis génère une invitation (lien `/invitation/INV-…` ou code) pour une entreprise (gratuit pour lui) ou pour un proche sur place.
+- **Offres client** : Gratuit (suivre), Basic 4,99 € ou 2 500 FCFA (1 proche), Premium 9,99 € ou 5 000 FCFA (jusqu'à 5 proches), avec 2 mois d'essai Premium. Sans offre active, le proche ne peut plus publier. Activation manuelle en attendant le paiement : `npm run activate -- client@example.com 1 premium`.
+- L'entreprise ou le proche ne peut pas supprimer un chantier qui appartient à un client : il peut seulement le lui rendre. Le client peut reprendre la main à tout moment.
+- Démo : `demo-client@archfield.app` (Awa, à Paris, 3 chantiers) et `demo-proche@archfield.app` (Ousmane, son frère à Thiès), mot de passe `archfield-demo`.
+
 ### Inscription, langues, thème et cookies
 
 - **Inscription** : pays de l'entreprise obligatoire. En France, le SIRET est exigé, sa clé est vérifiée et il est contrôlé dans l'annuaire public des entreprises (nom et ville remplis tout seuls). Belgique : numéro BCE, Suisse : IDE, Luxembourg : RCS. En Afrique de l'Ouest (Sénégal, Côte d'Ivoire, Mali, Burkina Faso, Bénin, Togo, Niger), le numéro (NINEA, RCCM…) est facultatif. Le pays fixe la devise et le tarif.
@@ -80,7 +89,7 @@ Les images de `public/img` sont de vraies captures de l'application (français e
   3. Copiez l'ID client et le code secret dans `GOOGLE_CLIENT_ID` et `GOOGLE_CLIENT_SECRET`.
 - **Langues** : français et anglais, au choix en haut de chaque page (le navigateur décide la première fois). Les textes anglais sont dans `public/js/i18n-en.js` ; `npm test` signale toute phrase sans traduction. Les e-mails partent encore en français.
 - **Thème** : soleil (clair), lune (sombre), écran (suit le système, par défaut).
-- **Cookies** : bandeau au premier passage (tout accepter, tout refuser, personnaliser), lien « Gérer les cookies » en bas de chaque page. Aujourd'hui seul le cookie de connexion est utilisé ; un outil de mesure d'audience ne devra se charger que si `AF.consent().analytics` vaut `true`.
+- **Cookies** : bandeau au premier passage (tout refuser, paramètres, tout accepter), redemandé tous les 6 mois comme le recommande la CNIL, et lien « Gérer les cookies » en bas de chaque page. Aujourd'hui seul le cookie de connexion est utilisé ; un outil de mesure d'audience ne devra se charger que si `AF.consent().analytics` vaut `true`.
 - **Démo** : hors production, boutons « Démo Lyon » et « Démo Saly » sur la page de connexion (après `npm run seed`).
 
 ### Organisation du code
@@ -93,6 +102,7 @@ Les images de `public/img` sont de vraies captures de l'application (français e
 | `server/reports.js` | Rapport hebdomadaire et e-mail |
 | `server/mail.js` | Envoi des e-mails (SMTP) |
 | `server/company.js` | Pays, SIRET et autres numéros d'entreprise |
+| `server/space.js` | Espace client : numéro de suivi, invitations, offres client |
 | `server/seed.js` | Données de démo |
 | `server/activate.js` | Activation manuelle d'un abonnement |
 | `public/` | Pages : accueil, connexion, app artisan (`/app`), page client (`/c/<lien>`), à propos, mentions légales, confidentialité |

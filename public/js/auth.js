@@ -1,45 +1,111 @@
-// Connexion, inscription (e-mail ou Google), mot de passe oublié et nouveau mot de passe.
+// Connexion, inscription question par question (client, entreprise ou proche invité), invitation, mot de passe oublié.
 (function () {
   "use strict";
-  const { t, LOGO, ic, api, esc } = window.AF;
+  const { t, ic, api, esc } = window.AF;
   const $ = (s) => document.querySelector(s);
-  const PAGES = {
-    "/connexion": ["login", "Connexion", 'Pas encore de compte ? <a href="/inscription">Essayer gratuitement</a>'],
-    "/inscription": ["signup", "Inscription", 'Déjà un compte ? <a href="/connexion">Se connecter</a>'],
-    "/mot-de-passe-oublie": ["forgot", "Mot de passe oublié", '<a href="/connexion">Retour à la connexion</a>'],
-    "/reinitialiser": ["reset", "Nouveau mot de passe", '<a href="/mot-de-passe-oublie">Demander un nouveau lien</a>']
-  };
+  const params = new URLSearchParams(location.search);
+  const path = location.pathname;
+  const resetToken = params.get("jeton");
+  const googleToken = params.get("google");
+  const store = { get(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { v == null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (e) {} } };
   const ERRORS = {
     google: "La connexion avec Google n'a pas abouti. Réessayez, ou utilisez votre e-mail.",
     "google-email": "Votre adresse Google n'est pas vérifiée. Vérifiez-la chez Google, ou inscrivez-vous avec votre e-mail.",
     "google-indisponible": "La connexion avec Google n'est pas encore activée sur ce site."
   };
-  const [id, title, sw] = PAGES[location.pathname] || PAGES["/connexion"];
-  const params = new URLSearchParams(location.search);
-  const resetToken = params.get("jeton");
-  const googleToken = params.get("google");
+  // Pays de résidence proposés aux clients (la diaspora vit souvent hors de la liste des pays d'entreprise).
+  const HOME_EXTRA = [["CA", "Canada"], ["US", "États-Unis"], ["GB", "Royaume-Uni"], ["IT", "Italie"], ["ES", "Espagne"], ["DE", "Allemagne"], ["XX", "Autre pays"]];
 
-  $("#logo").insertAdjacentHTML("afterbegin", LOGO(30) + " ");
-  document.querySelectorAll(".g-ic").forEach((el) => { el.innerHTML = ic("google", 18); });
-  $("#" + id).hidden = false;
-  $("#switch").innerHTML = t(sw);
-  document.title = t(title) + " · Archfield";
+  document.querySelectorAll("[data-ic]").forEach((el) => { el.innerHTML = ic(el.dataset.ic, 20); });
+  document.querySelectorAll(".g-ic").forEach((el) => { el.innerHTML = ic("google", 20); });
+  document.querySelectorAll("[data-eye]").forEach((b) => {
+    b.innerHTML = ic("eye", 18);
+    b.addEventListener("click", () => { const i = b.parentElement.querySelector("input"); i.type = i.type === "password" ? "text" : "password"; });
+  });
   if (ERRORS[params.get("erreur")]) { $("#query-error").textContent = t(ERRORS[params.get("erreur")]); $("#query-error").hidden = false; }
-  if (id === "reset" && !resetToken) {
-    const err = $("#reset .error-box");
-    err.textContent = t("Ce lien est incomplet. Ouvrez le lien reçu par e-mail, ou demandez-en un nouveau.");
-    err.hidden = false;
+
+  // Après connexion : accepte une invitation en attente, puis ouvre l'application.
+  async function done() {
+    const code = store.get("af-invite");
+    if (code) { try { await api(`/api/invitations/${code}/accept`, { method: "POST", authRedirect: false }); } catch (e) { alert(e.message); } store.set("af-invite", null); }
+    location.href = "/app";
   }
+  function showError(form, msg) { const err = form.querySelector(".error-box"); err.textContent = msg; err.hidden = !msg; }
+  const show = (id) => { document.querySelectorAll(".au-panel").forEach((p) => { p.hidden = p.id !== id; }); };
+
+  /* ---------- Inscription question par question ---------- */
+  let invite = null;          // { code, kind, site, owner } si l'inscription vient d'une invitation
+  let countries = [];
+  let stepIndex = 0;
+  const STEP_NAMES = { role: "Profil", name: "Identité", company: "Entreprise", home: "Lieu de vie", account: "Accès" };
+  const role = () => (invite ? (invite.kind === "pro" ? "pro" : "proche") : document.querySelector('input[name="account_type"]:checked')?.value);
+  function steps() {
+    const r = role();
+    const list = invite ? [] : ["role"];
+    list.push("name");
+    if (r === "pro") list.push("company");
+    if (r === "client") list.push("home");
+    if (!googleToken) list.push("account");
+    return list;
+  }
+  function renderStep() {
+    const list = steps(), cur = list[stepIndex];
+    document.querySelectorAll(".au-step").forEach((el) => { el.hidden = el.dataset.step !== cur; });
+    $("#su-count").textContent = t("{i} sur {n}", { i: stepIndex + 1, n: list.length });
+    $("#su-stepname").textContent = t(STEP_NAMES[cur]);
+    $("#su-bars").innerHTML = list.map((_, i) => `<span class="${i <= stepIndex ? "on" : ""}"></span>`).join("");
+    $("#su-back").hidden = stepIndex === 0;
+    $("#su-next").textContent = stepIndex === list.length - 1 ? (role() === "client" ? t("Créer mon espace") : t("Créer mon compte")) : t("Suivant");
+    showError($("#signup"), "");
+    const first = document.querySelector(`.au-step[data-step="${cur}"] input:not([type=radio]), .au-step[data-step="${cur}"] select`);
+    if (first && window.matchMedia("(min-width: 761px)").matches) first.focus();
+  }
+  function checkStep(cur) {
+    const v = (n) => ($(`#signup [name="${n}"]`)?.value || "").trim();
+    if (cur === "role" && !role()) return t("Choisissez votre profil pour continuer.");
+    if (cur === "name" && !v("contact_name")) return t("Indiquez votre prénom et votre nom.");
+    if (cur === "company") {
+      const c = countries.find((x) => x.code === v("country"));
+      if (!c) return t("Choisissez le pays de votre entreprise.");
+      if (c.required && !v("company_id")) return t("Indiquez votre {id} : il est obligatoire pour une entreprise en {country}.", { id: t(c.id), country: t(c.name) });
+      if (!v("company")) return t("Indiquez le nom de votre entreprise.");
+    }
+    if (cur === "account") {
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v("email"))) return t("Indiquez une adresse e-mail valide.");
+      if (v("password").length < 8) return t("Le mot de passe doit faire au moins 8 caractères.");
+    }
+    return "";
+  }
+  async function submitSignup() {
+    const f = $("#signup"), d = Object.fromEntries(new FormData(f));
+    const r = role();
+    const body = { account_type: r, contact_name: d.contact_name, email: d.email, password: d.password };
+    if (r === "pro") Object.assign(body, { country: d.country, company_id: d.company_id, company: d.company, city: d.city });
+    if (r === "client") Object.assign(body, { country: countries.some((c) => c.code === d.home_country) ? d.home_country : "", city: d.home_city });
+    if (invite) body.invite_code = invite.code;
+    if (googleToken) body.google_token = googleToken;
+    const btn = $("#su-next");
+    btn.disabled = true;
+    try { await api("/api/signup", { method: "POST", body, authRedirect: false }); store.set("af-invite", null); location.href = "/app"; }
+    catch (e) { showError(f, e.message); btn.disabled = false; }
+  }
+  $("#signup").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const list = steps(), cur = list[stepIndex];
+    const err = checkStep(cur);
+    if (err) return showError($("#signup"), err);
+    if (stepIndex < list.length - 1) { stepIndex++; renderStep(); } else submitSignup();
+  });
+  $("#su-back").addEventListener("click", () => { if (stepIndex > 0) { stepIndex--; renderStep(); } });
+  document.querySelectorAll('input[name="account_type"]').forEach((r) => r.addEventListener("change", () => { stepIndex = 1; renderStep(); }));
 
   /* Pays et numéro d'entreprise */
-  let countries = [];
   function onCountry() {
     const c = countries.find((x) => x.code === $("#su-country").value);
     if (!c) return;
     const input = $("#su-company-id");
     $("#su-company-id-label").textContent = t(c.id) + (c.required ? "" : " " + t("(facultatif)"));
     $("#su-company-id-hint").textContent = t(c.hint);
-    input.required = c.required;
     input.inputMode = ["FR", "BE"].includes(c.code) ? "numeric" : "text";
     $("#su-price").textContent = c.market === "af" ? t("9 900 FCFA par mois après l'essai.") : t("19 € par mois après l'essai.");
     $("#su-siret-check").textContent = "";
@@ -59,49 +125,96 @@
       if (!$("#su-city").value && r.city) $("#su-city").value = r.city;
     } catch (e) { out.textContent = e.message; }
   }
-
-  api("/api/config", { authRedirect: false }).then((c) => {
-    if (c.google) document.querySelectorAll(".google-zone").forEach((el) => { el.hidden = false; });
-    if (c.demo && id === "login") $("#demo").hidden = false;
-    countries = c.countries || [];
-    const opts = (m) => countries.filter((x) => x.market === m).map((x) => `<option value="${x.code}">${esc(t(x.name))}</option>`).join("");
-    $("#su-country").innerHTML = `<option value="" disabled selected>${t("Choisir…")}</option><optgroup label="${t("Europe")}">${opts("eu")}</optgroup><optgroup label="${t("Afrique de l'Ouest")}">${opts("af")}</optgroup>`;
-    const guess = /^(fr|en)-(\w\w)$/i.exec(navigator.language || "");
-    if (guess && countries.some((x) => x.code === guess[2].toUpperCase())) { $("#su-country").value = guess[2].toUpperCase(); onCountry(); }
-  }).catch(() => {});
   $("#su-country").addEventListener("change", onCountry);
   $("#su-company-id").addEventListener("blur", checkSiret);
   $("#su-company-id").addEventListener("input", () => { if ($("#su-company-id").value.replace(/\D/g, "").length === 14) checkSiret(); });
 
-  // Retour de Google pour un nouveau compte : e-mail connu, il reste l'entreprise et le pays.
-  if (id === "signup" && googleToken) {
-    api("/api/oauth-pending/" + encodeURIComponent(googleToken), { authRedirect: false }).then((p) => {
-      $("#google-pending").innerHTML = `${ic("check", 18)} ${t("Compte Google : {email}. Il reste à renseigner votre entreprise.", { email: esc(p.email) })}`;
-      $("#google-pending").hidden = false;
-      document.querySelectorAll("#signup .email-pw, #signup .google-zone").forEach((el) => { el.hidden = true; el.querySelectorAll("input").forEach((i) => { i.required = false; i.disabled = true; }); });
-      if (p.name && !$("#su-contact").value) $("#su-contact").value = p.name;
-    }).catch((e) => { const err = $("#signup .error-box"); err.textContent = e.message; err.hidden = false; });
-  }
+  api("/api/config", { authRedirect: false }).then((c) => {
+    if (c.google) document.querySelectorAll(".google-zone").forEach((el) => { el.hidden = false; });
+    if (c.demo) $("#demo").hidden = false;
+    countries = c.countries || [];
+    const opts = (m) => countries.filter((x) => x.market === m).map((x) => `<option value="${x.code}">${esc(t(x.name))}</option>`).join("");
+    const choose = `<option value="" disabled selected>${t("Choisir…")}</option>`;
+    $("#su-country").innerHTML = `${choose}<optgroup label="${t("Europe")}">${opts("eu")}</optgroup><optgroup label="${t("Afrique de l'Ouest")}">${opts("af")}</optgroup>`;
+    $("#su-home").innerHTML = `${choose}<optgroup label="${t("Europe")}">${opts("eu")}${HOME_EXTRA.slice(3, 6).map(([k, n]) => `<option value="${k}">${t(n)}</option>`).join("")}</optgroup><optgroup label="${t("Afrique de l'Ouest")}">${opts("af")}</optgroup><optgroup label="${t("Ailleurs")}">${HOME_EXTRA.filter(([k]) => ["CA", "US", "GB", "XX"].includes(k)).map(([k, n]) => `<option value="${k}">${t(n)}</option>`).join("")}</optgroup>`;
+    const guess = /^(fr|en)-(\w\w)$/i.exec(navigator.language || "");
+    if (guess) {
+      const code = guess[2].toUpperCase();
+      if (countries.some((x) => x.code === code)) { $("#su-country").value = code; onCountry(); }
+      if ([...$("#su-home").options].some((o) => o.value === code)) $("#su-home").value = code;
+    }
+  }).catch(() => {});
 
-  document.querySelectorAll("form[data-api]").forEach((f) => f.addEventListener("submit", async (e) => {
+  /* ---------- Connexion, mot de passe ---------- */
+  document.querySelectorAll("form[data-api]:not(#signup)").forEach((f) => f.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const btn = f.querySelector("[type=submit]"), err = f.querySelector(".error-box"), ok = f.querySelector(".okbox:not(#google-pending)");
+    const btn = f.querySelector("[type=submit]"), ok = f.querySelector(".okbox");
     const body = Object.fromEntries(new FormData(f));
     if (f.id === "reset") body.token = resetToken || "";
-    if (f.id === "signup" && googleToken) body.google_token = googleToken;
-    btn.disabled = true; err.hidden = true;
+    btn.disabled = true; showError(f, "");
     try {
       await api(f.dataset.api, { method: "POST", body, authRedirect: false });
       if (f.id === "forgot") { ok.hidden = false; btn.disabled = false; return; }
-      location.href = "/app";
-    } catch (x) { err.textContent = x.message; err.hidden = false; btn.disabled = false; }
+      done();
+    } catch (x) { showError(f, x.message); btn.disabled = false; }
   }));
-
   document.addEventListener("click", async (e) => {
     const b = e.target.closest("[data-demo]");
     if (!b) return;
     b.disabled = true;
     try { await api("/api/demo-login", { method: "POST", body: { account: b.dataset.demo }, authRedirect: false }); location.href = "/app"; }
-    catch (x) { const err = $("#login .error-box"); err.textContent = x.message; err.hidden = false; b.disabled = false; }
+    catch (x) { showError($("#login"), x.message); b.disabled = false; }
   });
+
+  /* ---------- Quelle page afficher ---------- */
+  async function start() {
+    const m = path.match(/^\/invitation\/([\w-]+)$/);
+    const pendingCode = m ? m[1] : store.get("af-invite");
+    if (pendingCode) {
+      try {
+        invite = await api("/api/invitations/" + encodeURIComponent(pendingCode), { authRedirect: false });
+        store.set("af-invite", invite.code);
+      } catch (e) {
+        store.set("af-invite", null);
+        if (m) { $("#query-error").textContent = e.message; $("#query-error").hidden = false; show("login"); return; }
+      }
+    }
+    if (m && invite) {
+      document.title = t("Invitation") + " · Archfield";
+      $("#inv-title").textContent = t("{owner} vous confie le chantier « {site} »", { owner: invite.owner, site: invite.site });
+      $("#inv-text").textContent = invite.kind === "proche"
+        ? t("Vous serez sur place : vous publiez l'avancement depuis votre téléphone (photos et une phrase), {owner} le suit à distance. C'est gratuit pour vous.", { owner: invite.owner })
+        : t("Votre entreprise publie l'avancement, {owner} le suit à distance. Connectez-vous avec votre compte entreprise, ou créez-le (2 mois offerts).", { owner: invite.owner });
+      $("#inv-code").textContent = invite.code;
+      $("#inv-signup").onclick = () => { history.pushState(null, "", "/inscription"); openSignup(); };
+      $("#inv-login").onclick = () => { history.pushState(null, "", "/connexion"); show("login"); document.title = t("Connexion") + " · Archfield"; };
+      return show("invite");
+    }
+    if (path === "/inscription") return openSignup();
+    if (path === "/mot-de-passe-oublie") { document.title = t("Mot de passe oublié") + " · Archfield"; return show("forgot"); }
+    if (path === "/reinitialiser") {
+      document.title = t("Nouveau mot de passe") + " · Archfield";
+      show("reset");
+      if (!resetToken) showError($("#reset"), t("Ce lien est incomplet. Ouvrez le lien reçu par e-mail, ou demandez-en un nouveau."));
+      return;
+    }
+    document.title = t("Connexion") + " · Archfield";
+    show("login");
+  }
+  async function openSignup() {
+    document.title = t("Inscription") + " · Archfield";
+    stepIndex = 0;
+    show("signup");
+    if (googleToken) {
+      try {
+        const p = await api("/api/oauth-pending/" + encodeURIComponent(googleToken), { authRedirect: false });
+        $("#google-pending").innerHTML = `${ic("check", 18)} ${t("Compte Google : {email}. Il reste quelques questions.", { email: esc(p.email) })}`;
+        $("#google-pending").hidden = false;
+        if (p.name && !$("#su-contact").value) $("#su-contact").value = p.name;
+      } catch (e) { showError($("#signup"), e.message); }
+    }
+    renderStep();
+  }
+  window.addEventListener("popstate", start);
+  start();
 })();

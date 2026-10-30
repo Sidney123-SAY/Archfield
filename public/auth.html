@@ -10,71 +10,145 @@
 <script src="/js/theme.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="/css/app.css">
+<link rel="stylesheet" href="/css/landing.css">
+<link rel="stylesheet" href="/css/auth.css">
 </head>
-<body>
-<header class="pub-head gutter"><a class="logo" href="/" id="logo">Archfield</a><div data-prefs></div></header>
-<main class="auth gutter">
-  <div class="box">
-    <div class="error-box" id="query-error" hidden></div>
+<body class="au-body">
+<div class="au">
+  <!-- Colonne du formulaire -->
+  <section class="au-side">
+    <header class="au-head"><a class="logo" href="/" id="logo">Archfield</a><div data-prefs></div></header>
 
-    <form class="card form" id="login" data-api="/api/login" hidden>
-      <h1 style="font-size:1.4rem" data-i18n>Connexion</h1>
-      <div class="google-zone" hidden><a class="btn google" href="/auth/google"><span class="g-ic"></span><span data-i18n>Continuer avec Google</span></a><p class="or"><span data-i18n>ou avec votre e-mail</span></p></div>
-      <div class="field"><label for="li-email" data-i18n>E-mail</label><input id="li-email" name="email" type="email" autocomplete="email" required></div>
-      <div class="field"><label for="li-password" data-i18n>Mot de passe</label><input id="li-password" name="password" type="password" autocomplete="current-password" required>
-        <a class="hint" href="/mot-de-passe-oublie" data-i18n>Mot de passe oublié ?</a></div>
-      <div class="error-box" hidden></div>
-      <button class="btn primary" type="submit" style="min-height:44px" data-i18n>Se connecter</button>
-    </form>
+    <div class="au-main" id="au-main">
+      <div class="error-box" id="query-error" hidden></div>
 
-    <form class="card form" id="signup" data-api="/api/signup" hidden>
-      <div><h1 style="font-size:1.4rem" data-i18n>Créer votre compte</h1><p class="muted" style="font-size:.86rem" data-i18n>2 mois gratuits, sans carte bancaire.</p></div>
-      <div class="google-zone" hidden><a class="btn google" href="/auth/google"><span class="g-ic"></span><span data-i18n>Continuer avec Google</span></a><p class="or"><span data-i18n>ou avec votre e-mail</span></p></div>
-      <div class="okbox" id="google-pending" hidden></div>
-      <div class="field"><label for="su-country" data-i18n>Pays de l'entreprise</label><select id="su-country" name="country" required></select>
-        <span class="hint" id="su-price"></span></div>
-      <div class="field"><label for="su-company-id" id="su-company-id-label">SIRET</label><input id="su-company-id" name="company_id" autocomplete="off" inputmode="numeric">
-        <span class="hint" id="su-company-id-hint"></span><span class="hint" id="su-siret-check" aria-live="polite"></span></div>
-      <div class="field"><label for="su-company" data-i18n>Nom de l'entreprise</label><input id="su-company" name="company" required maxlength="120" autocomplete="organization"></div>
-      <div class="row2">
-        <div class="field"><label for="su-contact" data-i18n>Votre nom</label><input id="su-contact" name="contact_name" required maxlength="120" autocomplete="name"></div>
-        <div class="field"><label for="su-city" data-i18n>Ville</label><input id="su-city" name="city" maxlength="120" autocomplete="address-level2"></div>
+      <!-- Connexion -->
+      <form id="login" class="au-panel" data-api="/api/login" hidden>
+        <h1 class="au-title" data-i18n>Se connecter</h1>
+        <p class="au-sub"><span data-i18n>Vous n'avez pas de compte ?</span> <a href="/inscription" class="au-link" id="to-signup"><span data-i18n>S'inscrire</span> ›</a></p>
+        <div class="google-zone" hidden><a class="btn au-google" href="/auth/google"><span class="g-ic"></span><span data-i18n>Continuer avec Google</span></a><p class="au-or"><span data-i18n>ou se connecter par e-mail</span></p></div>
+        <div class="au-field"><label for="li-email" data-i18n>E-mail</label><input id="li-email" name="email" type="email" autocomplete="email" required></div>
+        <div class="au-field"><label for="li-password" data-i18n>Mot de passe</label><div class="au-pw"><input id="li-password" name="password" type="password" autocomplete="current-password" required><button type="button" class="au-eye" data-eye aria-label="Afficher le mot de passe" data-i18n-label></button></div></div>
+        <a class="au-forgot" href="/mot-de-passe-oublie" data-i18n>Mot de passe oublié ?</a>
+        <div class="error-box" hidden></div>
+        <button class="btn primary au-submit" type="submit" data-i18n>Se connecter</button>
+        <div class="au-demo" id="demo" hidden>
+          <p data-i18n>Essayer sans compte, avec des données d'exemple :</p>
+          <div class="au-chips"><button type="button" data-demo="client" data-i18n>Client (diaspora)</button><button type="button" data-demo="eu" data-i18n>Artisan à Lyon</button><button type="button" data-demo="af" data-i18n>Entreprise à Saly</button><button type="button" data-demo="proche" data-i18n>Proche sur place</button></div>
+        </div>
+      </form>
+
+      <!-- Invitation à gérer un chantier -->
+      <section id="invite" class="au-panel" hidden>
+        <p class="au-kicker" data-i18n>Invitation</p>
+        <h1 class="au-title" id="inv-title"></h1>
+        <p class="au-sub" id="inv-text"></p>
+        <div class="au-invcard"><span class="au-invlabel" data-i18n>Code d'invitation</span><b id="inv-code"></b></div>
+        <div class="au-actions"><button type="button" class="btn primary au-submit" id="inv-signup" data-i18n>Créer mon compte</button><button type="button" class="btn au-second" id="inv-login" data-i18n>J'ai déjà un compte</button></div>
+      </section>
+
+      <!-- Inscription, question par question -->
+      <form id="signup" class="au-panel" data-api="/api/signup" hidden novalidate>
+        <div class="au-progress"><p class="au-count" id="su-count"></p><p class="au-stepname" id="su-stepname"></p><div class="au-bars" id="su-bars"></div></div>
+        <div class="okbox" id="google-pending" hidden></div>
+
+        <div class="au-step" data-step="role">
+          <h1 class="au-title" data-i18n>Commençons simplement : vous êtes…</h1>
+          <div class="au-roles">
+            <label class="au-role"><input type="radio" name="account_type" value="client"><span class="au-role-ic" data-ic="home"></span><b data-i18n>Je fais construire ou rénover</b><span data-i18n>Je suis mes chantiers, même de loin. Gratuit.</span></label>
+            <label class="au-role"><input type="radio" name="account_type" value="pro"><span class="au-role-ic" data-ic="tool"></span><b data-i18n>Je suis artisan ou entreprise du BTP</b><span data-i18n>Je publie l'avancement à mes clients. 2 mois offerts.</span></label>
+          </div>
+        </div>
+
+        <div class="au-step" data-step="name">
+          <h1 class="au-title" data-i18n>Quel est votre nom ?</h1>
+          <p class="au-sub" data-i18n>Il apparaît dans les messages : « Vu par… », « Réalisé par… ».</p>
+          <div class="au-field"><label for="su-contact" data-i18n>Prénom et nom</label><input id="su-contact" name="contact_name" maxlength="120" autocomplete="name"></div>
+        </div>
+
+        <div class="au-step" data-step="company">
+          <h1 class="au-title" data-i18n>Votre entreprise</h1>
+          <div class="au-field"><label for="su-country" data-i18n>Pays de l'entreprise</label><select id="su-country" name="country"></select><span class="hint" id="su-price"></span></div>
+          <div class="au-field"><label for="su-company-id" id="su-company-id-label">SIRET</label><input id="su-company-id" name="company_id" autocomplete="off" inputmode="numeric"><span class="hint" id="su-company-id-hint"></span><span class="hint" id="su-siret-check" aria-live="polite"></span></div>
+          <div class="au-field"><label for="su-company" data-i18n>Nom de l'entreprise</label><input id="su-company" name="company" maxlength="120" autocomplete="organization"></div>
+          <div class="au-field"><label for="su-city" data-i18n>Ville</label><input id="su-city" name="city" maxlength="120" autocomplete="address-level2"></div>
+        </div>
+
+        <div class="au-step" data-step="home">
+          <h1 class="au-title" data-i18n>Où habitez-vous ?</h1>
+          <p class="au-sub" data-i18n>Pour afficher les prix dans la bonne monnaie. Vos chantiers peuvent être ailleurs.</p>
+          <div class="au-field"><label for="su-home" data-i18n>Pays</label><select id="su-home" name="home_country"></select></div>
+          <div class="au-field"><label for="su-homecity" data-i18n>Ville</label><input id="su-homecity" name="home_city" maxlength="120" autocomplete="address-level2"></div>
+        </div>
+
+        <div class="au-step" data-step="account">
+          <h1 class="au-title" data-i18n>Dernière étape : votre accès</h1>
+          <div class="google-zone" hidden><a class="btn au-google" href="/auth/google"><span class="g-ic"></span><span data-i18n>Continuer avec Google</span></a><p class="au-or"><span data-i18n>ou avec votre e-mail</span></p></div>
+          <div class="au-field"><label for="su-email" data-i18n>E-mail</label><input id="su-email" name="email" type="email" autocomplete="email"></div>
+          <div class="au-field"><label for="su-password" data-i18n>Mot de passe</label><div class="au-pw"><input id="su-password" name="password" type="password" minlength="8" autocomplete="new-password"><button type="button" class="au-eye" data-eye aria-label="Afficher le mot de passe" data-i18n-label></button></div><span class="hint" data-i18n>8 caractères au moins.</span></div>
+          <p class="hint muted" data-i18n>En créant un compte, vous acceptez la <a href="/confidentialite">politique de confidentialité</a>.</p>
+        </div>
+
+        <div class="error-box" hidden></div>
+        <div class="au-nav"><button type="button" class="au-back" id="su-back" data-i18n>Retour</button><button type="submit" class="btn primary au-next" id="su-next" data-i18n>Suivant</button></div>
+        <p class="au-sub au-switch"><span data-i18n>Déjà un compte ?</span> <a href="/connexion" class="au-link" id="to-login"><span data-i18n>Se connecter</span> ›</a></p>
+      </form>
+
+      <form id="forgot" class="au-panel" data-api="/api/password/forgot" hidden>
+        <h1 class="au-title" data-i18n>Mot de passe oublié</h1>
+        <p class="au-sub" data-i18n>Indiquez l'e-mail de votre compte. Vous recevrez un lien valable une heure pour choisir un nouveau mot de passe.</p>
+        <div class="au-field"><label for="fg-email" data-i18n>E-mail</label><input id="fg-email" name="email" type="email" autocomplete="email" required></div>
+        <div class="error-box" hidden></div>
+        <div class="okbox" hidden data-i18n>Si un compte existe avec cet e-mail, le lien vient de partir. Pensez à regarder dans les courriers indésirables.</div>
+        <button class="btn primary au-submit" type="submit" data-i18n>Recevoir le lien</button>
+        <p class="au-sub"><a href="/connexion" class="au-link" data-i18n>Retour à la connexion</a></p>
+      </form>
+
+      <form id="reset" class="au-panel" data-api="/api/password/reset" hidden>
+        <h1 class="au-title" data-i18n>Nouveau mot de passe</h1>
+        <div class="au-field"><label for="rs-password" data-i18n>Nouveau mot de passe</label><div class="au-pw"><input id="rs-password" name="password" type="password" required minlength="8" autocomplete="new-password"><button type="button" class="au-eye" data-eye aria-label="Afficher le mot de passe" data-i18n-label></button></div><span class="hint" data-i18n>8 caractères au moins.</span></div>
+        <div class="error-box" hidden></div>
+        <button class="btn primary au-submit" type="submit" data-i18n>Enregistrer et me connecter</button>
+        <p class="au-sub"><a href="/mot-de-passe-oublie" class="au-link" data-i18n>Demander un nouveau lien</a></p>
+      </form>
+    </div>
+
+    <footer class="au-foot" data-footer-links></footer>
+  </section>
+
+  <!-- Colonne visuelle (ordinateur seulement) -->
+  <aside class="au-visual" aria-hidden="true">
+    <div class="lp-glow"></div>
+    <div class="au-stage">
+      <div class="lp-laptop">
+        <div class="lp-laptop-screen">
+          <img class="shot shot-light" data-shot="dashboard" alt="" src="/img/dashboard-fr-light.jpg" width="2040" height="1290">
+          <img class="shot shot-dark" data-shot="dashboard" data-dark alt="" src="/img/dashboard-fr-dark.jpg" width="2040" height="1290" loading="lazy">
+        </div>
+        <div class="lp-laptop-base"></div>
       </div>
-      <div class="field email-pw"><label for="su-email" data-i18n>E-mail</label><input id="su-email" name="email" type="email" required autocomplete="email"></div>
-      <div class="field email-pw"><label for="su-password" data-i18n>Mot de passe</label><input id="su-password" name="password" type="password" required minlength="8" autocomplete="new-password"><span class="hint" data-i18n>8 caractères au moins.</span></div>
-      <div class="error-box" hidden></div>
-      <button class="btn primary" type="submit" style="min-height:44px" data-i18n>Commencer l'essai gratuit</button>
-      <p class="hint muted" data-i18n>En créant un compte, vous acceptez la <a href="/confidentialite">politique de confidentialité</a>.</p>
-    </form>
-
-    <form class="card form" id="forgot" data-api="/api/password/forgot" hidden>
-      <div><h1 style="font-size:1.4rem" data-i18n>Mot de passe oublié</h1><p class="muted" style="font-size:.86rem" data-i18n>Indiquez l'e-mail de votre compte. Vous recevrez un lien valable une heure pour choisir un nouveau mot de passe.</p></div>
-      <div class="field"><label for="fg-email" data-i18n>E-mail</label><input id="fg-email" name="email" type="email" autocomplete="email" required></div>
-      <div class="error-box" hidden></div>
-      <div class="okbox" hidden data-i18n>Si un compte existe avec cet e-mail, le lien vient de partir. Pensez à regarder dans les courriers indésirables.</div>
-      <button class="btn primary" type="submit" style="min-height:44px" data-i18n>Recevoir le lien</button>
-    </form>
-
-    <form class="card form" id="reset" data-api="/api/password/reset" hidden>
-      <h1 style="font-size:1.4rem" data-i18n>Nouveau mot de passe</h1>
-      <div class="field"><label for="rs-password" data-i18n>Nouveau mot de passe</label><input id="rs-password" name="password" type="password" required minlength="8" autocomplete="new-password"><span class="hint" data-i18n>8 caractères au moins.</span></div>
-      <div class="error-box" hidden></div>
-      <button class="btn primary" type="submit" style="min-height:44px" data-i18n>Enregistrer et me connecter</button>
-    </form>
-
-    <p class="switch" id="switch"></p>
-    <section class="card demo-box" id="demo" hidden>
-      <h2 data-i18n>Essayer avec un compte de démo</h2>
-      <p class="muted" data-i18n>Des chantiers, photos et factures d'exemple, sans rien saisir.</p>
-      <div class="row-acts"><button type="button" class="btn" data-demo="eu" data-i18n>Démo Lyon (€)</button><button type="button" class="btn" data-demo="af" data-i18n>Démo Saly, Sénégal (FCFA)</button></div>
-    </section>
-    <div data-footer-links class="foot-tools"></div>
-  </div>
-</main>
+      <div class="lp-phone au-phone">
+        <img class="shot shot-light" data-shot="phone-client" alt="" src="/img/phone-client-fr-light.jpg" width="780" height="1688">
+        <img class="shot shot-dark" data-shot="phone-client" data-dark alt="" src="/img/phone-client-fr-dark.jpg" width="780" height="1688" loading="lazy">
+      </div>
+    </div>
+    <div class="au-pitch">
+      <h2><span data-i18n>Suivez vos chantiers</span> <span class="au-accent" data-i18n>où que vous soyez</span></h2>
+      <p data-i18n>Photos datées, étapes à valider, devis et factures : tout l'avancement, sans appeler l'artisan.</p>
+      <ul class="au-badges">
+        <li><span data-ic="cam"></span><b data-i18n>Photos datées</b></li>
+        <li><span data-ic="lock"></span><b data-i18n>Photos privées</b></li>
+        <li><span data-ic="globe"></span><b data-i18n>Europe et Afrique</b></li>
+        <li><span data-ic="phone"></span><b data-i18n>Téléphone et ordinateur</b></li>
+      </ul>
+    </div>
+  </aside>
+</div>
 <script src="/js/i18n-en.js"></script>
 <script src="/js/ui.js"></script>
+<script src="/js/home.js"></script>
 <script src="/js/auth.js"></script>
 </body>
 </html>

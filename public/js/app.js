@@ -18,7 +18,8 @@
   /* ---------- Coquille ---------- */
   const NAV = [["tableau-de-bord", "Tableau de bord", "dash"], ["chantiers", "Chantiers", "home"], ["journal", "Journal", "list"], ["clients", "Clients", "users"], ["compte", "Abonnement", "card"]];
   const TABS = [["chantiers", "Chantiers", "home"], ["journal", "Journal", "list"], ["photos", "Photos", "photo"], ["compte", "Compte", "user"]];
-  const planLabel = () => (me.access.status === "paid" ? t("Abonnement actif jusqu'au {date}", { date: dShort(me.access.until) }) : me.access.status === "trial" ? plural(me.access.days_left, "Essai gratuit : encore {n} jour", "Essai gratuit : encore {n} jours") : t("Essai terminé"));
+  const isPro = () => me.account_type === "pro";
+  const planLabel = () => (me.account_type === "proche" ? t("Accès offert par {who}", { who: esc((me.sponsors || []).join(", ") || "—") }) : me.access.status === "paid" ? t("Abonnement actif jusqu'au {date}", { date: dShort(me.access.until) }) : me.access.status === "trial" ? plural(me.access.days_left, "Essai gratuit : encore {n} jour", "Essai gratuit : encore {n} jours") : t("Essai terminé"));
   const waLink = (phoneNumber, text) => `https://wa.me/${(phoneNumber || "").replace(/[^\d]/g, "")}?text=${encodeURIComponent(text)}`;
   const initials = (n) => n.split(/\s+/).map((x) => x[0]).join("").slice(0, 2).toUpperCase();
 
@@ -28,7 +29,7 @@
     app.innerHTML = `<div class="shell">
       <aside class="side">
         <a class="logo" href="#tableau-de-bord">${LOGO(24)} Archfield</a>
-        <nav aria-label="${t("Menu")}">${NAV.map(([k, l, i]) => `<button type="button" data-go="${k}" ${sideOn(k) ? 'aria-current="page"' : ""}>${ic(i, 17)} ${t(l)}</button>`).join("")}</nav>
+        <nav aria-label="${t("Menu")}">${NAV.map(([k, l, i]) => `<button type="button" data-go="${k}" ${sideOn(k) ? 'aria-current="page"' : ""}>${ic(i, 17)} ${t(k === "compte" && !isPro() ? "Compte" : l)}</button>`).join("")}</nav>
         <div class="who">
           <div class="side-prefs">${prefs()}</div>
           <div class="plan-card"><b>${esc(me.company)}</b><span>${planLabel()}</span></div>
@@ -52,7 +53,7 @@
     const sub = `${esc(me.company)}${me.city ? " · " + esc(me.city) : ""}`;
     if (!d.sites.length && d.reliability.delivered === 0) {
       return shell("tableau-de-bord", `<div class="pagehead"><div><p class="sub">${sub}</p><h1>${t("Tableau de bord")}</h1></div></div>
-        <section class="card empty"><h2>${t("Créez votre premier chantier")}</h2><p>${t("Ajoutez le client et les étapes prévues. Archfield vous donne un lien privé à envoyer au client par WhatsApp ou par e-mail, sans compte à créer.")}</p><a class="btn primary" href="#nouveau-chantier">${ic("plus", 16)} ${t("Nouveau chantier")}</a></section>`);
+        ${!isPro() ? `<section class="card empty"><h2>${t("Pas encore de chantier")}</h2><p>${t("Le chantier qu'on vous confie apparaîtra ici dès que vous aurez accepté l'invitation.")}</p></section>` : ""}<section class="card empty" ${isPro() ? "" : "hidden"}><h2>${t("Créez votre premier chantier")}</h2><p>${t("Ajoutez le client et les étapes prévues. Archfield vous donne un lien privé à envoyer au client par WhatsApp ou par e-mail, sans compte à créer.")}</p><a class="btn primary" href="#nouveau-chantier">${ic("plus", 16)} ${t("Nouveau chantier")}</a></section>`);
     }
     const max = Math.max(1, ...d.byStep.map((b) => Math.max(b.planned, b.actual))) * 1.05;
     const chart = d.byStep.length ? d.byStep.map((b) => {
@@ -65,7 +66,7 @@
     const k = d.kpis, rl = d.reliability;
     shell("tableau-de-bord", `
       <div class="pagehead"><div><p class="sub">${sub}</p><h1>${t("Tableau de bord")}</h1></div>
-        <div class="acts"><span class="pill">${ic("cal", 15)} ${cap(fmt(Date.now(), { month: "long", year: "numeric" }))}</span><a class="btn" href="/api/export.csv" download>${t("Exporter en CSV")}</a><a class="btn primary" href="#nouveau-chantier">${ic("plus", 15)} ${t("Nouveau chantier")}</a></div></div>
+        <div class="acts"><span class="pill">${ic("cal", 15)} ${cap(fmt(Date.now(), { month: "long", year: "numeric" }))}</span><a class="btn" href="/api/export.csv" download>${t("Exporter en CSV")}</a>${isPro() ? `<a class="btn primary" href="#nouveau-chantier">${ic("plus", 15)} ${t("Nouveau chantier")}</a>` : ""}</div></div>
       <div class="kpis">
         <div class="card kpi"><span class="k">${t("Chantiers actifs")}</span><span class="v">${k.active}</span><span class="s">${t("{n} en démarrage", { n: k.starting })}</span></div>
         <div class="card kpi"><span class="k">${t("Alertes de dérive")}</span><span class="v ${k.alerts ? "warn" : ""}">${k.alerts}</span><span class="s">${t("Étapes à plus de 20 % du prévu")}</span></div>
@@ -101,8 +102,8 @@
       <div class="row-acts"><a class="btn ghost" href="#chantier-${s.id}">${t("Ouvrir")}</a>${s.status === "active" ? `<button type="button" class="btn ghost" data-copy-link="${esc(s.client_token)}">${t("Copier le lien client")}</button><button type="button" class="btn primary" data-publish="${s.id}">${ic("cam", 15)} ${t("Mise à jour")}</button>` : ""}</div>
     </div>`;
     shell("chantiers", `<div class="pagehead"><div><p class="sub">${t("{a} en cours · {d}", { a: active.length, d: plural(delivered.length, "{n} livré", "{n} livrés") })}</p><h1>${t("Chantiers")}</h1></div>
-      <div class="acts"><a class="btn primary" href="#nouveau-chantier">${ic("plus", 15)} ${t("Nouveau chantier")}</a></div></div>
-      ${isMobile() ? `<a class="btn primary" href="#nouveau-chantier">${ic("plus", 15)} ${t("Nouveau chantier")}</a>` : ""}
+      ${isPro() ? `<div class="acts"><a class="btn primary" href="#nouveau-chantier">${ic("plus", 15)} ${t("Nouveau chantier")}</a></div>` : ""}</div>
+      ${isMobile() && isPro() ? `<a class="btn primary" href="#nouveau-chantier">${ic("plus", 15)} ${t("Nouveau chantier")}</a>` : ""}
       ${active.length ? `<div class="sites">${active.map(card).join("")}</div>` : `<section class="card empty"><h2>${t("Aucun chantier en cours")}</h2><p>${t("Créez un chantier pour obtenir le lien privé de votre client.")}</p><a class="btn primary" href="#nouveau-chantier">${t("Nouveau chantier")}</a></section>`}
       ${delivered.length ? `<h2 class="section-t">${t("Chantiers livrés")}</h2><div class="sites">${delivered.map(card).join("")}</div>` : ""}`);
   }
@@ -200,7 +201,10 @@
           <div><button class="btn primary" type="submit">${t("Ajouter")}</button></div></form>`;
     } else {
       const url = clientUrl(s.client_token);
-      body = `<section class="card card-p share"><h2>${t("Lien privé du client")}</h2>
+      body = `<section class="card card-p share"><h2>${t("Numéro de suivi")}</h2>
+          <div class="sp-code"><b>${esc(s.tracking_code)}</b><button type="button" class="btn ghost" data-copy-text="${esc(s.tracking_code)}">${t("Copier")}</button></div>
+          <p class="muted" style="font-size:.86rem">${s.owner ? t("Ce chantier est dans l'espace client de {who}.", { who: esc(s.owner) }) : t("Votre client peut créer son espace gratuit sur Archfield et y ajouter ce chantier avec ce numéro : il retrouve tous ses chantiers au même endroit.")}</p></section>
+        <section class="card card-p share"><h2>${t("Lien privé du client")}</h2>
           <p class="muted" style="font-size:.86rem">${t("{who} ouvre ce lien sans créer de compte. Envoyez-le par WhatsApp, SMS ou e-mail.", { who: esc(s.client_name) })}</p>
           <div class="link"><code>${esc(url)}</code><button type="button" class="btn ghost" data-copy-link="${esc(s.client_token)}">${t("Copier")}</button></div>
           <div class="row-acts"><a class="btn wa" href="${waLink(s.client_phone, t("Bonjour {who}, suivez l'avancement de votre chantier ici : {url}", { who: s.client_short, url }))}" target="_blank" rel="noopener">${t("Envoyer par WhatsApp")}</a><a class="btn ghost" href="/c/${esc(s.client_token)}" target="_blank" rel="noopener">${t("Voir la page du client")}</a><button type="button" class="btn ghost" data-new-link>${t("Changer de lien")}</button></div>
@@ -214,7 +218,8 @@
           <div class="field" style="max-width:360px"><label for="ec-city">${t("Ville")}</label><input id="ec-city" name="client_city" value="${esc(s.client_city)}"></div>
           <div><button class="btn" type="submit">${t("Enregistrer")}</button></div></form>
         ${s.status === "active" ? `<section class="card card-p share"><h2>${t("Fin de chantier")}</h2><p class="muted" style="font-size:.86rem">${t("Quand toutes les étapes sont validées par le client, marquez le chantier comme livré. Il compte alors dans votre indice de fiabilité.")}</p><div><button type="button" class="btn" data-deliver>${t("Marquer comme livré")}</button></div></section>` : ""}
-        <section class="card card-p share"><h2>${t("Supprimer le chantier")}</h2><p class="muted" style="font-size:.86rem">${t("Le journal, les photos, les documents et les rapports sont effacés définitivement, et le lien du client cesse de marcher.")}</p><div><button type="button" class="btn danger" data-del-site="${s.id}">${t("Supprimer ce chantier")}</button></div></section>`;
+        ${s.owner ? `<section class="card card-p share"><h2>${t("Ne plus gérer ce chantier")}</h2><p class="muted" style="font-size:.86rem">${t("Le chantier appartient à {who} : il lui revient, avec tout son journal. Vous n'y aurez plus accès.", { who: esc(s.owner) })}</p><div><button type="button" class="btn danger" data-release="${s.id}">${t("Rendre le chantier à {who}", { who: esc(s.owner) })}</button></div></section>`
+          : `<section class="card card-p share"><h2>${t("Supprimer le chantier")}</h2><p class="muted" style="font-size:.86rem">${t("Le journal, les photos, les documents et les rapports sont effacés définitivement, et le lien du client cesse de marcher.")}</p><div><button type="button" class="btn danger" data-del-site="${s.id}">${t("Supprimer ce chantier")}</button></div></section>`}`;
     }
     shell("chantier", `<div class="phone" style="max-width:${siteTab === "journal" ? 560 : 760}px">
       <button type="button" class="back" data-go="chantiers">${ic("left", 16)} ${t("Chantiers")}</button>
@@ -277,8 +282,9 @@
     loading("compte");
     const d = await api("/api/dashboard");
     const acc = me.access;
-    shell("compte", `<div class="pagehead"><div><p class="sub">${esc(me.email)}${me.google ? " · " + t("connecté avec Google") : ""}</p><h1>${t("Abonnement et compte")}</h1></div></div>
-      <section class="card card-p planbox">
+    shell("compte", `<div class="pagehead"><div><p class="sub">${esc(me.email)}${me.google ? " · " + t("connecté avec Google") : ""}</p><h1>${isPro() ? t("Abonnement et compte") : t("Compte")}</h1></div></div>
+      ${isPro() ? "" : `<section class="card card-p planbox"><h2>${t("Votre accès")}</h2><p>${t("Votre accès est offert par {who}. Vous publiez l'avancement des chantiers qu'on vous confie, sans rien payer.", { who: esc((me.sponsors || []).join(", ") || "—") })}</p></section>`}
+      <section class="card card-p planbox" ${isPro() ? "" : "hidden"}>
         <div class="card-h" style="margin:0"><h2>Archfield Artisan</h2><span class="chip ${acc.status === "paid" ? "ok" : acc.status === "trial" ? "wait" : "warn"}">${planLabel()}</span></div>
         ${acc.status === "trial" ? `<span class="track"><span style="width:${Math.round(((61 - Math.min(61, acc.days_left)) / 61) * 100)}%"></span></span><p>${t("2 mois offerts, puis :")}</p>` : ""}
         <div class="price">${esc(me.price)} <small>${t("par mois, sans engagement")}</small></div>
@@ -399,10 +405,11 @@
       await (pages[h] || pageDashboard)();
     } catch (e) { errorBox(h, e); }
   }
-  window.addEventListener("hashchange", () => { if (!/^#chantier-/.test(location.hash)) siteTab = "journal"; route().then(() => window.scrollTo(0, 0)); });
+  window.addEventListener("hashchange", () => { if (!me || me.account_type === "client") return; if (!/^#chantier-/.test(location.hash)) siteTab = "journal"; route().then(() => window.scrollTo(0, 0)); });
 
   let pendingNewLink = false;
   document.addEventListener("click", async (e) => {
+    if (!me || me.account_type === "client") return;
     const b = e.target.closest("button, tr[data-site]");
     if (!b) return;
     const d = b.dataset;
@@ -411,6 +418,11 @@
     else if (d.publish !== undefined) openComposer(d.publish);
     else if (d.siteTab) { siteTab = d.siteTab; route(); }
     else if (d.pick) { lastSiteId = Number(d.pick); route(); }
+    else if (d.copyText) copy(d.copyText, t("Copié."));
+    else if (d.release) {
+      if (!b.dataset.armed) { b.dataset.armed = "1"; b.textContent = t("Confirmer : je ne gère plus ce chantier"); setTimeout(() => { if (b.isConnected) delete b.dataset.armed; }, 5000); return; }
+      try { await api(`/api/sites/${d.release}/release`, { method: "POST" }); toast(t("Chantier rendu à son propriétaire.")); location.hash = "chantiers"; } catch (err) { toast(err.message); }
+    }
     else if (d.copyLink) copy(clientUrl(d.copyLink), t("Lien copié. Envoyez-le au client par WhatsApp ou par e-mail."));
     else if (d.stepAction) act(() => api("/api/steps/" + d.step, { method: "PATCH", body: { action: d.stepAction } }), t({ start: "Étape démarrée.", finish: "Étape terminée. Le client est invité à la valider.", reopen: "Étape rouverte." }[d.stepAction]));
     else if (d.stepDel) act(() => api("/api/steps/" + d.stepDel, { method: "DELETE" }), t("Étape supprimée."));
@@ -438,6 +450,11 @@
 
   (async () => {
     try { me = await api("/api/me"); } catch (e) { return; }
+    // Invitation acceptée après une connexion (Google ou e-mail) qui a ramené ici.
+    let code = null;
+    try { code = sessionStorage.getItem("af-invite"); sessionStorage.removeItem("af-invite"); } catch (e) {}
+    if (code) { try { await api(`/api/invitations/${code}/accept`, { method: "POST" }); me = await api("/api/me"); toast(t("Invitation acceptée : le chantier est dans votre liste.")); } catch (e) { toast(e.message); } }
+    if (me.account_type === "client") return window.AFSpace.start(me);
     route();
   })();
 })();
