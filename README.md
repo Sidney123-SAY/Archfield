@@ -69,7 +69,7 @@ L'installation demande le HTTPS : elle marche une fois le site en ligne (ou sur 
 
 ### Captures de la page d'accueil
 
-Les images de `public/img` sont de vraies captures de l'application (français et anglais, clair et sombre). Après un changement d'interface : `npm run seed`, `npm start`, puis dans un autre terminal `npm run screenshots` (nécessite Playwright : `npx playwright install chromium`).
+Les images de `public/img` sont de vraies captures de l'application (français et anglais, clair et sombre). Après un changement d'interface : `npm run seed`, `npm start`, puis dans un autre terminal `npm run screenshots` (Playwright est installé par `npm ci` ; la première fois, téléchargez le navigateur avec `npx playwright install chromium`).
 
 ### Ce que fait le MVP
 
