@@ -35,13 +35,13 @@ test.after(() => { server.close(); fs.rmSync(process.env.DATA_DIR, { recursive: 
 test("parcours artisan et client", async () => {
   assert.equal((await call("GET", "/api/me")).status, 401);
 
-  const su = await call("POST", "/api/signup", { country: "SN", email: "Test@Example.com", password: "motdepasse", company: "Ndiaye BTP", contact_name: "Ousmane Ndiaye", city: "Thiès", market: "af" });
+  const su = await call("POST", "/api/signup", { country: "SN", email: "Test@Example.com", password: "chantier-2026", company: "Ndiaye BTP", contact_name: "Ousmane Ndiaye", city: "Thiès", market: "af" });
   assert.equal(su.status, 201);
   const me = (await call("GET", "/api/me")).data;
   assert.equal(me.email, "test@example.com");
   assert.equal(me.currency, "XOF");
 
-  assert.equal((await call("POST", "/api/signup", { country: "SN", email: "test@example.com", password: "motdepasse", company: "X", contact_name: "Y" })).status, 409);
+  assert.equal((await call("POST", "/api/signup", { country: "SN", email: "test@example.com", password: "chantier-2026", company: "X", contact_name: "Y" })).status, 409);
 
   const created = await call("POST", "/api/sites", {
     name: "Villa Diallo", location: "Thiès", kind: "ext", client_name: "Aminata Diallo", client_email: "a@example.com", budget: 18500000, start_now: true,
@@ -119,14 +119,14 @@ test("parcours artisan et client", async () => {
   // Un autre artisan ne voit pas ce chantier.
   const mine = cookie;
   cookie = "";
-  await call("POST", "/api/signup", { country: "SN", email: "autre@example.com", password: "motdepasse", company: "Autre", contact_name: "Autre" });
+  await call("POST", "/api/signup", { country: "SN", email: "autre@example.com", password: "chantier-2026", company: "Autre", contact_name: "Autre" });
   assert.equal((await call("GET", `/api/sites/${site.id}`)).status, 404);
   cookie = mine;
 
   assert.equal((await call("POST", "/api/logout")).status, 200);
   assert.equal((await call("GET", "/api/me")).status, 401);
   assert.equal((await call("POST", "/api/login", { email: "test@example.com", password: "faux" })).status, 401);
-  assert.equal((await call("POST", "/api/login", { email: "test@example.com", password: "motdepasse" })).status, 200);
+  assert.equal((await call("POST", "/api/login", { email: "test@example.com", password: "chantier-2026" })).status, 200);
 });
 
 test("rapport hebdomadaire : un seul par chantier et par semaine", async () => {
@@ -162,7 +162,7 @@ test("photos protégées, notification du client, fin d'essai, suppression et ex
   const { outbox } = require("../server/mail");
   const { run, get } = require("../server/db");
   cookie = "";
-  await call("POST", "/api/signup", { country: "SN", email: "photos@example.com", password: "motdepasse", company: "Photos BTP", contact_name: "Moussa" });
+  await call("POST", "/api/signup", { country: "SN", email: "photos@example.com", password: "chantier-2026", company: "Photos BTP", contact_name: "Moussa" });
   const site = (await call("POST", "/api/sites", { name: "Villa", client_name: "Fatou Sow", client_email: "fatou@example.com", client_phone: "+221 77 123 45 67", steps: [{ name: "Murs", planned_days: 10 }], start_now: true })).data;
   assert.equal(site.client_phone, "+221771234567");
   assert.equal((await call("POST", "/api/sites", { name: "X", client_name: "Y", client_phone: "abc", steps: [{ name: "A", planned_days: 1 }] })).status, 400);
@@ -194,13 +194,11 @@ test("photos protégées, notification du client, fin d'essai, suppression et ex
   assert.equal((await fetch(base + "/api/logout", { method: "POST", headers: { Origin: "https://pirate.example" } })).status, 403);
 
   const me = (await call("GET", "/api/me")).data;
+  // Archfield est gratuit pour les entreprises : rien ne s'arrête après la date d'essai.
   run("UPDATE artisans SET trial_ends_at = ? WHERE id = ?", new Date(Date.now() - 864e5).toISOString(), me.id);
-  assert.equal((await call("GET", "/api/me")).data.access.status, "expired");
-  assert.equal((await post("Après l'essai.")).status, 402);
-  assert.equal((await call("GET", `/api/sites/${site.id}`)).status, 200, "la lecture reste possible");
+  assert.equal((await call("GET", "/api/me")).data.access.status, "free");
+  assert.equal((await post("Après la date d'essai.")).status, 201);
   assert.equal((await call("GET", `/api/c/${site.client_token}`, undefined, { noCookie: true })).status, 200, "le client garde l'accès");
-  run("UPDATE artisans SET paid_until = ? WHERE id = ?", new Date(Date.now() + 30 * 864e5).toISOString(), me.id);
-  assert.equal((await call("GET", "/api/me")).data.access.status, "paid");
 
   const exp = await call("GET", "/api/me/export");
   assert.equal(exp.data.sites.length, 2);
@@ -215,6 +213,6 @@ test("photos protégées, notification du client, fin d'essai, suppression et ex
   assert.equal((await call("GET", `/api/c/${site.client_token}`, undefined, { noCookie: true })).status, 404);
 
   assert.equal((await call("DELETE", "/api/me", { password: "faux" })).status, 400);
-  assert.equal((await call("DELETE", "/api/me", { password: "motdepasse" })).status, 200);
+  assert.equal((await call("DELETE", "/api/me", { password: "chantier-2026" })).status, 200);
   assert.equal(get("SELECT COUNT(*) AS n FROM artisans WHERE email = 'photos@example.com'").n, 0);
 });

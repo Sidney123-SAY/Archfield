@@ -210,7 +210,7 @@
         if (x.status === 401) { location.href = "/connexion"; return reject(new Error(t("Session expirée."))); }
         x.status < 300 ? resolve(data) : reject(new Error(tr(data?.error) || t("Erreur {n}", { n: x.status })));
       };
-      x.onerror = () => reject(new Error(t("L'envoi a échoué. Vérifiez votre réseau puis réessayez.")));
+      x.onerror = () => { const e = new Error(t("L'envoi a échoué. Vérifiez votre réseau puis réessayez.")); e.offline = true; reject(e); };
       x.send(form);
     });
   }
@@ -226,6 +226,56 @@
       const blob = await new Promise((r) => c.toBlob(r, "image/jpeg", quality));
       return blob && blob.size < file.size ? new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" }) : file;
     } catch (e) { return file; }
+  }
+
+  // Date de prise de vue et position GPS inscrites par le téléphone dans une photo JPEG (EXIF).
+  // Lues avant la réduction de la photo, qui les efface. Renvoie { shot_at, lat, lng } (null si absent).
+  async function exifOf(file) {
+    const out = { shot_at: null, lat: null, lng: null };
+    if (!/jpe?g$/i.test(file.type) && !/\.jpe?g$/i.test(file.name)) return out;
+    try {
+      const v = new DataView(await file.slice(0, 256 * 1024).arrayBuffer());
+      if (v.getUint16(0) !== 0xffd8) return out;
+      let o = 2;
+      while (o + 4 < v.byteLength) {
+        const marker = v.getUint16(o), size = v.getUint16(o + 2);
+        if (marker === 0xffe1 && v.getUint32(o + 4) === 0x45786966) { readTiff(v, o + 10, out); break; }
+        if ((marker & 0xff00) !== 0xff00) break;
+        o += 2 + size;
+      }
+    } catch (e) {}
+    return out;
+  }
+  function readTiff(v, t, out) {
+    const le = v.getUint16(t) === 0x4949;
+    const u16 = (x) => v.getUint16(x, le), u32 = (x) => v.getUint32(x, le);
+    const str = (off, n) => { let r = ""; for (let i = 0; i < n - 1; i++) r += String.fromCharCode(v.getUint8(off + i)); return r; };
+    const rat = (off) => u32(off) / (u32(off + 4) || 1);
+    const ifd = (start) => { const tags = {}; const n = u16(start); for (let i = 0; i < n; i++) { const e = start + 2 + i * 12; tags[u16(e)] = { type: u16(e + 2), count: u32(e + 4), at: e + 8 }; } return tags; };
+    const ptr = (tag) => t + u32(tag.at);
+    const ifd0 = ifd(t + u32(t + 4));
+    if (ifd0[0x8769]) {
+      const ex = ifd(ptr(ifd0[0x8769]));
+      const d = ex[0x9003] || ex[0x9004];
+      const m = d && /^(\d{4}):(\d\d):(\d\d) (\d\d):(\d\d):(\d\d)/.exec(str(ptr(d), d.count));
+      if (m) out.shot_at = new Date(+m[1], m[2] - 1, +m[3], +m[4], +m[5], +m[6]).toISOString();
+    }
+    if (ifd0[0x8825]) {
+      const g = ifd(ptr(ifd0[0x8825]));
+      const deg = (tag) => { const a = ptr(tag); return rat(a) + rat(a + 8) / 60 + rat(a + 16) / 3600; };
+      if (g[2] && g[4]) {
+        const lat = deg(g[2]) * (String.fromCharCode(v.getUint8(g[1].at)) === "S" ? -1 : 1);
+        const lng = deg(g[4]) * (String.fromCharCode(v.getUint8(g[3].at)) === "W" ? -1 : 1);
+        if (Number.isFinite(lat) && Number.isFinite(lng) && (lat || lng)) { out.lat = lat; out.lng = lng; }
+      }
+    }
+  }
+  // Position du téléphone au moment de publier (HTTPS obligatoire). null si refusée ou indisponible.
+  function position(timeout = 10000) {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation || !window.isSecureContext) return resolve(null);
+      navigator.geolocation.getCurrentPosition((p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }), () => resolve(null), { enableHighAccuracy: true, timeout, maximumAge: 60000 });
+    });
   }
 
   let toastT = null;
@@ -279,15 +329,84 @@
         return `<div class="card sys">${ic("check", 22, waiting ? "var(--orange)" : "var(--vert)")}<span>${waiting ? (forClient ? t("{step} terminé · en attente de votre validation", { step }) : t("{step} terminé · en attente de validation par {who}", { step, who: esc(who) })) : t("{step} terminé · le {date}", { step, date: dShort(u.created_at) })}</span>${forClient && waiting ? `<button type="button" class="btn ok" data-validate="${st.id}">${t("Valider")}</button>` : ""}</div>`;
       }
       if (u.kind === "step_validated") return `<div class="card sys">${ic("check", 22, "var(--vert)")}<span>${forClient ? t("{step} validé par vous · {date}", { step, date: rel(u.created_at) }) : t("{step} validé par {who} · {date}", { step, who: esc(who), date: rel(u.created_at) })}</span></div>`;
+      const proof = verifyBadge(u);
       const seen = u.seen_at ? (new Date(u.seen_at).toDateString() !== new Date().toDateString() ? t("Vu par {who} le {date} à {h}", { who: esc(who), date: dShort(u.seen_at), h: time(u.seen_at) }) : t("Vu par {who} à {h}", { who: esc(who), h: time(u.seen_at) })) : t("Pas encore vu par {who}", { who: esc(who) });
       return `<article class="card entry">
         <div class="eh"><span>${rel(u.created_at)}</span><span>${esc(u.step_name || "")}</span></div>
         <p>${esc(u.text)}</p>
-        ${u.photos.length ? `<div class="photos">${u.photos.map((p) => `<a class="photo" href="${p.url}" target="_blank" rel="noopener"><img loading="lazy" alt="${t("Photo du chantier")}${u.step_name ? ", " + esc(u.step_name) : ""}" src="${p.url}"><span class="stamp">${dShort(p.taken_at)} ${time(p.taken_at)}</span></a>`).join("")}</div>` : ""}
+        ${u.photos.length ? `<div class="photos">${u.photos.map((p) => { const d = p.shot_at || p.taken_at; return `<a class="photo" href="${p.url}" target="_blank" rel="noopener"><img loading="lazy" alt="${t("Photo du chantier")}${u.step_name ? ", " + esc(u.step_name) : ""}" src="${p.url}"><span class="stamp">${dShort(d)} ${time(d)}</span></a>`; }).join("")}</div>` : ""}
+        ${proof}
         ${forClient ? "" : `<div class="eh"><span class="vu ${u.seen_at ? "" : "no"}">${ic("eye", 17)} ${seen}</span><button type="button" class="del" data-del-update="${u.id}">${t("Supprimer")}</button></div>`}
       </article>`;
     }).join("");
   }
+
+  // Preuve d'une publication : prise sur le chantier, récente ? (voir server/verify.js)
+  function verifyBadge(u) {
+    if (!u.verify) return "";
+    const n = u.verify_note || {};
+    const km = (m) => (m >= 1000 ? t("{n} km", { n: nf(Math.round(m / 100) / 10) }) : t("{n} m", { n: m }));
+    const why = [];
+    if (n.position === "far") why.push(t("publiée à {d} du chantier", { d: km(n.distance) }));
+    if (n.photos === "old") why.push(t("photo prise le {date}", { date: dShort(n.old_shot_at) }));
+    if (n.photos === "far") why.push(t("photo prise à {d} du chantier", { d: km(n.photo_distance) }));
+    if (u.verify === "warning") return `<p class="proof warn">${ic("warn", 16)} ${t("À vérifier : {why}", { why: why.join(", ") })}</p>`;
+    if (u.verify === "verified") return `<p class="proof ok">${ic("check", 16)} ${n.position === "origin" ? t("Photos récentes · position du chantier enregistrée ici") : n.photos === "none" ? t("Publié depuis le chantier") : t("Vérifiée : photos récentes, prises sur le chantier")}</p>`;
+    const miss = [];
+    if (n.position === "unknown") miss.push(t("position du téléphone inconnue"));
+    if (n.photos === "unknown") miss.push(t("date des photos inconnue"));
+    return `<p class="proof part">${ic("eye", 16)} ${t("Vérification partielle : {why}", { why: miss.join(", ") })}</p>`;
+  }
+
+  /* ---------- Argent du chantier ---------- */
+  const CATEGORY = { materiaux: "Matériaux", main_oeuvre: "Main-d'œuvre", transport: "Transport", autre: "Autre" };
+  const METHOD = { wave: "Wave", orange_money: "Orange Money", mtn_momo: "MTN MoMo", virement: "Virement", especes: "Espèces", autre: "Autre" };
+  // Résumé (budget, versé, dépensé, avancement), alerte, échéancier et lignes. me : id du compte (bouton « Annuler »).
+  function moneyPanel(m, { me, forClient } = {}) {
+    const cur = m.currency, pct = (n) => (m.budget ? Math.min(100, Math.round((n / m.budget) * 100)) : 0);
+    const line = (e) => `<li class="ml ${e.kind} ${e.cancelled_at ? "cancelled" : ""}">
+        <span class="ml-ic">${ic(e.kind === "versement" ? "card" : "tool", 16)}</span>
+        <div class="ml-main">
+          <div class="ml-top"><b>${e.kind === "versement" ? t("Versement") + (e.category ? " · " + t(METHOD[e.category] || "Autre") : "") : esc(e.label) + " · " + t(CATEGORY[e.category] || "Autre")}</b><span class="ml-amt">${e.kind === "versement" ? "+" : "−"}${money(e.amount, cur)}</span></div>
+          <span class="muted">${dShort(e.entry_date)} · ${t("noté par {who}", { who: esc(e.created_by_name) })}${e.kind === "versement" && e.label ? " · " + esc(e.label) : ""}</span>
+          ${e.cancelled_at ? `<span class="ml-cancel">${t("Annulée le {date} par {who}", { date: dShort(e.cancelled_at), who: esc(e.cancelled_by_name) })}${e.cancel_reason ? " : " + esc(e.cancel_reason) : ""}</span>` : ""}
+          ${e.receipt_url || (!e.cancelled_at && me && e.created_by === me) ? `<div class="ml-foot">${e.receipt_url ? `<a class="ml-receipt" href="${e.receipt_url}" target="_blank" rel="noopener"><img src="${e.receipt_url}" alt="${t("Reçu")}" loading="lazy"></a>` : "<span></span>"}${!e.cancelled_at && me && e.created_by === me ? `<button type="button" class="btn ghost ml-x" data-ledger-cancel="${e.id}">${t("Annuler")}</button>` : ""}</div>` : ""}
+        </div>
+      </li>`;
+    const vers = m.entries.filter((e) => e.kind === "versement"), deps = m.entries.filter((e) => e.kind === "depense");
+    return `<section class="card card-p money">
+      <div class="m-figs">
+        <div><span>${t("Budget")}</span><b>${m.budget ? money(m.budget, cur) : "—"}</b><small>${m.budget_from === "devis" ? t("devis signés") : m.budget_from ? t("estimation") : t("ajoutez un devis")}</small></div>
+        <div><span>${t("Versé")}</span><b>${money(m.paid, cur)}</b><small>${m.paid_pct != null ? t("{n} % du budget", { n: m.paid_pct }) : ""}</small></div>
+        <div><span>${t("Dépenses justifiées")}</span><b>${money(m.spent, cur)}</b><small>${m.paid ? t("{n} % de l'argent versé", { n: Math.round((m.spent / m.paid) * 100) }) : ""}</small></div>
+        <div><span>${t("Travaux réalisés")}</span><b>${m.progress} %</b><small>${t("d'après les étapes")}</small></div>
+      </div>
+      <div class="m-bars" aria-hidden="true"><span class="lbl">${t("Versé")}</span><span class="bar"><i class="paid" style="width:${pct(m.paid)}%"></i></span><span class="lbl">${t("Réalisé")}</span><span class="bar"><i class="done" style="width:${m.progress}%"></i></span></div>
+      ${m.alert ? `<div class="warnbox">${ic("warn", 18)} ${t("Attention : {paid} % du budget est déjà versé pour {done} % des travaux réalisés.", { paid: m.paid_pct, done: m.progress })} ${forClient ? t("Avant le prochain versement, demandez où en est le chantier.") : ""}</div>` : m.paid ? `<div class="okbox">${ic("check", 18)} ${t("Les versements suivent l'avancement des travaux.")}</div>` : ""}
+      ${m.unjustified > 0 ? `<p class="muted m-note">${t("{n} versés ne sont pas encore justifiés par une dépense avec reçu.", { n: money(m.unjustified, cur) })}</p>` : ""}
+      ${m.schedule.length ? `<h3>${t("Échéancier")}</h3><ul class="m-sched">${m.schedule.map((x) => `<li><span>${esc(x.name)}</span><b>${money(x.amount, cur)}</b>${x.due ? `<span class="chip ok">${t("Étape validée")}</span>` : `<span class="chip idle">${t("À la validation")}</span>`}</li>`).join("")}</ul>` : ""}
+      <h3>${t("Versements")}</h3>${vers.length ? `<ul class="m-list">${vers.map(line).join("")}</ul>` : `<p class="muted">${t("Aucun versement noté.")}</p>`}
+      <h3>${t("Dépenses")}</h3>${deps.length ? `<ul class="m-list">${deps.map(line).join("")}</ul>` : `<p class="muted">${t("Aucune dépense notée.")}</p>`}
+    </section>`;
+  }
+  // Formulaires : dépense (gestionnaire) et versement.
+  const today = () => new Date().toISOString().slice(0, 10);
+  const depenseForm = (cur) => `<form class="card card-p form" id="add-depense"><h2>${t("Noter une dépense")}</h2>
+    <p class="muted" style="font-size:.84rem">${t("Achat de matériaux, paie des ouvriers, transport… Avec la photo du reçu, la dépense est justifiée aux yeux du propriétaire.")}</p>
+    <div class="row2"><div class="field"><label for="dp-label">${t("Quoi ?")}</label><input id="dp-label" name="label" required maxlength="160" placeholder="${t("Ex. : 40 sacs de ciment")}"></div>
+    <div class="field"><label for="dp-cat">${t("Catégorie")}</label><select id="dp-cat" name="category">${Object.entries(CATEGORY).map(([k, v]) => `<option value="${k}">${t(v)}</option>`).join("")}</select></div></div>
+    <div class="row2"><div class="field"><label for="dp-amount">${t("Montant ({cur})", { cur })}</label><input id="dp-amount" name="amount" type="number" min="1" required inputmode="numeric"></div>
+    <div class="field"><label for="dp-date">${t("Date")}</label><input id="dp-date" name="entry_date" type="date" required value="${today()}"></div></div>
+    <div class="field"><label for="dp-receipt">${t("Photo du reçu (conseillé)")}</label><input id="dp-receipt" name="receipt" type="file" accept="image/*"></div>
+    <div><button class="btn primary" type="submit">${t("Ajouter la dépense")}</button></div></form>`;
+  const versementForm = (cur, { received } = {}) => `<form class="card card-p form" id="add-versement"><h2>${received ? t("Noter un versement reçu") : t("Noter un versement")}</h2>
+    <p class="muted" style="font-size:.84rem">${received ? t("L'argent reçu du propriétaire pour le chantier.") : t("Chaque envoi d'argent pour le chantier. Vous voyez tout de suite si vous avez payé plus que ce qui est construit.")}</p>
+    <div class="row2"><div class="field"><label for="vs-amount">${t("Montant ({cur})", { cur })}</label><input id="vs-amount" name="amount" type="number" min="1" required inputmode="numeric"></div>
+    <div class="field"><label for="vs-method">${t("Moyen")}</label><select id="vs-method" name="category">${Object.entries(METHOD).map(([k, v]) => `<option value="${k}">${t(v)}</option>`).join("")}</select></div></div>
+    <div class="row2"><div class="field"><label for="vs-date">${t("Date")}</label><input id="vs-date" name="entry_date" type="date" required value="${today()}"></div>
+    <div class="field"><label for="vs-label">${t("Note (facultatif)")}</label><input id="vs-label" name="label" maxlength="160" placeholder="${t("Ex. : pour la dalle")}"></div></div>
+    <div><button class="btn primary" type="submit">${t("Ajouter le versement")}</button></div></form>`;
+  const curLabel = (c) => (c === "EUR" ? "€" : "FCFA");
 
   function docsTable(docs, currency, { editable } = {}) {
     if (!docs.length) return `<p class="muted">${t("Aucun devis ni facture pour l'instant.")}</p>`;
@@ -302,5 +421,5 @@
     </table></div>`;
   }
 
-  window.AF = { t, tr, lang, LANGS, translatePage, setLang, langSelect, themeToggle, prefs, setTheme, consent, cookieBanner, footerLinks, installCard, installNudge, LOGO, ic, esc, fmt, time, dShort, dLong, nf, money, cap, plural, rel, api, upload, shrink, toast, copy, STATUS_CHIP, healthChip, siteCard, journal, docsTable };
+  window.AF = { t, tr, lang, LANGS, translatePage, setLang, langSelect, themeToggle, prefs, setTheme, consent, cookieBanner, footerLinks, installCard, installNudge, exifOf, position, verifyBadge, moneyPanel, depenseForm, versementForm, curLabel, LOGO, ic, esc, fmt, time, dShort, dLong, nf, money, cap, plural, rel, api, upload, shrink, toast, copy, STATUS_CHIP, healthChip, siteCard, journal, docsTable };
 })();

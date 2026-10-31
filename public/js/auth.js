@@ -107,7 +107,7 @@
     $("#su-company-id-label").textContent = t(c.id) + (c.required ? "" : " " + t("(facultatif)"));
     $("#su-company-id-hint").textContent = t(c.hint);
     input.inputMode = ["FR", "BE"].includes(c.code) ? "numeric" : "text";
-    $("#su-price").textContent = c.market === "af" ? t("9 900 FCFA par mois après l'essai.") : t("19 € par mois après l'essai.");
+    $("#su-price").textContent = t("Archfield est gratuit pour les entreprises.");
     $("#su-siret-check").textContent = "";
   }
   // SIRET : vérification dans l'annuaire des entreprises, puis nom et ville remplis s'ils sont vides.
@@ -185,7 +185,7 @@
       $("#inv-title").textContent = t("{owner} vous confie le chantier « {site} »", { owner: invite.owner, site: invite.site });
       $("#inv-text").textContent = invite.kind === "proche"
         ? t("Vous serez sur place : vous publiez l'avancement depuis votre téléphone (photos et une phrase), {owner} le suit à distance. C'est gratuit pour vous.", { owner: invite.owner })
-        : t("Votre entreprise publie l'avancement, {owner} le suit à distance. Connectez-vous avec votre compte entreprise, ou créez-le (2 mois offerts).", { owner: invite.owner });
+        : t("Votre entreprise publie l'avancement, {owner} le suit à distance. Connectez-vous avec votre compte entreprise, ou créez-le gratuitement.", { owner: invite.owner });
       $("#inv-code").textContent = invite.code;
       $("#inv-signup").onclick = () => { history.pushState(null, "", "/inscription"); openSignup(); };
       $("#inv-login").onclick = () => { history.pushState(null, "", "/connexion"); show("login"); document.title = t("Connexion") + " · Archfield"; };

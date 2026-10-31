@@ -18,7 +18,7 @@ const app = require("../server/server");
 const DANGER = /supprim|déconnect|reprendre|retirer|rendre le chantier|changer de lien|annuler l'invitation|delete|log out|take back|remove|give .* back|new link|cancel the invitation|tout refuser|tout accepter|reject all|accept all|enregistrer|save|publier|publish|créer|create|ajouter|add|envoyer un rapport|send a report|marquer|mark|valider|validate|terminer|finish|démarrer|start|rouvrir|reopen|confier|entrust|invit|une entreprise|a construction|un proche|a relative/i;
 const PAGES = {
   anon: ["/", "/connexion", "/inscription", "/mot-de-passe-oublie", "/reinitialiser", "/a-propos", "/confidentialite", "/mentions-legales", "/c/demo-saly-awa", "/c/demo-lyon-claire", "/invitation/INV-DEMO-RUFQ", "/c/inexistant", "/invitation/INV-XXXX-XXXX"],
-  eu: ["/app#tableau-de-bord", "/app#chantiers", "/app#nouveau-chantier", "/app#journal", "/app#photos", "/app#clients", "/app#compte", "SITE:journal", "SITE:etapes", "SITE:documents", "SITE:partage"],
+  eu: ["/app#tableau-de-bord", "/app#chantiers", "/app#nouveau-chantier", "/app#journal", "/app#photos", "/app#clients", "/app#compte", "SITE:journal", "SITE:etapes", "SITE:argent", "SITE:partage"],
   af: ["/app#tableau-de-bord", "/app#chantiers", "/app#journal", "/app#compte", "SITE:etapes", "SITE:partage"],
   proche: ["/app#tableau-de-bord", "/app#chantiers", "/app#nouveau-chantier", "/app#journal", "/app#photos", "/app#clients", "/app#compte", "SITE:partage"],
   client: ["/app#mes-chantiers", "/app#ajouter", "/app#nouveau", "/app#offre", "/app#compte", "CSITE:0", "CSITE:1", "CSITE:2", "/c/demo-saly-awa"]

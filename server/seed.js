@@ -46,9 +46,29 @@ function photoFile(kind, level) {
 }
 const level = (kind, i, n) => (kind === "ext" ? Math.min(6, Math.round((i / Math.max(1, n - 1)) * 6)) : Math.min(5, i));
 
-function addPost(siteId, stepId, at, text, kind, lvl, nPhotos, seenAfterH) {
-  const r = run("INSERT INTO updates (site_id, step_id, kind, text, created_at, seen_at) VALUES (?, ?, 'post', ?, ?, ?)", siteId, stepId, text, iso(at), seenAfterH == null ? null : iso(Math.min(NOW - 60e3, at + seenAfterH * H)));
-  for (let i = 0; i < nPhotos; i++) run("INSERT INTO photos (update_id, file, taken_at) VALUES (?, ?, ?)", Number(r.lastInsertRowid), photoFile(kind, lvl), iso(at));
+// Publication de démo : vérifiée (photos prises quelques minutes avant, sur le chantier), sauf si warn.
+function addPost(siteId, stepId, at, text, kind, lvl, nPhotos, seenAfterH, warn) {
+  const note = warn ? { position: "far", distance: 8400, accuracy: 15, photos: "old", old_shot_at: iso(at - 12 * DAY) }
+    : { position: "near", distance: 20 + Math.round(rand() * 120), accuracy: 6 + Math.round(rand() * 20), photos: nPhotos ? "fresh" : "none" };
+  const r = run("INSERT INTO updates (site_id, step_id, kind, text, created_at, seen_at, verify, verify_note) VALUES (?, ?, 'post', ?, ?, ?, ?, ?)", siteId, stepId, text, iso(at), seenAfterH == null ? null : iso(Math.min(NOW - 60e3, at + seenAfterH * H)), warn ? "warning" : "verified", JSON.stringify(note));
+  for (let i = 0; i < nPhotos; i++) run("INSERT INTO photos (update_id, file, taken_at, shot_at) VALUES (?, ?, ?, ?)", Number(r.lastInsertRowid), photoFile(kind, lvl), iso(at), iso(warn ? at - 12 * DAY : at - (4 + rand() * 30) * 60e3));
+}
+// Reçu d'achat dessiné (pour les dépenses de démo).
+function receiptFile(label, amount, cur) {
+  const f = tok(18) + ".svg";
+  const txt = (x) => String(x).replace(/[<&]/g, "");
+  fs.writeFileSync(path.join(UPLOAD_DIR, f), `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 320"><rect width="240" height="320" fill="#EDE6D6"/><rect x="20" y="16" width="200" height="290" fill="#FFFDF7"/><text x="120" y="48" font-family="monospace" font-size="13" text-anchor="middle" fill="#333">QUINCAILLERIE</text><text x="120" y="64" font-family="monospace" font-size="9" text-anchor="middle" fill="#666">REÇU N° ${100 + Math.floor(rand() * 899)}</text>${[90, 110, 130, 150].map((y) => `<rect x="36" y="${y}" width="${90 + Math.floor(rand() * 70)}" height="5" fill="#C9C2B2"/>`).join("")}<text x="36" y="200" font-family="monospace" font-size="10" fill="#333">${txt(label).slice(0, 26)}</text><line x1="36" y1="220" x2="204" y2="220" stroke="#999" stroke-dasharray="3 3"/><text x="204" y="245" font-family="monospace" font-size="13" text-anchor="end" fill="#111">TOTAL ${amount.toLocaleString("fr-FR")} ${cur}</text><text x="120" y="285" font-family="monospace" font-size="9" text-anchor="middle" fill="#888">MERCI DE VOTRE VISITE</text></svg>`);
+  return f;
+}
+// Lignes d'argent de démo : [type, montant, jours passés, libellé, catégorie ou moyen, auteur, reçu ?, annulée ?]
+function addLedger(siteId, rows, cur) {
+  for (const [kind, amount, daysAgo, label, category, by, receipt, cancel] of rows) {
+    const a = all("SELECT id, contact_name FROM artisans WHERE id = ?", by)[0];
+    const at = NOW - daysAgo * DAY;
+    run(`INSERT INTO ledger (site_id, kind, amount, label, category, entry_date, receipt_file, created_by, created_by_name, created_at, cancelled_at, cancelled_by_name, cancel_reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      siteId, kind, amount, label, category, iso(at).slice(0, 10), receipt ? receiptFile(label, amount, cur) : null, a.id, a.contact_name, iso(at + 2 * H),
+      cancel ? iso(at + 26 * H) : null, cancel ? a.contact_name : null, cancel || "");
+  }
 }
 
 /*
@@ -71,8 +91,8 @@ function makeSite(artisanId, d) {
   const started = steps.filter((s) => s.start).map((s) => s.start);
   const createdAt = started.length ? Math.min(...started) - 6 * DAY : NOW - 2 * DAY;
   const r = run(
-    `INSERT INTO sites (artisan_id, owner_id, name, location, kind, client_name, client_short, client_email, client_city, client_token, tracking_code, budget, status, created_at, delivered_at, last_client_visit_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    artisanId, d.ownerId || null, d.name, d.location, d.kind, d.client, d.short, d.email || "", d.city, d.token || tok(16), d.tracking || newTrackingCode(), d.budget,
+    `INSERT INTO sites (artisan_id, owner_id, currency, lat, lng, position_set_at, position_set_by, name, location, kind, client_name, client_short, client_email, client_city, client_token, tracking_code, budget, status, created_at, delivered_at, last_client_visit_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    artisanId, d.ownerId || null, d.currency || "EUR", d.lat ?? null, d.lng ?? null, d.lat != null ? iso(NOW - 40 * DAY) : null, d.lat != null ? all("SELECT contact_name FROM artisans WHERE id = ?", artisanId)[0].contact_name : null, d.name, d.location, d.kind, d.client, d.short, d.email || "", d.city, d.token || tok(16), d.tracking || newTrackingCode(), d.budget,
     d.deliveredDaysAgo != null ? "delivered" : "active", iso(createdAt), d.deliveredDaysAgo != null ? iso(anchor + DAY) : null, iso(NOW - (d.lastVisitH || 2) * H));
   const siteId = Number(r.lastInsertRowid);
 
@@ -86,7 +106,7 @@ function makeSite(artisanId, d) {
     const end = s.end || NOW;
     const custom = s.state === "c" && d.latest ? d.latest : null;
     if (custom) {
-      custom.forEach((p) => addPost(siteId, s.id, NOW - p.hAgo * H, p.text, d.kind, lvl, p.photos, p.seenAfterH));
+      custom.forEach((p) => addPost(siteId, s.id, NOW - p.hAgo * H, p.text, d.kind, lvl, p.photos, p.seenAfterH, p.warn));
     } else {
       const texts = phrasesFor(s.name);
       const n = Math.max(1, Math.min(texts.length, Math.round((end - s.start) / DAY / 4)));
@@ -197,7 +217,8 @@ async function main() {
         steps: [["Démolition", 5, 3, "c"], ["Gros œuvre", 20, 0, "f"], ["Plomberie", 8, 0, "f"], ["Électricité", 8, 0, "f"], ["Plâtrerie", 10, 0, "f"], ["Peinture", 8, 0, "f"]],
         latest: [{ hAgo: 8, text: "Benne livrée, dépose de l'ancienne véranda commencée.", photos: 1, seenAfterH: null }] }
     ];
-    euActive.forEach((s) => makeSite(eu, { ...s, currency: "EUR" }));
+    const lyon = euActive.map((s) => makeSite(eu, { ...s, currency: "EUR", lat: 45.7578, lng: 4.8320 }));
+    addLedger(lyon[2], [["versement", 11520, 30, "Acompte 30 %", "virement", eu], ["versement", 6000, 8, "Situation plomberie", "virement", eu], ["depense", 2380, 25, "Tableau électrique et disjoncteurs", "materiaux", eu, true]], "€");
 
     /* ---- Saly : gros œuvre pour la diaspora ---- */
     const EXT = [["Terrassement", 6], ["Fondations", 14], ["Élévation des murs", 18], ["Dalle et chaînage", 12], ["Toiture", 9], ["Menuiseries", 10], ["Enduits et finitions", 20]];
@@ -208,12 +229,12 @@ async function main() {
     ];
     afDone.forEach(([name, location, client, short, city, budget, ago]) => makeSite(af, delivered(EXT, afBias, { name, location, kind: "ext", client, short, city, budget, deliveredDaysAgo: ago, currency: "XOF", quoteLabel: "Gros œuvre et finitions" })));
     const afActive = [
-      { name: "Villa Ndiaye", location: "Saly, Sénégal", kind: "ext", client: "Awa Ndiaye", short: "Awa", city: "Paris", budget: 21700000, token: "demo-saly-awa", tracking: "ARC-SALY-2026", ownerId: client, quoteLabel: "Gros œuvre complet", readRate: 1,
+      { name: "Villa Ndiaye", location: "Saly, Sénégal", kind: "ext", client: "Awa Ndiaye", short: "Awa", city: "Paris", budget: 21700000, token: "demo-saly-awa", tracking: "ARC-SALY-2026", ownerId: client, quoteLabel: "Gros œuvre complet", readRate: 1, lat: 14.4472, lng: -17.0089,
         steps: [["Terrassement", 6, 6, "v"], ["Fondations", 14, 15, "v"], ["Soubassement", 7, 7, "a"], ["Élévation des murs", 14, 17, "c"], ["Dalle et chaînage", 12, 0, "f"], ["Toiture", 9, 0, "f"], ["Finitions", 20, 0, "f"]],
         latest: [{ hAgo: 0.8, text: "Murs du salon montés à 2,10 m. On attaque la chambre principale demain.", photos: 3, seenAfterH: 0.5 }, { hAgo: 20, text: "Livraison de 400 parpaings, stockés à l'abri.", photos: 0, seenAfterH: 1.5 }, { hAgo: 70, text: "Premières rangées montées sur tout le périmètre.", photos: 2, seenAfterH: 3 }] },
       { name: "Immeuble R+1", location: "Thiès, Sénégal", kind: "ext", client: "Ibrahima Kane", short: "Ibrahima", city: "Montréal", budget: 41000000, readRate: 0.8,
         steps: [["Terrassement", 6, 6, "v"], ["Fondations", 16, 21, "c"], ["Élévation des murs", 28, 0, "f"], ["Dalle et chaînage", 18, 0, "f"], ["Toiture-terrasse", 12, 0, "f"], ["Finitions", 30, 0, "f"]],
-        latest: [{ hAgo: 170, text: "Semelles coulées côté rue. Il reste le côté cour, retard dû aux pluies.", photos: 2, seenAfterH: 9 }] },
+        latest: [{ hAgo: 170, text: "Semelles coulées côté rue. Il reste le côté cour, retard dû aux pluies.", photos: 2, seenAfterH: 9, warn: true }] },
       { name: "Maison Diop", location: "Mbour, Sénégal", kind: "ext", client: "Cheikh Diop", short: "Cheikh", city: "Milan", budget: 26500000,
         steps: [["Terrassement", 6, 5, "v"], ["Fondations", 14, 14, "v"], ["Élévation des murs", 18, 18, "v"], ["Dalle et chaînage", 12, 12, "v"], ["Toiture", 9, 4, "c"], ["Menuiseries", 10, 0, "f"], ["Finitions", 20, 0, "f"]],
         latest: [{ hAgo: 28, text: "Charpente posée sur toute la longueur. Les tôles arrivent lundi.", photos: 3, seenAfterH: 3 }] },
@@ -221,15 +242,31 @@ async function main() {
         steps: [["Terrassement", 6, 3, "c"], ["Fondations", 14, 0, "f"], ["Élévation des murs", 18, 0, "f"], ["Dalle et chaînage", 12, 0, "f"], ["Toiture", 9, 0, "f"], ["Finitions", 20, 0, "f"]],
         latest: [{ hAgo: 50, text: "Implantation faite avec le géomètre, terrassement commencé.", photos: 2, seenAfterH: 1 }] }
     ];
-    afActive.forEach((s) => makeSite(af, { ...s, currency: "XOF" }));
+    const [villa] = afActive.map((s) => makeSite(af, { ...s, currency: "XOF" }));
+    // Villa Ndiaye : échéancier par étape, versements d'Awa et dépenses de Sarr Construction avec reçus.
+    // Awa a versé 60 % du budget pour un peu moins de la moitié des travaux : l'alerte apparaît.
+    [3640000, 4340000, 2170000, 4340000, 3255000, 2170000, 1785000].forEach((amount, i) => run("UPDATE steps SET amount = ? WHERE site_id = ? AND position = ?", amount, villa, i + 1));
+    addLedger(villa, [
+      ["versement", 6510000, 62, "Acompte de démarrage", "virement", client], ["versement", 4340000, 30, "Fondations", "wave", client], ["versement", 3270000, 6, "Soubassement et murs", "orange_money", client],
+      ["depense", 1980000, 58, "Ciment, 360 sacs", "materiaux", af, true], ["depense", 1250000, 40, "Fer à béton", "materiaux", af, true], ["depense", 420000, 39, "Sable, 2 camions", "transport", af, true, "Noté deux fois par erreur"],
+      ["depense", 420000, 39, "Sable, 2 camions", "transport", af, true], ["depense", 1650000, 21, "Paie des maçons, 3 semaines", "main_oeuvre", af], ["depense", 1600000, 4, "Parpaings, 400 pièces", "materiaux", af, true]
+    ], "FCFA");
 
     /* ---- Espace client d'Awa ---- */
     // Maison familiale confiée à Ousmane, son frère sur place : il publie, Awa paie l'offre (ici, l'essai Premium).
-    makeSite(proche, { name: "Maison familiale", location: "Thiès, Sénégal", kind: "ext", client: "Awa Ndiaye", short: "Awa", email: "demo-client@archfield.app", city: "Paris", budget: 0, ownerId: client, tracking: "ARC-THES-FAM2", currency: "EUR",
+    const famille = makeSite(proche, { name: "Maison familiale", location: "Thiès, Sénégal", kind: "ext", client: "Awa Ndiaye", short: "Awa", email: "demo-client@archfield.app", city: "Paris", budget: 12500000, ownerId: client, tracking: "ARC-THES-FAM2", currency: "XOF", lat: 14.7910, lng: -16.9359,
       steps: [["Terrassement", 5, 5, "v"], ["Fondations", 12, 14, "c"], ["Élévation des murs", 16, 0, "f"], ["Dalle et chaînage", 10, 0, "f"], ["Toiture", 8, 0, "f"]],
       latest: [{ hAgo: 3, text: "Le ferrailleur a fini côté cour. Coulage des semelles demain si le camion arrive.", photos: 2, seenAfterH: 0.4 }, { hAgo: 50, text: "Fouilles terminées, j'ai vérifié les niveaux avec le maçon.", photos: 2, seenAfterH: 2 }] });
+    // Ousmane gère l'argent envoyé par Awa : chaque achat est noté avec son reçu.
+    addLedger(famille, [
+      ["versement", 2500000, 40, "Pour le terrassement et les fondations", "wave", client], ["versement", 1500000, 9, "Fer et ciment", "wave", client],
+      ["depense", 650000, 38, "Terrassement, location de pelleteuse", "main_oeuvre", proche, true], ["depense", 1340000, 20, "Ciment, 240 sacs", "materiaux", proche, true],
+      ["depense", 980000, 8, "Fer à béton", "materiaux", proche, true], ["depense", 120000, 2, "Transport du fer", "transport", proche]
+    ], "FCFA");
+    run("UPDATE steps SET amount = ? WHERE site_id = ? AND position = 1", 2500000, famille);
+
     // Extension pas encore confiée : Awa a invité une entreprise, en attente de réponse.
-    const ext = makeSite(client, { name: "Extension", location: "Rufisque, Sénégal", kind: "ext", client: "Awa Ndiaye", short: "Awa", email: "demo-client@archfield.app", city: "Paris", budget: 0, ownerId: client, tracking: "ARC-RUFQ-EXT3", currency: "EUR",
+    const ext = makeSite(client, { name: "Extension", location: "Rufisque, Sénégal", kind: "ext", client: "Awa Ndiaye", short: "Awa", email: "demo-client@archfield.app", city: "Paris", budget: 0, ownerId: client, tracking: "ARC-RUFQ-EXT3", currency: "XOF",
       steps: [["Terrassement", 4, 0, "f"], ["Fondations", 10, 0, "f"], ["Élévation des murs", 12, 0, "f"], ["Toiture", 7, 0, "f"]] });
     run("INSERT INTO invitations (code, site_id, kind, invitee_name, created_by, created_at) VALUES ('INV-DEMO-RUFQ', ?, 'pro', 'Entreprise Diallo BTP', ?, ?)", ext, client, iso(NOW - 26 * H));
   });

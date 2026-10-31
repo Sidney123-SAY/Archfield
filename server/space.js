@@ -1,19 +1,23 @@
 // Espace client : le propriétaire retrouve tous ses chantiers (numéro de suivi), crée les siens et les confie
-// à une entreprise ou à un proche par invitation. Suivre est gratuit ; confier à un proche demande Basic ou Premium.
+// à une entreprise ou à un proche par invitation. Suivre le journal est gratuit ; l'offre Plus ajoute le suivi
+// de l'argent (versements, dépenses, alertes), les proches qui publient et les visites de contrôle.
 const { all, get, run, tx, readableCode, newTrackingCode } = require("./db");
 const { siteWithSummary, DAY } = require("./analytics");
 
+const { moneyOf } = require("./money");
+const { sendMail, BASE_URL } = require("./mail");
+
 const CLIENT_PLANS = {
   free: { slots: 0 },
-  basic: { slots: 1, eu: "4,99 €", af: "2 500 FCFA" },
-  premium: { slots: 5, eu: "9,99 €", af: "5 000 FCFA" }
+  plus: { slots: 5, eu: "9,99 €", af: "5 000 FCFA" }
 };
 const CLIENT_TRIAL_DAYS = 61;
+const PAID_PLANS = ["plus", "basic", "premium"]; // basic et premium : anciennes offres, devenues Plus
 
-// Offre en vigueur : payée, sinon essai Premium de 2 mois, sinon gratuite.
+// Offre en vigueur : payée, sinon essai Plus de 2 mois, sinon gratuite.
 function clientPlan(a, now = Date.now()) {
-  if (a.paid_until && Date.parse(a.paid_until) > now && CLIENT_PLANS[a.plan]) return { plan: a.plan, status: "paid", until: a.paid_until };
-  if (Date.parse(a.trial_ends_at) > now) return { plan: "premium", status: "trial", until: a.trial_ends_at, days_left: Math.ceil((Date.parse(a.trial_ends_at) - now) / DAY) };
+  if (a.paid_until && Date.parse(a.paid_until) > now && PAID_PLANS.includes(a.plan)) return { plan: "plus", status: "paid", until: a.paid_until };
+  if (Date.parse(a.trial_ends_at) > now) return { plan: "plus", status: "trial", until: a.trial_ends_at, days_left: Math.ceil((Date.parse(a.trial_ends_at) - now) / DAY) };
   return { plan: "free", status: "free", until: null };
 }
 // Proches qui gèrent un chantier du client (comptés une fois chacun).
@@ -22,9 +26,9 @@ const prochesOf = (ownerId) => all(
    WHERE s.owner_id = ? AND a.account_type = 'proche'`, ownerId);
 function clientInfo(a) {
   const p = clientPlan(a);
-  return { ...p, slots: CLIENT_PLANS[p.plan].slots, used: prochesOf(a.id).length, prices: { basic: CLIENT_PLANS.basic[a.market], premium: CLIENT_PLANS.premium[a.market] } };
+  return { ...p, slots: CLIENT_PLANS[p.plan].slots, used: prochesOf(a.id).length, prices: { plus: CLIENT_PLANS.plus[a.market] } };
 }
-// Un proche ne peut publier que si le propriétaire du chantier a une offre Basic ou Premium active.
+// Un proche ne peut publier que si le propriétaire du chantier a l'offre Plus (ou son essai).
 const prochePublishAllowed = (site) => {
   const owner = site.owner_id && get("SELECT * FROM artisans WHERE id = ?", site.owner_id);
   return !!owner && clientPlan(owner).plan !== "free";
@@ -39,6 +43,7 @@ const openInvitations = (siteId) => all("SELECT code, kind, invitee_name, create
 
 function mount(app, api, h) {
   const { fail, str, num, wrap, limit, nowIso, token } = h;
+  const visitsOf = (siteId) => all("SELECT id, wished_date, note, status, created_at FROM visit_requests WHERE site_id = ? ORDER BY created_at DESC", siteId);
   const onlyClient = (req) => { if (req.artisan.account_type !== "client") fail(403, "Cette page est réservée à l'espace client."); };
   const ownedSite = (req, id) => {
     const s = get("SELECT * FROM sites WHERE id = ? AND owner_id = ?", Number(id), req.artisan.id);
@@ -53,7 +58,11 @@ function mount(app, api, h) {
       const x = siteWithSummary(s);
       const last = get("SELECT MAX(created_at) AS d FROM updates WHERE site_id = ? AND kind = 'post'", s.id).d;
       const unseen = get("SELECT COUNT(*) AS n FROM updates WHERE site_id = ? AND kind = 'post' AND seen_at IS NULL", s.id).n;
-      return { ...x, last_update_at: last, unseen, manager: managerOf(s), self_managed: s.artisan_id === s.owner_id, invitations: openInvitations(s.id) };
+      return {
+        ...x, lat: undefined, lng: undefined, last_update_at: last, unseen, manager: managerOf(s), self_managed: s.artisan_id === s.owner_id, invitations: openInvitations(s.id),
+        money: moneyOf(s, `/c/${s.client_token}/media/`, x.progress), visits: visitsOf(s.id),
+        position: s.lat != null ? { set_at: s.position_set_at, set_by: s.position_set_by } : null
+      };
     });
     res.json({ sites, plan: clientInfo(req.artisan) });
   });
@@ -78,8 +87,8 @@ function mount(app, api, h) {
     if (steps.length > 30) fail(400, "30 étapes au maximum.");
     const id = tx(() => {
       const r = run(
-        `INSERT INTO sites (artisan_id, owner_id, name, location, kind, client_name, client_short, client_email, client_city, client_token, tracking_code, budget, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        a.id, a.id, str(b.name, 120, "nom du chantier"), str(b.location, 120, "lieu", false), b.kind === "int" ? "int" : "ext",
+        `INSERT INTO sites (artisan_id, owner_id, currency, name, location, kind, client_name, client_short, client_email, client_city, client_token, tracking_code, budget, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        a.id, a.id, ["EUR", "XOF", "XAF"].includes(b.currency) ? b.currency : a.currency, str(b.name, 120, "nom du chantier"), str(b.location, 120, "lieu", false), b.kind === "int" ? "int" : "ext",
         a.contact_name, a.contact_name.split(" ")[0], a.email, a.city || "", token(16), newTrackingCode(), Math.round(num(b.budget || 0, "budget")), nowIso());
       const siteId = Number(r.lastInsertRowid);
       steps.forEach((s, i) => run("INSERT INTO steps (site_id, position, name, planned_days) VALUES (?, ?, ?, ?)", siteId, i + 1, str(s.name, 80, "étape"), num(s.planned_days, "durée prévue", 0.5, 365)));
@@ -95,9 +104,9 @@ function mount(app, api, h) {
     const kind = req.body?.kind === "proche" ? "proche" : "pro";
     if (kind === "proche") {
       const info = clientInfo(req.artisan);
-      if (info.plan === "free") fail(402, "Confier un chantier à un proche demande l'offre Basic ou Premium.");
+      if (info.plan === "free") fail(402, "Confier un chantier à un proche demande l'offre Plus.");
       const pendingProche = get(`SELECT COUNT(*) AS n FROM invitations i JOIN sites s ON s.id = i.site_id WHERE s.owner_id = ? AND i.kind = 'proche' AND i.accepted_at IS NULL AND i.revoked_at IS NULL`, req.artisan.id).n;
-      if (info.used + pendingProche >= info.slots) fail(402, `Votre offre permet ${info.slots} proche(s). Passez à Premium ou annulez une invitation en attente.`);
+      if (info.used + pendingProche >= info.slots) fail(402, `Votre offre permet ${info.slots} proches. Annulez une invitation en attente pour en inviter un autre.`);
     }
     run("UPDATE invitations SET revoked_at = ? WHERE site_id = ? AND accepted_at IS NULL AND revoked_at IS NULL", nowIso(), s.id);
     const code = readableCode("INV");
@@ -123,6 +132,27 @@ function mount(app, api, h) {
     const s = ownedSite(req, req.params.id);
     if (s.artisan_id === req.artisan.id) fail(409, "Ce chantier est le vôtre : supprimez-le depuis sa page.");
     run("UPDATE sites SET owner_id = NULL WHERE id = ?", s.id);
+    res.json({ ok: true });
+  });
+  // Demande de visite de contrôle : une personne de confiance passe sur le chantier et fait un compte rendu.
+  // L'équipe Archfield est prévenue par e-mail (CONTACT_EMAIL) et rappelle le client avec un prix.
+  api.post("/client/sites/:id/visits", limit("visit", 10, 24 * 60 * 60e3, (req) => "a" + req.artisan.id), wrap(async (req, res) => {
+    onlyClient(req);
+    const s = ownedSite(req, req.params.id), b = req.body || {}, a = req.artisan;
+    const wished = str(b.wished_date, 10, "date souhaitée", false);
+    if (wished && !/^\d{4}-\d{2}-\d{2}$/.test(wished)) fail(400, "La date doit être au format AAAA-MM-JJ.");
+    const phone = str(b.phone, 30, "téléphone", false), note = str(b.note, 1000, "précisions", false);
+    run("INSERT INTO visit_requests (site_id, requested_by, wished_date, phone, note, created_at) VALUES (?, ?, ?, ?, ?, ?)", s.id, a.id, wished, phone, note, nowIso());
+    if (process.env.CONTACT_EMAIL) await sendMail({
+      to: process.env.CONTACT_EMAIL, subject: `Visite de contrôle demandée : ${s.name} (${s.location || "lieu non précisé"})`,
+      text: `${a.contact_name} (${a.email}${phone ? ", " + phone : ""}) demande une visite de contrôle.\n\nChantier : ${s.name}\nLieu : ${s.location || "non précisé"}\nNuméro de suivi : ${s.tracking_code}\nDate souhaitée : ${wished || "dès que possible"}\n\n${note}\n\nSuivi du chantier : ${BASE_URL}/c/${s.client_token}`
+    }).catch(() => {});
+    res.status(201).json({ ok: true });
+  }));
+  // Le propriétaire efface la position du chantier (enregistrée par erreur) : la prochaine publication la refixe.
+  api.post("/client/sites/:id/position/reset", (req, res) => {
+    onlyClient(req);
+    run("UPDATE sites SET lat = NULL, lng = NULL, position_set_at = NULL, position_set_by = NULL WHERE id = ?", ownedSite(req, req.params.id).id);
     res.json({ ok: true });
   });
   api.get("/client/sites/:id/link", (req, res) => { onlyClient(req); res.json({ client_token: ownedSite(req, req.params.id).client_token }); });

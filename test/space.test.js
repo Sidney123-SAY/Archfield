@@ -31,24 +31,24 @@ const post = (u, text) => { const f = new FormData(); f.append("text", text); re
 
 test("le client suit, crée, confie à un proche puis à une entreprise", async () => {
   const awa = user();
-  assert.equal((await awa.call("POST", "/api/signup", { account_type: "client", country: "FR", contact_name: "Awa Ndiaye", email: "awa@example.com", password: "motdepasse" })).status, 201);
+  assert.equal((await awa.call("POST", "/api/signup", { account_type: "client", country: "FR", contact_name: "Awa Ndiaye", email: "awa@example.com", password: "chantier-2026" })).status, 201);
   const me = (await awa.call("GET", "/api/me")).data;
   assert.equal(me.account_type, "client");
-  assert.equal(me.client.plan, "premium");
+  assert.equal(me.client.plan, "plus");
   assert.equal(me.client.status, "trial");
-  assert.equal(me.client.prices.basic, "4,99 €");
+  assert.equal(me.client.prices.plus, "9,99 €");
   assert.equal((await awa.call("POST", "/api/sites", { name: "X", client_name: "Y", steps: [{ name: "A", planned_days: 1 }] })).status, 403);
 
   // Chantier géré par une entreprise : rattaché grâce au numéro de suivi.
   const pro = user();
-  await pro.call("POST", "/api/signup", { country: "SN", company: "Sarr Construction", contact_name: "Moussa", email: "sarr@example.com", password: "motdepasse" });
+  await pro.call("POST", "/api/signup", { country: "SN", company: "Sarr Construction", contact_name: "Moussa", email: "sarr@example.com", password: "chantier-2026" });
   const villa = (await pro.call("POST", "/api/sites", { name: "Villa", client_name: "Awa", steps: [{ name: "Murs", planned_days: 10 }], start_now: true })).data;
   const code = (await pro.call("GET", `/api/sites/${villa.id}`)).data.tracking_code;
   assert.match(code, /^ARC-\w{4}-\w{4}$/);
   assert.equal((await awa.call("POST", "/api/client/claim", { code: "ARC-AAAA-AAAA" })).status, 404);
   assert.equal((await awa.call("POST", "/api/client/claim", { code: code.toLowerCase().replace(/-/g, " ") })).status, 200);
   const other = user();
-  await other.call("POST", "/api/signup", { account_type: "client", contact_name: "Autre", email: "autre@example.com", password: "motdepasse" });
+  await other.call("POST", "/api/signup", { account_type: "client", contact_name: "Autre", email: "autre@example.com", password: "chantier-2026" });
   assert.equal((await other.call("POST", "/api/client/claim", { code })).status, 409);
   assert.equal((await pro.call("GET", `/api/sites/${villa.id}`)).data.owner, "Awa Ndiaye");
   assert.equal((await pro.call("DELETE", `/api/sites/${villa.id}`)).status, 409, "l'entreprise ne supprime pas le chantier du client");
@@ -65,8 +65,8 @@ test("le client suit, crée, confie à un proche puis à une entreprise", async 
   assert.equal(pub.data.kind, "proche");
 
   const ousmane = user();
-  assert.equal((await ousmane.call("POST", "/api/signup", { account_type: "proche", contact_name: "Ousmane", email: "ousmane@example.com", password: "motdepasse" })).status, 400, "pas de compte proche sans invitation");
-  assert.equal((await ousmane.call("POST", "/api/signup", { invite_code: inv.code, contact_name: "Ousmane Ndiaye", email: "ousmane@example.com", password: "motdepasse" })).status, 201);
+  assert.equal((await ousmane.call("POST", "/api/signup", { account_type: "proche", contact_name: "Ousmane", email: "ousmane@example.com", password: "chantier-2026" })).status, 400, "pas de compte proche sans invitation");
+  assert.equal((await ousmane.call("POST", "/api/signup", { invite_code: inv.code, contact_name: "Ousmane Ndiaye", email: "ousmane@example.com", password: "chantier-2026" })).status, 201);
   const om = (await ousmane.call("GET", "/api/me")).data;
   assert.equal(om.account_type, "proche");
   assert.deepEqual(om.sponsors, ["Awa Ndiaye"]);
@@ -83,14 +83,11 @@ test("le client suit, crée, confie à un proche puis à une entreprise", async 
   assert.equal(m.unseen, 1);
   assert.equal(list.plan.used, 1);
 
-  // Offre Basic : un seul proche.
+  // Sans offre Plus (essai fini, rien payé) : pas de nouveau proche, le proche ne publie plus ; le client garde l'accès.
   const awaId = get("SELECT id FROM artisans WHERE email = 'awa@example.com'").id;
-  run("UPDATE artisans SET plan = 'basic', paid_until = ?, trial_ends_at = ? WHERE id = ?", new Date(Date.now() + 30 * 864e5).toISOString(), new Date(Date.now() - 864e5).toISOString(), awaId);
+  run("UPDATE artisans SET paid_until = NULL, trial_ends_at = ? WHERE id = ?", new Date(Date.now() - 864e5).toISOString(), awaId);
   const ext = (await awa.call("POST", "/api/client/sites", { name: "Extension", steps: [{ name: "Murs", planned_days: 8 }] })).data;
   assert.equal((await awa.call("POST", `/api/client/sites/${ext.id}/invite`, { kind: "proche" })).status, 402);
-
-  // Sans offre, le proche ne peut plus publier ; le client garde l'accès.
-  run("UPDATE artisans SET paid_until = NULL WHERE id = ?", awaId);
   assert.equal((await post(ousmane, "Après l'offre.")).status, 402);
   assert.equal((await awa.call("GET", "/api/client/sites")).data.plan.plan, "free");
 

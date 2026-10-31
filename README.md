@@ -17,16 +17,17 @@ L'artisan (ou l'entreprise du BTP) publie l'avancement depuis son téléphone en
 
 ## La data
 
-Chaque photo, étape et date devient une donnée. L'artisan voit quelles étapes prennent plus de temps que prévu, reçoit une alerte quand un chantier dérape, et obtient un indice de fiabilité basé sur ses chantiers réellement livrés.
+Chaque photo garde sa date et son lieu de prise de vue, et chaque franc versé est comparé à l'avancement réel : le client sait s'il paie plus vite que les travaux n'avancent. Les retards d'étape déclenchent aussi une alerte.
 
 ## Modèle économique
 
-L'artisan s'abonne, pas le client : 2 mois gratuits, puis 19 €/mois en Europe ou 9 900 FCFA/mois en Afrique de l'Ouest et centrale.
+Celui qui fait construire paie l'offre Plus (9,99 € ou 5 000 FCFA par mois, 2 mois offerts) ; les entreprises et les proches qui publient ne paient pas.
 
 ## Marchés
 
-- Europe : artisans et clients pressés ou à distance.
-- Afrique de l'Ouest et centrale : entreprises du BTP qui construisent pour des clients de la diaspora.
+- La diaspora qui construit au pays (Sénégal, Côte d'Ivoire, Cameroun, Mali…) depuis l'Europe ou l'Amérique.
+- En Afrique de l'Ouest et centrale : salariés, cadres et chefs d'entreprise sans temps pour aller sur le chantier, ou dont le terrain est loin de la ville.
+- Les entreprises du BTP qui veulent rassurer leurs clients (gratuit pour elles). L'Europe (rénovation) reste possible mais n'est pas la cible du test.
 
 ## Lancer l'application (MVP)
 
@@ -65,7 +66,7 @@ L'installation demande le HTTPS : elle marche une fois le site en ligne (ou sur 
 
 `npm run qa` démarre un serveur sur une base de démo jetable, ouvre chaque écran avec chaque compte de démo (ordinateur et téléphone, français et anglais), clique sur chaque bouton sans danger et liste : erreurs JavaScript, requêtes en échec, liens cassés, boutons sans effet, pages plus larges que l'écran, textes restés en français dans la version anglaise. Compter une vingtaine de minutes.
 
-`npm run parcours` joue 25 parcours complets comme un vrai utilisateur, en remplissant chaque formulaire : inscriptions (entreprise avec SIRET, client, proche invité), chantier, publication avec photo, étapes, devis et factures, validation par le client, numéro de suivi, invitation, cookies, langue, compte et suppression. Environ une minute.
+`npm run parcours` joue 29 parcours complets comme un vrai utilisateur, en remplissant chaque formulaire : inscriptions (entreprise avec SIRET, client, proche invité), chantier, publication avec photo vérifiée, publication sans réseau, étapes, argent (dépenses avec reçu, versements, annulation), devis et factures, validation par le client, visite de contrôle, numéro de suivi, invitation, cookies, langue, compte et suppression. Environ une minute.
 
 ### Captures de la page d'accueil
 
@@ -73,24 +74,27 @@ Les images de `public/img` sont de vraies captures de l'application (français e
 
 ### Ce que fait le MVP
 
-- **Artisan** : inscription avec 2 mois d'essai, création de chantiers avec étapes et durées prévues (modèles construction ou rénovation), publication de photos datées et d'une phrase depuis le téléphone (photos allégées dans le navigateur avant l'envoi), étapes à démarrer, terminer ou rouvrir, devis et factures, lien privé à copier ou envoyer par WhatsApp, accusé « Vu par … », chantier livré.
-- **Client** : lien privé sans compte, journal photo, validation des étapes (l'étape suivante démarre alors toute seule), devis et factures, rapports du lundi.
-- **Données** : alertes quand l'étape en cours dépasse de plus de 20 % sa durée prévue, durée prévue et réelle par type d'étape sur 12 mois, indice de fiabilité calculé sur les chantiers livrés (étape dans les délais à 10 % près), taux de lecture des rapports, export CSV.
+- **Qui paie** : celui qui fait construire, avec l'offre **Plus** (9,99 € ou 5 000 FCFA par mois, 2 mois offerts). Les entreprises du BTP et les proches qui publient utilisent Archfield **gratuitement**.
+- **Publier (entreprise ou proche)** : chantiers avec étapes et durées prévues (modèles construction ou rénovation), photos prises sur place ou choisies dans la galerie, allégées dans le navigateur avant l'envoi, et une phrase. Étapes à démarrer, terminer ou rouvrir, lien privé à envoyer par WhatsApp, accusé « Vu par … », chantier livré.
+- **Photos vérifiées** : la date de prise de vue et la position GPS de chaque photo sont lues dans le téléphone avant l'envoi, et la position du téléphone est demandée au moment de publier. La première publication géolocalisée enregistre la position du chantier ; chaque publication est ensuite marquée « Vérifiée », « Vérification partielle » ou « À vérifier » (photo de plus de 3 jours, ou prise à plus de 500 m du chantier, précision du GPS en plus). Voir `server/verify.js`. Ce n'est pas infalsifiable (un fraudeur équipé peut tricher), mais une vieille photo ou une photo prise ailleurs se voit.
+- **Argent** : budget (devis signés), versements du propriétaire (Wave, Orange Money, MTN MoMo, virement, espèces), dépenses du gestionnaire avec photo du reçu, versement prévu par étape (échéancier). Archfield compare le versé à l'avancement et alerte quand le propriétaire a versé plus de 15 points de plus que les travaux réalisés. Une ligne ne s'efface jamais : son auteur peut l'annuler, et l'annulation reste visible avec la date et le motif. Monnaie propre à chaque chantier (euro, franc CFA de l'Ouest ou du Centre).
+- **Sans réseau** : sur un chantier sans couverture, la publication (texte, photos, position) est gardée sur le téléphone et part toute seule dès que le réseau revient.
+- **Visite de contrôle** : depuis son espace, le client demande qu'une personne de confiance passe sur le chantier. La demande est enregistrée et envoyée par e-mail à `CONTACT_EMAIL`, qui rappelle le client avec un prix.
+- **Client sans compte** : lien privé avec le journal photo, les preuves, la validation des étapes (l'étape suivante démarre alors toute seule), l'onglet Argent en lecture et les rapports du lundi.
 - **Rapport du lundi** : généré chaque lundi à 7 h UTC pour chaque chantier actif, envoyé par e-mail si `SMTP_URL` est configuré, toujours visible sur le lien du client.
 - **Client prévenu** : e-mail à chaque mise à jour (au plus un toutes les 3 heures) si son e-mail est renseigné, et bouton « Prévenir sur WhatsApp » après chaque publication.
-- **Compte** : mot de passe oublié (lien valable une heure), changement de mot de passe, export de toutes les données (JSON), suppression du chantier ou du compte avec effacement des photos.
-- **Abonnement** : à la fin des 2 mois d'essai, l'artisan peut encore consulter ses chantiers mais plus publier ; ses clients gardent l'accès. En attendant le paiement en ligne, un abonnement s'active à la main : `npm run activate -- artisan@example.com 1` (1 mois).
-- **Sécurité** : photos visibles seulement par l'artisan du chantier et par le lien du client, photos d'iPhone (HEIC) converties en JPEG, en-têtes de sécurité (CSP, anti-iframe), limites de requêtes, refus des requêtes venant d'autres sites.
-- **Thème** : clair, sombre, ou celui du système (par défaut), au choix dans « Abonnement et compte » et en bas de chaque page.
+- **Compte** : mot de passe oublié (lien valable une heure), changement de mot de passe, « Déconnecter mes autres appareils », export de toutes les données (JSON), suppression du chantier ou du compte avec effacement des photos et des reçus.
+- **Retirés de l'écran pour le test** (le code reste dans `server/analytics.js`) : graphique des durées par type d'étape, indice de fiabilité, export CSV. Ils reviendront quand il y aura assez de chantiers.
+- **Sécurité** : voir [deploy/SECURITE.md](deploy/SECURITE.md).
 
 ### Espace client, numéro de suivi et proches
 
-- **Trois types de compte** : entreprise ou artisan (publie, paie 19 € ou 9 900 FCFA par mois), client (suit ses chantiers, gratuit) et proche (particulier invité par un client, publie gratuitement).
+- **Trois types de compte** : entreprise ou artisan (publie, gratuit), client (suit ses chantiers et son argent, offre Gratuit ou Plus) et proche (particulier invité par un client, publie et note les dépenses gratuitement).
 - **Numéro de suivi** : chaque chantier a un numéro du type `ARC-7K3Q-9XW2`. Le client l'ajoute dans son espace (« Ajouter avec un numéro de suivi ») et retrouve tous ses chantiers au même endroit, quel que soit l'artisan.
-- **Confier un chantier** : le client crée son chantier, puis génère une invitation (lien `/invitation/INV-…` ou code) pour une entreprise (gratuit pour lui) ou pour un proche sur place.
-- **Offres client** : Gratuit (suivre), Basic 4,99 € ou 2 500 FCFA (1 proche), Premium 9,99 € ou 5 000 FCFA (jusqu'à 5 proches), avec 2 mois d'essai Premium. Sans offre active, le proche ne peut plus publier. Activation manuelle en attendant le paiement : `npm run activate -- client@example.com 1 premium`.
-- L'entreprise ou le proche ne peut pas supprimer un chantier qui appartient à un client : il peut seulement le lui rendre. Le client peut reprendre la main à tout moment.
-- Démo : `demo-client@archfield.app` (Awa, à Paris, 3 chantiers) et `demo-proche@archfield.app` (Ousmane, son frère à Thiès), mot de passe `archfield-demo`.
+- **Confier un chantier** : le client crée son chantier, puis génère une invitation (lien `/invitation/INV-…` ou code) pour une entreprise ou pour un proche sur place.
+- **Offres client** : Gratuit (journal, photos vérifiées, étapes, devis, rapports) et Plus (suivi de l'argent, jusqu'à 5 proches, visites de contrôle), avec 2 mois d'essai Plus. Sans Plus, le proche ne peut plus publier et le propriétaire ne note plus ses versements. Activation manuelle en attendant le paiement en ligne : `npm run activate -- client@example.com 1` (1 mois).
+- L'entreprise ou le proche ne peut pas supprimer un chantier qui appartient à un client : il peut seulement le lui rendre. Le client peut reprendre la main à tout moment, et lui seul peut effacer la position enregistrée de son chantier.
+- Démo : `demo-client@archfield.app` (Awa, à Paris, 3 chantiers, dont la Villa Ndiaye avec l'alerte « versé plus que construit ») et `demo-proche@archfield.app` (Ousmane, son frère à Thiès, qui note les dépenses avec reçus), mot de passe `archfield-demo`.
 
 ### Inscription, langues, thème et cookies
 

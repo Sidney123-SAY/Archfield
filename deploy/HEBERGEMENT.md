@@ -42,6 +42,8 @@ sudo usermod -aG docker ubuntu
 sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
 sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
 sudo netfilter-persistent save
+# Sécurité : mises à jour automatiques d'Ubuntu et blocage des attaques sur SSH
+sudo apt install -y unattended-upgrades fail2ban
 exit
 ```
 
@@ -64,11 +66,15 @@ Dans `.env`, changez au minimum (Ctrl+O pour enregistrer, Ctrl+X pour quitter) :
 DOMAIN=archfield.duckdns.org
 BASE_URL=https://archfield.duckdns.org
 DEMO=off
+CONTACT_EMAIL=votre-adresse@example.com
 ```
 
-Lancez :
+`CONTACT_EMAIL` reçoit les demandes de visite de contrôle (il faut aussi le service d'e-mails, étape 7).
+
+Protégez ce fichier (il contiendra vos mots de passe d'e-mail et de Google), puis lancez :
 
 ```bash
+chmod 600 .env
 docker compose up -d --build
 ```
 
@@ -116,6 +122,10 @@ L'application redémarre en quelques secondes ; les données et les comptes rest
 - **E-mails** (mot de passe oublié, rapports du lundi) : créez un compte gratuit chez Brevo, récupérez les identifiants SMTP, enlevez le `#` devant les lignes `SMTP_URL` et `MAIL_FROM` de `.env` et remplissez-les : `SMTP_URL=smtp://identifiant:clé@smtp-relay.brevo.com:587` et `MAIL_FROM=Archfield <votre-adresse>`, puis `docker compose up -d`.
 - **Connexion avec Google** : `GOOGLE_CLIENT_ID` et `GOOGLE_CLIENT_SECRET` dans `.env` (voir le README), avec l'adresse de retour `https://votre-domaine/auth/google/callback`.
 - **Être prévenu si le site tombe** : UptimeRobot (gratuit) sur `https://votre-domaine/healthz`.
+
+## Sécurité
+
+Ce qui protège le site, ses limites et la liste à suivre sur le serveur : [SECURITE.md](SECURITE.md).
 
 ## En cas de souci
 

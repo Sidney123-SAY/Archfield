@@ -153,6 +153,59 @@ CREATE TABLE IF NOT EXISTS invitations (
 );
 `);
 
+// Argent, preuves et visites.
+// - ledger : versements du client et dépenses du gestionnaire (reçu en photo). On n'efface jamais une ligne :
+//   une annulation reste visible avec son auteur et sa date, pour que personne ne fasse disparaître une dépense.
+// - steps.amount : versement prévu quand l'étape est validée (échéancier).
+// - sites.lat/lng : position du chantier, enregistrée à la première publication géolocalisée.
+// - updates.verify : photo vérifiée (date de prise de vue et position), partielle ou suspecte.
+addColumn("steps", "amount", "INTEGER NOT NULL DEFAULT 0");
+addColumn("sites", "currency", "TEXT");
+addColumn("sites", "lat", "REAL");
+addColumn("sites", "lng", "REAL");
+addColumn("sites", "position_set_at", "TEXT");
+addColumn("sites", "position_set_by", "TEXT");
+addColumn("updates", "lat", "REAL");
+addColumn("updates", "lng", "REAL");
+addColumn("updates", "accuracy", "REAL");
+addColumn("updates", "verify", "TEXT");
+addColumn("updates", "verify_note", "TEXT");
+addColumn("photos", "shot_at", "TEXT");
+addColumn("photos", "shot_lat", "REAL");
+addColumn("photos", "shot_lng", "REAL");
+db.exec(`
+CREATE TABLE IF NOT EXISTS ledger (
+  id INTEGER PRIMARY KEY,
+  site_id INTEGER NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('versement', 'depense')),
+  amount INTEGER NOT NULL,
+  label TEXT NOT NULL DEFAULT '',
+  category TEXT NOT NULL DEFAULT '',
+  entry_date TEXT NOT NULL,
+  step_id INTEGER REFERENCES steps(id) ON DELETE SET NULL,
+  receipt_file TEXT,
+  created_by INTEGER REFERENCES artisans(id) ON DELETE SET NULL,
+  created_by_name TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  cancelled_at TEXT,
+  cancelled_by_name TEXT,
+  cancel_reason TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_ledger_site ON ledger(site_id, entry_date);
+CREATE TABLE IF NOT EXISTS visit_requests (
+  id INTEGER PRIMARY KEY,
+  site_id INTEGER NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+  requested_by INTEGER REFERENCES artisans(id) ON DELETE SET NULL,
+  wished_date TEXT NOT NULL DEFAULT '',
+  phone TEXT NOT NULL DEFAULT '',
+  note TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'demandee',
+  created_at TEXT NOT NULL
+);
+`);
+// Monnaie propre au chantier : un client à Paris peut construire en FCFA à Thiès.
+db.exec("UPDATE sites SET currency = (SELECT currency FROM artisans WHERE artisans.id = sites.artisan_id) WHERE currency IS NULL");
+
 // Codes lisibles à dicter ou recopier : sans 0/O, 1/I/L. 31^8 combinaisons par code.
 const ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
 function readableCode(prefix) {

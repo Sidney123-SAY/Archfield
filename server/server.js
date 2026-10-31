@@ -12,14 +12,15 @@ const { sendReport, startScheduler } = require("./reports");
 const { sendMail, BASE_URL } = require("./mail");
 const { checkCompany, publicCountries, siret: checkSiret, COUNTRIES } = require("./company");
 const space = require("./space");
+const money = require("./money");
+const { verify, cleanMeta } = require("./verify");
 const { newTrackingCode } = require("./db");
 
 const PORT = Number(process.env.PORT || 3000);
 const PROD = process.env.NODE_ENV === "production";
 const PUBLIC = path.join(__dirname, "..", "public");
-const TRIAL_DAYS = 61;
+const TRIAL_DAYS = 61; // durée d'essai enregistrée à l'inscription (l'offre Plus pour un client)
 const NOTIFY_EVERY_H = 3; // au plus un e-mail « nouvelle mise à jour » toutes les 3 heures par chantier
-const MARKETS = { eu: { price: "19 €" }, af: { price: "9 900 FCFA" } };
 const TEMPLATES = {
   ext: [["Terrassement", 6], ["Fondations", 14], ["Soubassement", 7], ["Élévation des murs", 18], ["Dalle et chaînage", 12], ["Toiture", 9], ["Menuiseries", 10], ["Enduits et finitions", 20]],
   int: [["Démolition", 3], ["Plomberie", 5], ["Électricité", 4], ["Plâtrerie", 6], ["Carrelage", 4], ["Peinture", 4]]
@@ -33,13 +34,15 @@ if (process.env.TRUST_PROXY) app.set("trust proxy", Number(process.env.TRUST_PRO
 app.use((req, res, next) => {
   res.setHeader("Content-Security-Policy", [
     "default-src 'self'", "script-src 'self'", "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", "font-src 'self' https://fonts.gstatic.com",
-    "img-src 'self' data: blob:", "connect-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'"
+    "img-src 'self' data: blob:", "connect-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'", "worker-src 'self'", "manifest-src 'self'"
   ].join("; "));
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "same-origin");
   res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-  res.setHeader("Permissions-Policy", "geolocation=(), microphone=(), payment=()");
+  // La position sert à vérifier qu'une photo est prise sur le chantier ; micro et paiement restent bloqués.
+  res.setHeader("Permissions-Policy", "geolocation=(self), camera=(self), microphone=(), payment=(), usb=()");
+  res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
   if (PROD) res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
   next();
 });
@@ -100,19 +103,14 @@ function cookies(req) {
 function setSession(res, t, maxAge) {
   res.append("Set-Cookie", `af_session=${t}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${PROD ? "; Secure" : ""}`);
 }
-function access(a) {
-  const now = Date.now(), trial = Date.parse(a.trial_ends_at), paid = a.paid_until ? Date.parse(a.paid_until) : 0;
-  if (paid > now) return { status: "paid", active: true, until: a.paid_until, days_left: Math.ceil((paid - now) / DAY) };
-  if (trial > now) return { status: "trial", active: true, until: a.trial_ends_at, days_left: Math.ceil((trial - now) / DAY) };
-  return { status: "expired", active: false, until: a.paid_until || a.trial_ends_at, days_left: 0 };
-}
 const hasPassword = (a) => !a.password_hash.startsWith("!");
 // Propriétaires qui confient un chantier à ce proche (ils paient pour lui).
 const sponsorsOf = (a) => all("SELECT DISTINCT o.contact_name FROM sites s JOIN artisans o ON o.id = s.owner_id WHERE s.artisan_id = ? AND s.owner_id <> ?", a.id, a.id).map((x) => x.contact_name);
 const publicArtisan = (a) => ({
   id: a.id, email: a.email, account_type: a.account_type, company: a.company, contact_name: a.contact_name, city: a.city, country: a.country, company_id: a.company_id,
-  market: a.market, currency: a.currency, price: MARKETS[a.market].price, trial_ends_at: a.trial_ends_at, google: !!a.google_sub, has_password: hasPassword(a), created_at: a.created_at,
-  access: a.account_type === "pro" ? access(a) : { status: "included", active: true, until: null, days_left: 0 },
+  market: a.market, currency: a.currency, trial_ends_at: a.trial_ends_at, google: !!a.google_sub, has_password: hasPassword(a), created_at: a.created_at,
+  // Archfield est gratuit pour les entreprises et les proches : c'est le client (propriétaire) qui paie l'offre Plus.
+  access: { status: "free", active: true, until: null, days_left: 0 },
   client: a.account_type === "client" ? space.clientInfo(a) : undefined,
   sponsors: a.account_type === "proche" ? sponsorsOf(a) : undefined
 });
@@ -129,12 +127,6 @@ function auth(req, res, next) {
   if (!req.artisan) return res.status(401).json({ error: "Connectez-vous pour continuer." });
   next();
 }
-// Essai terminé et abonnement non payé : lecture possible, mais plus de nouveau chantier ni de publication.
-function requireActive(req, res, next) {
-  // Les clients et les proches ne paient pas l'abonnement artisan ; le droit de publier d'un proche se vérifie par chantier.
-  if (req.artisan.account_type !== "pro" || access(req.artisan).active) return next();
-  res.status(402).json({ error: "Votre essai gratuit est terminé. Activez votre abonnement pour publier à nouveau. Vos clients gardent l'accès à leurs chantiers." });
-}
 function openSession(res, artisanId) {
   const t = token(32);
   run("INSERT INTO sessions (token, artisan_id, expires_at) VALUES (?, ?, ?)", t, artisanId, new Date(Date.now() + 30 * DAY).toISOString());
@@ -146,7 +138,14 @@ function throttle(key) {
   if (a.until > Date.now()) fail(429, "Trop d'essais. Réessayez dans 10 minutes.");
   return { failed() { a.n += 1; if (a.n >= 8) { a.until = Date.now() + 10 * 60e3; a.n = 0; } attempts.set(key, a); }, ok() { attempts.delete(key); } };
 }
-const passwordOk = (p) => { const s = str(p, 200, "mot de passe"); if (s.length < 8) fail(400, "Le mot de passe doit faire au moins 8 caractères."); return s; };
+// Mots de passe les plus essayés par les pirates : refusés même s'ils font 8 caractères.
+const COMMON = new Set(["12345678", "123456789", "1234567890", "password", "password1", "motdepasse", "azertyui", "azertyuiop", "qwertyui", "qwertyuiop", "11111111", "00000000", "iloveyou", "sunshine", "princess", "football", "baseball", "welcome1", "abcd1234", "abc12345", "archfield", "senegal1", "bonjour1", "soleil123", "doudou123", "loulou123", "chouchou", "12341234", "87654321", "aaaaaaaa", "q1w2e3r4", "1q2w3e4r", "passw0rd", "admin123", "letmein1"]);
+const passwordOk = (p) => {
+  const s = str(p, 200, "mot de passe");
+  if (s.length < 8) fail(400, "Le mot de passe doit faire au moins 8 caractères.");
+  if (COMMON.has(s.toLowerCase()) || /^(.)\1+$/.test(s)) fail(400, "Ce mot de passe est trop courant : choisissez-en un autre, par exemple trois mots séparés par des tirets.");
+  return s;
+};
 
 // Inscription : par e-mail et mot de passe, ou après « Continuer avec Google » (google_token).
 app.post("/api/signup", limit("signup", 10, 60 * 60e3), wrap(async (req, res) => {
@@ -345,9 +344,14 @@ function ownStep(req, id) {
 function updatesOf(siteId, mediaBase, limitN = 300) {
   const ups = all(`SELECT u.*, st.name AS step_name FROM updates u LEFT JOIN steps st ON st.id = u.step_id WHERE u.site_id = ? ORDER BY u.created_at DESC, u.id DESC LIMIT ?`, siteId, limitN);
   const photos = ups.length ? all(`SELECT * FROM photos WHERE update_id IN (${ups.map(() => "?").join(",")}) ORDER BY id`, ...ups.map((u) => u.id)) : [];
-  return ups.map((u) => ({ ...u, photos: photos.filter((p) => p.update_id === u.id).map((p) => ({ id: p.id, url: mediaBase + p.file, taken_at: p.taken_at })) }));
+  return ups.map((u) => ({
+    ...u, lat: undefined, lng: undefined, verify_note: u.verify_note ? JSON.parse(u.verify_note) : null,
+    photos: photos.filter((p) => p.update_id === u.id).map((p) => ({ id: p.id, url: mediaBase + p.file, taken_at: p.taken_at, shot_at: p.shot_at }))
+  }));
 }
-const siteFiles = (siteId) => all("SELECT p.file FROM photos p JOIN updates u ON u.id = p.update_id WHERE u.site_id = ?", siteId).map((p) => p.file);
+const siteFiles = (siteId) => all("SELECT p.file FROM photos p JOIN updates u ON u.id = p.update_id WHERE u.site_id = ? UNION SELECT receipt_file FROM ledger WHERE site_id = ? AND receipt_file IS NOT NULL", siteId, siteId).map((p) => p.file);
+// Position de référence du chantier, montrée au client (sans les coordonnées exactes).
+const positionInfo = (s) => (s.lat != null ? { set_at: s.position_set_at, set_by: s.position_set_by } : null);
 function startNextIfIdle(siteId, afterPosition) {
   const steps = all("SELECT * FROM steps WHERE site_id = ? ORDER BY position", siteId);
   if (steps.some((s) => stepStatus(s) === "en_cours")) return;
@@ -375,6 +379,12 @@ api.post("/me/password", wrap(async (req, res) => {
   });
   res.json({ ok: true });
 }));
+
+// Se déconnecter partout (téléphone perdu, ordinateur partagé) : toutes les sessions sauf celle-ci.
+api.post("/me/logout-others", (req, res) => {
+  const n = run("DELETE FROM sessions WHERE artisan_id = ? AND token <> ?", req.artisan.id, cookies(req).af_session).changes;
+  res.json({ ok: true, closed: Number(n) });
+});
 
 // RGPD : export de toutes les données du compte, puis suppression définitive.
 api.get("/me/export", (req, res) => {
@@ -425,7 +435,7 @@ api.get("/sites", (req, res) => {
   }));
 });
 
-api.post("/sites", requireActive, (req, res) => {
+api.post("/sites", (req, res) => {
   if (req.artisan.account_type !== "pro") fail(403, "Seule une entreprise crée des chantiers ici. Les clients créent les leurs dans leur espace.");
   const b = req.body || {};
   const steps = Array.isArray(b.steps) ? b.steps : [];
@@ -434,8 +444,8 @@ api.post("/sites", requireActive, (req, res) => {
   const clientName = str(b.client_name, 120, "client");
   const id = tx(() => {
     const r = run(
-      `INSERT INTO sites (artisan_id, name, location, kind, client_name, client_short, client_email, client_phone, client_city, client_token, tracking_code, budget, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      req.artisan.id, str(b.name, 120, "nom du chantier"), str(b.location, 120, "lieu", false), b.kind === "ext" ? "ext" : "int",
+      `INSERT INTO sites (artisan_id, currency, name, location, kind, client_name, client_short, client_email, client_phone, client_city, client_token, tracking_code, budget, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      req.artisan.id, req.artisan.currency, str(b.name, 120, "nom du chantier"), str(b.location, 120, "lieu", false), b.kind === "ext" ? "ext" : "int",
       clientName, str(b.client_short, 60, "prénom du client", false) || clientName.split(" ")[0], email(b.client_email, "e-mail du client", false), phone(b.client_phone),
       str(b.client_city, 120, "ville du client", false), token(16), newTrackingCode(), Math.round(num(b.budget || 0, "budget")), nowIso());
     const siteId = Number(r.lastInsertRowid);
@@ -449,9 +459,13 @@ api.post("/sites", requireActive, (req, res) => {
 api.get("/sites/:id", (req, res) => {
   const s = ownSite(req, req.params.id);
   const owner = s.owner_id && s.owner_id !== s.artisan_id ? get("SELECT contact_name FROM artisans WHERE id = ?", s.owner_id) : null;
+  const sum = siteWithSummary(s);
   res.json({
-    ...siteWithSummary(s),
+    ...sum, lat: undefined, lng: undefined,
     owner: owner ? owner.contact_name : null,
+    can_reset_position: !s.owner_id || s.owner_id === req.artisan.id,
+    position: positionInfo(s),
+    money: money.moneyOf(s, "/media/", sum.progress),
     updates: updatesOf(s.id, "/media/"),
     documents: all("SELECT * FROM documents WHERE site_id = ? ORDER BY doc_date, id", s.id),
     reports: all("SELECT id, period_start, period_end, sent_at, emailed, opened_at FROM reports WHERE site_id = ? ORDER BY period_end DESC", s.id)
@@ -483,6 +497,14 @@ api.post("/sites/:id/release", (req, res) => {
   const s = ownSite(req, req.params.id);
   if (!s.owner_id || s.owner_id === req.artisan.id) fail(409, "Ce chantier n'a pas de propriétaire à qui le rendre.");
   run("UPDATE sites SET artisan_id = owner_id WHERE id = ?", s.id);
+  res.json({ ok: true });
+});
+
+// Nouvelle position du chantier (erreur à la première publication). Si un client possède le chantier, c'est lui qui décide.
+api.post("/sites/:id/position/reset", (req, res) => {
+  const s = ownSite(req, req.params.id);
+  if (s.owner_id && s.owner_id !== req.artisan.id) fail(403, "Seul le propriétaire du chantier peut changer sa position.");
+  run("UPDATE sites SET lat = NULL, lng = NULL, position_set_at = NULL, position_set_by = NULL WHERE id = ?", s.id);
   res.json({ ok: true });
 });
 
@@ -550,6 +572,20 @@ const upload = multer({
   limits: { fileSize: 15 * 1024 * 1024, files: 10 },
   fileFilter: (req, f, cb) => cb(EXT[f.mimetype] ? null : new HttpError(400, "Seules les photos JPEG, PNG, WebP ou HEIC (iPhone) sont acceptées."), !!EXT[f.mimetype])
 });
+// Le type annoncé par le navigateur peut mentir : on lit les premiers octets du fichier pour vérifier que c'est
+// bien une image JPEG, PNG, WebP ou HEIC. Un fichier déguisé (page web, script…) est refusé et effacé.
+async function checkFiles(files) {
+  for (const f of files) {
+    const fh = await fs.promises.open(f.path, "r");
+    const head = Buffer.alloc(16);
+    try { await fh.read(head, 0, 16, 0); } finally { await fh.close(); }
+    const ascii = (a, b) => head.subarray(a, b).toString("latin1");
+    const ok = (head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) || ascii(0, 8) === "\x89PNG\r\n\x1a\n"
+      || (ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP") || (ascii(4, 8) === "ftyp" && /^(heic|heix|hevc|hevx|mif1|msf1|heim|heis)$/.test(ascii(8, 12)));
+    if (!ok) throw new HttpError(400, `« ${f.originalname} » n'est pas une photo valide.`);
+  }
+}
+
 // Les photos HEIC des iPhone ne s'affichent pas dans la plupart des navigateurs : on les convertit en JPEG.
 async function normalizePhotos(files) {
   for (const f of files) {
@@ -577,7 +613,7 @@ async function notifyClient(site, artisan, text) {
   });
 }
 
-api.post("/sites/:id/updates", requireActive, limit("upload", 60, 60 * 60e3, (req) => "a" + req.artisan.id), upload.array("photos", 10), wrap(async (req, res) => {
+api.post("/sites/:id/updates", limit("upload", 60, 60 * 60e3, (req) => "a" + req.artisan.id), upload.array("photos", 10), wrap(async (req, res) => {
   const files = req.files || [];
   try {
     const s = ownSite(req, req.params.id);
@@ -585,14 +621,22 @@ api.post("/sites/:id/updates", requireActive, limit("upload", 60, 60 * 60e3, (re
     const text = str(req.body.text, 500, "message");
     const st = req.body.step_id ? get("SELECT * FROM steps WHERE id = ? AND site_id = ?", Number(req.body.step_id), s.id) : null;
     if (req.body.step_id && !st) fail(400, "Étape inconnue pour ce chantier.");
+    await checkFiles(files);
     await normalizePhotos(files);
     const done = req.body.done === "1" || req.body.done === "true";
     const now = nowIso();
+    // Preuve : date de prise de vue des photos et position du téléphone, comparées à la position du chantier.
+    const meta = cleanMeta(req.body.meta, files.length);
+    const lat = Number(req.body.lat), lng = Number(req.body.lng);
+    const pos = req.body.lat !== undefined && req.body.lat !== "" ? { lat, lng, accuracy: Number(req.body.accuracy) } : null;
+    const v = verify({ site: s, pos, photos: meta });
     const id = tx(() => {
       if (st && !st.started_at) run("UPDATE steps SET started_at = ? WHERE id = ?", now, st.id);
-      const r = run("INSERT INTO updates (site_id, step_id, kind, text, created_at) VALUES (?, ?, 'post', ?, ?)", s.id, st ? st.id : null, text, now);
+      if (v.setOrigin) run("UPDATE sites SET lat = ?, lng = ?, position_set_at = ?, position_set_by = ? WHERE id = ?", lat, lng, now, req.artisan.contact_name, s.id);
+      const r = run("INSERT INTO updates (site_id, step_id, kind, text, created_at, lat, lng, accuracy, verify, verify_note) VALUES (?, ?, 'post', ?, ?, ?, ?, ?, ?, ?)",
+        s.id, st ? st.id : null, text, now, pos && v.note.position !== "unknown" ? lat : null, pos && v.note.position !== "unknown" ? lng : null, v.note.accuracy ?? null, v.status, JSON.stringify(v.note));
       const uid = Number(r.lastInsertRowid);
-      files.forEach((f) => run("INSERT INTO photos (update_id, file, taken_at) VALUES (?, ?, ?)", uid, f.filename, now));
+      files.forEach((f, i) => run("INSERT INTO photos (update_id, file, taken_at, shot_at, shot_lat, shot_lng) VALUES (?, ?, ?, ?, ?, ?)", uid, f.filename, now, meta[i].shot_at, meta[i].lat, meta[i].lng));
       if (done && st && !st.finished_at) {
         run("UPDATE steps SET finished_at = ? WHERE id = ?", now, st.id);
         run("INSERT INTO updates (site_id, step_id, kind, created_at) VALUES (?, ?, 'step_done', ?)", s.id, st.id, new Date(Date.now() + 1000).toISOString());
@@ -600,7 +644,7 @@ api.post("/sites/:id/updates", requireActive, limit("upload", 60, 60 * 60e3, (re
       return uid;
     });
     const notified = await notifyClient(s, req.artisan, text);
-    res.status(201).json({ id, photos: files.length, notified });
+    res.status(201).json({ id, photos: files.length, notified, verify: v.status, note: v.note });
   } catch (e) {
     removeFiles(files.map((f) => f.filename));
     throw e;
@@ -652,7 +696,8 @@ api.get("/photos", (req, res) => {
     WHERE u.site_id = ? ORDER BY p.taken_at DESC, p.id DESC`, s.id).map((p) => ({ ...p, url: "/media/" + p.file })));
 });
 
-const spaceApi = space.mount(app, api, { fail, str, num, wrap, limit, nowIso, token });
+const spaceApi = space.mount(app, api, { fail, str, num, wrap, limit, nowIso, token, sendMail });
+money.mount(app, api, { fail, str, num, wrap, limit, nowIso, upload, normalizePhotos, removeFiles, checkFiles });
 // Routes publiques sous /api : lien du client et lecture d'une invitation.
 app.use("/api", (req, res, next) => (req.path.startsWith("/c/") || (req.method === "GET" && req.path.startsWith("/invitations/")) ? next() : api(req, res, next)));
 
@@ -666,10 +711,13 @@ app.get("/api/c/:token", limit("client", 120, 60e3), (req, res) => {
   const s = bySiteToken(req.params.token);
   const a = get("SELECT * FROM artisans WHERE id = ?", s.artisan_id);
   const now = nowIso();
+  const sum = siteWithSummary(s);
   const out = {
-    ...siteWithSummary(s),
-    client_token: undefined, client_email: undefined, client_phone: undefined, last_notified_at: undefined,
-    artisan: { company: a.company, contact_name: a.contact_name, city: a.city, currency: a.currency, reliability: dashboard(a.id).reliability },
+    ...sum,
+    client_token: undefined, client_email: undefined, client_phone: undefined, last_notified_at: undefined, lat: undefined, lng: undefined,
+    artisan: { company: a.company, contact_name: a.contact_name, city: a.city, currency: s.currency },
+    position: positionInfo(s),
+    money: money.publicMoney(money.moneyOf(s, `/c/${s.client_token}/media/`, sum.progress)),
     updates: updatesOf(s.id, `/c/${s.client_token}/media/`).map((u) => ({ ...u, seen_at: undefined })),
     documents: all("SELECT kind, ref, label, amount, status, doc_date FROM documents WHERE site_id = ? ORDER BY doc_date, id", s.id),
     reports: all("SELECT id, period_start, period_end, sent_at, data FROM reports WHERE site_id = ? ORDER BY period_end DESC LIMIT 12", s.id).map((r) => ({ ...r, data: JSON.parse(r.data) }))
@@ -701,10 +749,14 @@ function sendPhoto(res, file) {
   res.setHeader("Cache-Control", "private, max-age=86400");
   res.sendFile(p);
 }
-const photoSite = (file) => get("SELECT u.site_id FROM photos p JOIN updates u ON u.id = p.update_id WHERE p.file = ?", path.basename(String(file)));
+const photoSite = (file) => {
+  const f = path.basename(String(file));
+  return get("SELECT u.site_id FROM photos p JOIN updates u ON u.id = p.update_id WHERE p.file = ?", f) || get("SELECT site_id FROM ledger WHERE receipt_file = ?", f);
+};
 app.get("/media/:file", (req, res) => {
   const a = sessionArtisan(req), ph = photoSite(req.params.file);
-  if (!a || !ph || !get("SELECT 1 FROM sites WHERE id = ? AND artisan_id = ?", ph.site_id, a.id)) return res.status(404).end();
+  // Le gestionnaire du chantier, ou son propriétaire (client), voit les photos et les reçus.
+  if (!a || !ph || !get("SELECT 1 FROM sites WHERE id = ? AND (artisan_id = ? OR owner_id = ?)", ph.site_id, a.id, a.id)) return res.status(404).end();
   sendPhoto(res, path.basename(req.params.file));
 });
 app.get("/c/:token/media/:file", limit("client-media", 600, 60e3), (req, res) => {

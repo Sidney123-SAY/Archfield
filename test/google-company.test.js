@@ -53,7 +53,7 @@ test("numéros d'entreprise : SIRET, BCE, IDE", () => {
 });
 
 test("inscription : SIRET obligatoire et vérifié en France, facultatif en Afrique de l'Ouest et centrale", async () => {
-  const body = { email: "fr@example.com", password: "motdepasse", company: "Rhône Rénov", contact_name: "Marc", country: "FR" };
+  const body = { email: "fr@example.com", password: "chantier-2026", company: "Rhône Rénov", contact_name: "Marc", country: "FR" };
   const post = (b) => req("/api/signup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) });
   assert.equal((await post(body)).status, 400);
   assert.equal((await post({ ...body, company_id: "12345678901234" })).status, 400);
@@ -70,8 +70,8 @@ test("inscription : SIRET obligatoire et vérifié en France, facultatif en Afri
   assert.equal(cm.status, 201);
   const cmMe = await (await req("/api/me", { headers: { Cookie: cookieOf(cm, "af_session") } })).json();
   assert.equal(cmMe.currency, "XAF");
-  assert.equal(cmMe.price, "9 900 FCFA");
-  const client = await post({ email: "ga@example.com", password: "motdepasse", contact_name: "Léa", account_type: "client", country: "GA" });
+  assert.equal(cmMe.access.status, "free", "gratuit pour les entreprises");
+  const client = await post({ email: "ga@example.com", password: "chantier-2026", contact_name: "Léa", account_type: "client", country: "GA" });
   assert.equal((await (await req("/api/me", { headers: { Cookie: cookieOf(client, "af_session") } })).json()).currency, "XAF");
   assert.equal((await req("/api/entreprise/12345678901234")).status, 400);
 });

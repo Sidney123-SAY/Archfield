@@ -25,7 +25,8 @@ const ok = (msg) => console.log("  ✓ " + msg);
   // Réponses d'erreur attendues dans ces parcours (le test les provoque exprès).
   const EXPECTED = [/\/api\/me$/, /\/api\/entreprise\//, /\/deliver$/, /\/api\/signup$/, /\/api\/login$/, /\/api\/client\/claim$/];
   async function context(opts = {}) {
-    const ctx = await browser.newContext({ locale: "fr-FR", viewport: { width: 1280, height: 860 }, ...opts });
+    // Téléphone localisé sur le chantier (vérification des photos).
+    const ctx = await browser.newContext({ locale: "fr-FR", viewport: { width: 1280, height: 860 }, geolocation: { latitude: 45.7578, longitude: 4.832, accuracy: 12 }, permissions: ["geolocation"], ...opts });
     await ctx.addInitScript(() => { try { if (!localStorage.getItem("af-lang")) localStorage.setItem("af-lang", "fr"); } catch (e) {} });
     ctx.setDefaultTimeout(8000);
     ctx.on("page", (p) => watch(p));
@@ -110,8 +111,10 @@ const ok = (msg) => console.log("  ✓ " + msg);
     await pro.check("#cmp-done");
     await pro.click("#cmp-send");
     await pro.waitForSelector("#cmp-done-title");
+    await pro.waitForSelector("#composer .proof"); // résultat de la vérification affiché
     await pro.click("#cmp-close");
     await pro.waitForSelector(".entry .photos img");
+    await pro.waitForSelector(".entry .proof");
   });
   await run("étapes : rouvrir, terminer, ajouter, changer une durée, supprimer", async () => {
     await pro.click('[data-site-tab="etapes"]');
@@ -122,8 +125,19 @@ const ok = (msg) => console.log("  ✓ " + msg);
     await pro.fill("[data-step-days] >> nth=0", "3"); await pro.press("[data-step-days] >> nth=0", "Tab"); await toast(pro, /Durée prévue/);
     await pro.locator("[data-step-del]").last().click(); await toast(pro, /supprimée/);
   });
+  await run("argent : dépense avec reçu, versement reçu, annulation, versement prévu", async () => {
+    await pro.click('[data-site-tab="etapes"]');
+    await pro.fill("[data-step-amount] >> nth=0", "4000"); await pro.press("[data-step-amount] >> nth=0", "Tab"); await toast(pro, /Versement prévu/);
+    await pro.click('[data-site-tab="argent"]');
+    await pro.fill("#dp-label", "Plan de travail"); await pro.fill("#dp-amount", "650"); await pro.setInputFiles("#dp-receipt", photo);
+    await pro.click('#add-depense [type="submit"]'); await toast(pro, /Dépense ajoutée/);
+    await pro.waitForSelector(".ml.depense .ml-receipt img");
+    await pro.fill("#vs-amount", "3000"); await pro.click('#add-versement [type="submit"]'); await toast(pro, /Versement noté/);
+    await pro.locator("[data-ledger-cancel]").first().click(); await pro.locator("[data-ledger-cancel]").first().click(); await toast(pro, /Ligne annulée/);
+    await pro.waitForSelector(".ml.cancelled");
+  });
   await run("devis et factures : ajouter, marquer payée, supprimer", async () => {
-    await pro.click('[data-site-tab="documents"]');
+    await pro.click('[data-site-tab="argent"]');
     await pro.fill("#doc-ref", "F-1"); await pro.fill("#doc-label", "Acompte"); await pro.fill("#doc-amount", "1500");
     await pro.click('#add-doc [type="submit"]'); await toast(pro, /Document ajouté/);
     await pro.click("[data-doc-paid]"); await toast(pro, /payée/);
@@ -151,7 +165,8 @@ const ok = (msg) => console.log("  ✓ " + msg);
     await anon.waitForSelector(".entry .photos img");
     await anon.click('[data-tab="etapes"]');
     await anon.click("[data-validate]"); await toast(anon, /Étape validée/);
-    for (const tab of ["documents", "rapports", "journal"]) await anon.click(`[data-tab="${tab}"]`);
+    for (const tab of ["argent", "rapports", "journal"]) await anon.click(`[data-tab="${tab}"]`);
+    await anon.click('[data-tab="argent"]'); await anon.waitForSelector(".money .m-figs"); await anon.click('[data-tab="journal"]');
     if (!(await anon.textContent(".cl-code")).includes(tracking)) throw new Error("numéro de suivi absent de la page client");
   });
   await run("l'artisan voit « Vu par » et supprime une publication", async () => {
@@ -169,6 +184,7 @@ const ok = (msg) => console.log("  ✓ " + msg);
     await pro.fill("#pf-city", "Villeurbanne"); await pro.click('#profile [type="submit"]'); await toast(pro, /Profil enregistré/);
     await pro.fill("#pw-current", "motdepasse1"); await pro.fill("#pw-new", "motdepasse2"); await pro.click('#password [type="submit"]'); await toast(pro, /Mot de passe enregistré/);
     const r = await pro.request.get(BASE + "/api/me/export"); if (!r.ok()) throw new Error("export " + r.status());
+    await pro.click("[data-logout-others]"); await toast(pro, /appareil/);
     await pro.click(".install [data-install]"); await pro.waitForSelector("[data-install-steps]:not([hidden])");
   });
 
@@ -202,6 +218,13 @@ const ok = (msg) => console.log("  ✓ " + msg);
     inviteCode = (await cli.textContent(".sp-invite .sp-code b")).trim();
     await cli.click(".sp-invite [data-copy]"); await toast(cli, /Copié/);
   });
+  await run("le client note un versement et demande une visite de contrôle", async () => {
+    await cli.fill("#vs-amount", "2500000"); await cli.selectOption("#vs-method", "wave");
+    await cli.click('#add-versement [type="submit"]'); await toast(cli, /Versement noté/);
+    await cli.waitForSelector(".ml.versement");
+    await cli.fill("#vi-phone", "+33612345678"); await cli.fill("#vi-note", "Les fondations sont-elles coulées ?");
+    await cli.click('#visit [type="submit"]'); await toast(cli, /Demande envoyée/);
+  });
   await run("offre, compte et lien de suivi du client", async () => {
     await cli.goto(BASE + "/app#offre"); await cli.waitForSelector(".sp-plans");
     await cli.goto(BASE + "/app#compte"); await cli.fill("#pf-city", "Paris"); await cli.click('#profile [type="submit"]'); await toast(cli, /Profil enregistré/);
@@ -225,6 +248,21 @@ const ok = (msg) => console.log("  ✓ " + msg);
     await pr.setInputFiles("#cmp-photos", photo); await pr.waitForSelector("#cmp-thumbs img");
     await pr.fill("#cmp-text", "Fondations coulées ce matin."); await pr.click("#cmp-send");
     await pr.waitForSelector("#cmp-done-title"); await pr.click("#cmp-close");
+    // Sans réseau : la publication attend sur le téléphone, puis part toute seule.
+    await pr.goto(BASE + "/app#chantiers"); await pr.click('[data-publish]');
+    await pr.fill("#cmp-text", "Ferraillage fini, pas de réseau ici.");
+    await proCtx2.setOffline(true);
+    await pr.click("#cmp-send");
+    await pr.waitForSelector("#cmp-done-title:has-text('sans réseau')");
+    await pr.click("#cmp-close");
+    await proCtx2.setOffline(false);
+    await toast(pr, /en attente est partie/);
+    // Le proche note une dépense avec le reçu.
+    await pr.goto(BASE + "/app#chantiers"); await pr.locator('a[href^="#chantier-"]').first().click();
+    await pr.click('[data-site-tab="argent"]');
+    await pr.fill("#dp-label", "Ciment, 40 sacs"); await pr.fill("#dp-amount", "260000"); await pr.setInputFiles("#dp-receipt", photo);
+    await pr.click('#add-depense [type="submit"]'); await toast(pr, /Dépense ajoutée/);
+    if (await pr.$("#add-versement")) throw new Error("le proche d'un client ne note pas les versements à sa place");
     await pr.goto(BASE + "/app#nouveau-chantier"); await pr.waitForURL(/#chantiers/); // un proche ne crée pas de chantier
     await pr.goto(BASE + "/app#compte"); await pr.waitForSelector("#profile"); if (await pr.$("#pf-company")) throw new Error("champ entreprise affiché au proche");
   });

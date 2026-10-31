@@ -1,7 +1,7 @@
 // Application artisan : tableau de bord, chantiers, journal, photos, clients, compte.
 (function () {
   "use strict";
-  const { t, LOGO, ic, esc, prefs, themeToggle, installCard, installNudge, fmt, dShort, nf, cap, plural, rel, api, upload, shrink, toast, copy, STATUS_CHIP, healthChip, siteCard, journal, docsTable } = window.AF;
+  const { t, LOGO, ic, esc, prefs, themeToggle, installCard, installNudge, exifOf, position, moneyPanel, depenseForm, versementForm, curLabel, money, fmt, dShort, nf, cap, plural, rel, api, upload, shrink, toast, copy, STATUS_CHIP, healthChip, siteCard, journal, docsTable } = window.AF;
   const $ = (s, el) => (el || document).querySelector(s);
   const app = $("#app");
 
@@ -13,13 +13,13 @@
   const clientUrl = (tok) => `${location.origin}/c/${tok}`;
   const siteLabel = (s) => [s.name, s.location.split(",")[0]].filter(Boolean).join(" — ");
   const days = (n) => t("{n} j", { n: nf(n) });
-  const cur = () => (me.currency === "EUR" ? "€" : "FCFA");
+  const cur = () => curLabel(me.currency);
 
   /* ---------- Coquille ---------- */
-  const NAV = [["tableau-de-bord", "Tableau de bord", "dash"], ["chantiers", "Chantiers", "home"], ["journal", "Journal", "list"], ["clients", "Clients", "users"], ["compte", "Abonnement", "card"]];
+  const NAV = [["tableau-de-bord", "Tableau de bord", "dash"], ["chantiers", "Chantiers", "home"], ["journal", "Journal", "list"], ["clients", "Clients", "users"], ["compte", "Compte", "user"]];
   const TABS = [["chantiers", "Chantiers", "home"], ["journal", "Journal", "list"], ["photos", "Photos", "photo"], ["compte", "Compte", "user"]];
   const isPro = () => me.account_type === "pro";
-  const planLabel = () => (me.account_type === "proche" ? t("Accès offert par {who}", { who: esc((me.sponsors || []).join(", ") || "—") }) : me.access.status === "paid" ? t("Abonnement actif jusqu'au {date}", { date: dShort(me.access.until) }) : me.access.status === "trial" ? plural(me.access.days_left, "Essai gratuit : encore {n} jour", "Essai gratuit : encore {n} jours") : t("Essai terminé"));
+  const planLabel = () => (me.account_type === "proche" ? t("Accès offert par {who}", { who: esc((me.sponsors || []).join(", ") || "—") }) : t("Gratuit pour les entreprises"));
   const waLink = (phoneNumber, text) => `https://wa.me/${(phoneNumber || "").replace(/[^\d]/g, "")}?text=${encodeURIComponent(text)}`;
   const initials = (n) => n.split(/\s+/).map((x) => x[0]).join("").slice(0, 2).toUpperCase();
 
@@ -29,7 +29,7 @@
     app.innerHTML = `<div class="shell">
       <aside class="side">
         <a class="logo" href="#tableau-de-bord">${LOGO(24)} Archfield</a>
-        <nav aria-label="${t("Menu")}">${NAV.map(([k, l, i]) => `<button type="button" data-go="${k}" ${sideOn(k) ? 'aria-current="page"' : ""}>${ic(i, 17)} ${t(k === "compte" && !isPro() ? "Compte" : l)}</button>`).join("")}</nav>
+        <nav aria-label="${t("Menu")}">${NAV.map(([k, l, i]) => `<button type="button" data-go="${k}" ${sideOn(k) ? 'aria-current="page"' : ""}>${ic(i, 17)} ${t(l)}</button>`).join("")}</nav>
         <div class="who">
           <div class="side-prefs">${prefs()}</div>
           <div class="plan-card"><b>${esc(me.company)}</b><span>${planLabel()}</span></div>
@@ -38,7 +38,7 @@
       </aside>
       <div class="content">
         <div class="mhead"><a class="logo" href="#journal">${LOGO(30)} Archfield</a><span class="mhead-r">${themeToggle()}<a class="avatar" href="#compte" title="${esc(me.contact_name)}" style="text-decoration:none">${esc(initials(me.contact_name))}</a></span></div>
-        <div class="content-in">${installNudge()}${me.access.active ? "" : `<div class="expired">${ic("warn", 18)}<span>${t("Votre essai gratuit est terminé. Vous pouvez consulter vos chantiers, mais plus publier.")} <a href="#compte">${t("Activer l'abonnement")}</a></span></div>`}${body}</div>
+        <div class="content-in">${installNudge()}${outboxBar()}${body}</div>
       </div>
       <nav class="tabbar" aria-label="${t("Onglets")}">${TABS.map(([k, l, i]) => `<button type="button" data-go="${k}" ${tabOn(k) ? 'aria-current="page"' : ""}>${ic(i, 24)}<span>${t(l)}</span></button>`).join("")}</nav>
     </div>`;
@@ -55,18 +55,11 @@
       return shell("tableau-de-bord", `<div class="pagehead"><div><p class="sub">${sub}</p><h1>${t("Tableau de bord")}</h1></div></div>
         ${!isPro() ? noSiteForProche() : ""}<section class="card empty" ${isPro() ? "" : "hidden"}><h2>${t("Créez votre premier chantier")}</h2><p>${t("Ajoutez le client et les étapes prévues. Archfield vous donne un lien privé à envoyer au client par WhatsApp ou par e-mail, sans compte à créer.")}</p><a class="btn primary" href="#nouveau-chantier">${ic("plus", 16)} ${t("Nouveau chantier")}</a></section>`);
     }
-    const max = Math.max(1, ...d.byStep.map((b) => Math.max(b.planned, b.actual))) * 1.05;
-    const chart = d.byStep.length ? d.byStep.map((b) => {
-      const over = b.actual > b.planned * 1.2;
-      return `<div class="crow"><span class="n" title="${esc(b.name)} · ${plural(b.samples, "{n} étape", "{n} étapes")}">${esc(b.name)}</span><div class="bars">
-        <div class="bar prevu" style="width:${(b.planned / max) * 100}%"><span>${nf(b.planned)}</span></div>
-        <div class="bar reel ${over ? "drift" : ""}" style="width:${(b.actual / max) * 100}%"><span>${nf(b.actual)}${over ? ` (+${Math.round(((b.actual - b.planned) / b.planned) * 100)} %)` : ""}</span></div></div></div>`;
-    }).join("") : `<p class="muted">${t("Le graphique apparaît dès que vous avez terminé au moins deux étapes du même type.")}</p>`;
     const ecart = (s) => (s.running ? (s.delay > 0 ? "+" : "") + days(Math.max(0, s.delay)) : "—");
-    const k = d.kpis, rl = d.reliability;
+    const k = d.kpis;
     shell("tableau-de-bord", `
       <div class="pagehead"><div><p class="sub">${sub}</p><h1>${t("Tableau de bord")}</h1></div>
-        <div class="acts"><span class="pill">${ic("cal", 15)} ${cap(fmt(Date.now(), { month: "long", year: "numeric" }))}</span><a class="btn" href="/api/export.csv" download>${t("Exporter en CSV")}</a>${isPro() ? `<a class="btn primary" href="#nouveau-chantier">${ic("plus", 15)} ${t("Nouveau chantier")}</a>` : ""}</div></div>
+        <div class="acts"><span class="pill">${ic("cal", 15)} ${cap(fmt(Date.now(), { month: "long", year: "numeric" }))}</span>${isPro() ? `<a class="btn primary" href="#nouveau-chantier">${ic("plus", 15)} ${t("Nouveau chantier")}</a>` : ""}</div></div>
       <div class="kpis">
         <div class="card kpi"><span class="k">${t("Chantiers actifs")}</span><span class="v">${k.active}</span><span class="s">${t("{n} en démarrage", { n: k.starting })}</span></div>
         <div class="card kpi"><span class="k">${t("Alertes de dérive")}</span><span class="v ${k.alerts ? "warn" : ""}">${k.alerts}</span><span class="s">${t("Étapes à plus de 20 % du prévu")}</span></div>
@@ -74,14 +67,6 @@
         <div class="card kpi"><span class="k">${t("Rapports lus par les clients")}</span><span class="v">${k.reportsRead == null ? "—" : k.reportsRead + " %"}</span><span class="s">${t("Sur les 4 dernières semaines")}</span></div>
       </div>
       ${d.alerts.map((a) => `<div class="banner">${ic("warn", 18)}<div><b>${t("{site} : {step} dérape", { site: esc(a.site) + (a.location ? " — " + esc(a.location.split(",")[0]) : ""), step: esc(a.step.toLowerCase()) })}</b><br>${t("{actual} jours au lieu de {planned} prévus, soit {pct} % de plus. Prévenez {who} avant le rapport de lundi.", { actual: nf(a.actual), planned: nf(a.planned), pct: a.overPct, who: esc(a.client_short) })}</div><button type="button" class="btn" data-publish="${a.site_id}">${t("Prévenir")}</button></div>`).join("")}
-      <div class="duo">
-        <section class="card card-p"><div class="card-h"><h2>${t("Durée par type d'étape, en jours")}</h2>
-          <div class="legend"><span><i style="background:var(--gris-barre)"></i>${t("Prévu")}</span><span><i style="background:var(--ink)"></i>${t("Réel")}</span><span><i style="background:var(--orange)"></i>${t("Réel, +20 % ou plus")}</span></div></div>
-          <div class="chart">${chart}<p class="chart-foot">${t("Moyenne des étapes terminées sur les 12 derniers mois.")}</p></div></section>
-        <section class="navy"><h2>${t("Indice de fiabilité")}</h2>
-          ${rl.pct == null ? `<p>${t("Il apparaîtra après votre premier chantier livré. Il se calcule sur vos chantiers réels, pas sur des avis.")}</p>` : `<span class="big">${rl.pct} %</span><p>${plural(rl.delivered, "des étapes livrées dans les délais, sur {n} chantier terminé.", "des étapes livrées dans les délais, sur {n} chantiers terminés.")}</p>`}
-          <p class="foot">${t("Montré à vos clients sur leur lien privé pour les rassurer.")}</p></section>
-      </div>
       <section class="card card-p"><div class="card-h"><h2>${t("Chantiers en cours")}</h2></div>
         ${d.sites.length ? `<div class="tbl-wrap tbl-desk"><table><thead><tr><th>${t("Chantier")}</th><th>${t("Client")}</th><th>${t("Avancement")}</th><th>${t("Étape en cours")}</th><th>${t("Écart")}</th><th>${t("Statut")}</th></tr></thead><tbody>
         ${d.sites.map((s) => `<tr class="click" data-site="${s.id}"><td><b>${esc(siteLabel(s))}</b></td><td>${esc(s.client_name)}</td><td><span class="mini"><span class="t"><span style="width:${s.progress}%"></span></span><span class="num">${s.progress} %</span></span></td><td>${s.running ? esc(s.running.name) : s.toValidate ? t("À valider") : "—"}</td><td class="num">${ecart(s)}</td><td>${healthChip(s)}</td></tr>`).join("")}
@@ -177,7 +162,8 @@
     try { s = await api("/api/sites/" + id); } catch (e) { return errorBox("chantier", e); }
     lastSiteId = s.id;
     try { localStorage.setItem("af-last-site", String(s.id)); } catch (e) {}
-    const tabs = [["journal", "Journal"], ["etapes", "Étapes", s.toValidate], ["documents", "Devis et factures"], ["partage", "Lien et rapports"]];
+    const tabs = [["journal", "Journal"], ["etapes", "Étapes", s.toValidate], ["argent", "Argent", s.money.alert ? "!" : 0], ["partage", "Lien et rapports"]];
+    const scur = curLabel(s.currency);
     let body = "";
     if (siteTab === "journal") body = `<h2 class="section-t">${t("Journal du chantier")}</h2>${journal(s, s.updates, { who: s.client_short })}`;
     else if (siteTab === "etapes") {
@@ -187,27 +173,36 @@
         const meta = st.status === "a_venir" ? t("{n} prévus", { n: days(st.planned_days) })
           : st.status === "en_cours" ? t("Commencée le {date} · {a} sur {p} prévus", { date: dShort(st.started_at), a: days(st.actual_days), p: days(st.planned_days) })
           : t("{a} réalisés pour {p} prévus", { a: days(st.actual_days), p: days(st.planned_days) }) + (st.validated_at ? " · " + t("validée le {date}", { date: dShort(st.validated_at) }) : "");
+        const amount = s.status === "delivered" || st.validated_at ? (st.amount ? `<span class="muted" style="font-size:.78rem">${t("Versement prévu : {n}", { n: money(st.amount, s.currency) })}</span>` : "")
+          : `<label class="sr" style="display:inline-flex;align-items:center;gap:4px;font-size:.78rem;color:var(--muted)">${t("Versement prévu")} <input type="number" min="0" step="1" value="${st.amount || ""}" placeholder="0" data-step-amount="${st.id}" style="width:7.5rem;border:1px solid var(--line);border-radius:8px;padding:5px 6px;background:var(--surface)" aria-label="${t("Versement prévu à la validation de {step}", { step: esc(st.name) })}"> ${scur}</label>`;
         const acts = s.status === "delivered" ? "" : st.status === "a_venir" ? `${running ? "" : `<button type="button" class="btn ghost" data-step-action="start" data-step="${st.id}">${t("Démarrer")}</button>`}<label class="sr" style="display:inline-flex;align-items:center;gap:4px;font-size:.78rem;color:var(--muted)">${t("Prévu")} <input type="number" min="0.5" step="0.5" value="${st.planned_days}" data-step-days="${st.id}" style="width:4.5rem;border:1px solid var(--line);border-radius:8px;padding:5px 6px;background:var(--surface)" aria-label="${t("Jours prévus pour {step}", { step: esc(st.name) })}"> ${t("j")}</label><button type="button" class="btn ghost" data-step-del="${st.id}" aria-label="${t("Supprimer {step}", { step: esc(st.name) })}">${ic("x", 14)}</button>`
           : st.status === "en_cours" ? `<button type="button" class="btn" data-step-action="finish" data-step="${st.id}">${t("Terminer : demander la validation")}</button>`
           : st.status === "a_valider" ? `<span class="chip wait">${t("En attente du client")}</span><button type="button" class="btn ghost" data-step-action="reopen" data-step="${st.id}">${t("Rouvrir")}</button>` : "";
-        return `<li class="${st.status}"><span class="pos">${st.status === "validee" ? "✓" : i + 1}</span><div><b>${esc(st.name)}</b> ${late ? `<span class="chip warn">${t("En retard")}</span>` : STATUS_CHIP[st.status]}<div class="meta">${meta}</div></div><div class="acts">${acts}</div></li>`;
+        return `<li class="${st.status}"><span class="pos">${st.status === "validee" ? "✓" : i + 1}</span><div><b>${esc(st.name)}</b> ${late ? `<span class="chip warn">${t("En retard")}</span>` : STATUS_CHIP[st.status]}<div class="meta">${meta}</div></div><div class="acts">${acts}${amount}</div></li>`;
       }).join("")}</ul>
       ${s.status === "active" ? `<form class="inline-add" id="add-step"><input name="name" required maxlength="80" placeholder="${t("Nouvelle étape")}" aria-label="${t("Nom de la nouvelle étape")}"><input name="days" type="number" min="0.5" step="0.5" required placeholder="${t("Jours")}" aria-label="${t("Jours prévus")}"><button class="btn" type="submit">${t("Ajouter")}</button></form>` : ""}</section>`;
-    } else if (siteTab === "documents") {
-      body = `<section class="card card-p">${docsTable(s.documents, me.currency, { editable: true })}</section>
+    } else if (siteTab === "argent") {
+      body = `${moneyPanel(s.money, { me: me.id })}
+        ${depenseForm(scur)}
+        ${s.owner ? "" : versementForm(scur, { received: true })}
+        <h2 class="section-t">${t("Devis et factures")}</h2>
+        <section class="card card-p">${docsTable(s.documents, s.currency, { editable: true })}</section>
         <form class="card card-p form" id="add-doc"><h2>${t("Ajouter un devis ou une facture")}</h2>
           <div class="row2"><div class="field"><label for="doc-kind">${t("Type")}</label><select id="doc-kind" name="kind"><option value="facture">${t("Facture")}</option><option value="devis">${t("Devis")}</option></select></div>
           <div class="field"><label for="doc-status">${t("Statut")}</label><select id="doc-status" name="status"><option value="a_regler">${t("À régler")}</option><option value="payee">${t("Payée")}</option></select></div></div>
           <div class="row2"><div class="field"><label for="doc-ref">${t("Référence")}</label><input id="doc-ref" name="ref" required maxlength="40" placeholder="F-2026-012"></div>
           <div class="field"><label for="doc-date">${t("Date")}</label><input id="doc-date" name="doc_date" type="date" required value="${new Date().toISOString().slice(0, 10)}"></div></div>
           <div class="field"><label for="doc-label">${t("Objet")}</label><input id="doc-label" name="label" required maxlength="160" placeholder="${t("Situation : fondations")}"></div>
-          <div class="field" style="max-width:260px"><label for="doc-amount">${t("Montant ({cur})", { cur: cur() })}</label><input id="doc-amount" name="amount" type="number" min="0" required inputmode="numeric"></div>
+          <div class="field" style="max-width:260px"><label for="doc-amount">${t("Montant ({cur})", { cur: scur })}</label><input id="doc-amount" name="amount" type="number" min="0" required inputmode="numeric"></div>
           <div><button class="btn primary" type="submit">${t("Ajouter")}</button></div></form>`;
     } else {
       const url = clientUrl(s.client_token);
       body = `<section class="card card-p share"><h2>${t("Numéro de suivi")}</h2>
           <div class="sp-code"><b>${esc(s.tracking_code)}</b><button type="button" class="btn ghost" data-copy-text="${esc(s.tracking_code)}">${t("Copier")}</button></div>
           <p class="muted" style="font-size:.86rem">${s.owner ? t("Ce chantier est dans l'espace client de {who}.", { who: esc(s.owner) }) : t("Votre client peut créer son espace gratuit sur Archfield et y ajouter ce chantier avec ce numéro : il retrouve tous ses chantiers au même endroit.")}</p></section>
+        <section class="card card-p share"><h2>${t("Position du chantier")}</h2>
+          <p class="muted" style="font-size:.86rem">${s.position ? t("Enregistrée le {date} par {who}, lors d'une publication sur place. Chaque photo est comparée à cette position.", { date: dShort(s.position.set_at), who: esc(s.position.set_by) }) : t("Pas encore enregistrée : elle le sera à la prochaine publication faite sur le chantier, avec la localisation du téléphone activée.")}</p>
+          ${s.position && s.can_reset_position ? `<div><button type="button" class="btn ghost" data-reset-position="${s.id}">${t("Effacer la position")}</button></div>` : ""}</section>
         <section class="card card-p share"><h2>${t("Lien privé du client")}</h2>
           <p class="muted" style="font-size:.86rem">${t("{who} ouvre ce lien sans créer de compte. Envoyez-le par WhatsApp, SMS ou e-mail.", { who: esc(s.client_name) })}</p>
           <div class="link"><code>${esc(url)}</code><button type="button" class="btn ghost" data-copy-link="${esc(s.client_token)}">${t("Copier")}</button></div>
@@ -239,6 +234,19 @@
       addDoc.kind.addEventListener("change", () => { addDoc.status.innerHTML = addDoc.kind.value === "devis" ? `<option value="signe">${t("Signé")}</option><option value="en_attente">${t("À signer")}</option>` : `<option value="a_regler">${t("À régler")}</option><option value="payee">${t("Payée")}</option>`; });
       addDoc.addEventListener("submit", (e) => { e.preventDefault(); act(() => api(`/api/sites/${s.id}/documents`, { method: "POST", body: Object.fromEntries(new FormData(addDoc)) }), t("Document ajouté. Le client le voit sur son lien.")); });
     }
+    // Argent : dépense avec photo du reçu, versement reçu.
+    const sendLedger = (form, kind, ok) => form && form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fd = new FormData(form), btn = form.querySelector("[type=submit]");
+      fd.append("kind", kind);
+      const receipt = fd.get("receipt");
+      if (receipt && receipt.size) fd.set("receipt", await shrink(receipt), "recu.jpg"); else fd.delete("receipt");
+      btn.disabled = true;
+      try { await upload(`/api/sites/${s.id}/ledger`, fd); toast(ok); route(); } catch (err) { toast(err.message); btn.disabled = false; }
+    });
+    sendLedger($("#add-depense"), "depense", t("Dépense ajoutée. Le propriétaire la voit avec le reçu."));
+    sendLedger($("#add-versement"), "versement", t("Versement noté."));
+    app.querySelectorAll("[data-step-amount]").forEach((inp) => inp.addEventListener("change", () => act(() => api(`/api/steps/${inp.dataset.stepAmount}/amount`, { method: "PATCH", body: { amount: Number(inp.value) || 0 } }), t("Versement prévu enregistré."))));
     const ec = $("#edit-client");
     if (ec) ec.addEventListener("submit", (e) => { e.preventDefault(); act(() => api(`/api/sites/${s.id}`, { method: "PATCH", body: Object.fromEntries(new FormData(ec)) }), t("Client enregistré.")); });
     app.querySelectorAll("[data-step-days]").forEach((inp) => inp.addEventListener("change", () => act(() => api("/api/steps/" + inp.dataset.stepDays, { method: "PATCH", body: { planned_days: Number(inp.value) } }), t("Durée prévue enregistrée."))));
@@ -283,17 +291,12 @@
 
   /* ---------- Compte et abonnement ---------- */
   async function pageAccount() {
-    loading("compte");
-    const d = await api("/api/dashboard");
-    const acc = me.access;
     shell("compte", `<div class="pagehead"><div><p class="sub">${esc(me.email)}${me.google ? " · " + t("connecté avec Google") : ""}</p><h1>${isPro() ? t("Abonnement et compte") : t("Compte")}</h1></div></div>
       ${isPro() ? "" : `<section class="card card-p planbox"><h2>${t("Votre accès")}</h2><p>${t("Votre accès est offert par {who}. Vous publiez l'avancement des chantiers qu'on vous confie, sans rien payer.", { who: esc((me.sponsors || []).join(", ") || "—") })}</p></section>`}
       <section class="card card-p planbox" ${isPro() ? "" : "hidden"}>
-        <div class="card-h" style="margin:0"><h2>Archfield Artisan</h2><span class="chip ${acc.status === "paid" ? "ok" : acc.status === "trial" ? "wait" : "warn"}">${planLabel()}</span></div>
-        ${acc.status === "trial" ? `<span class="track"><span style="width:${Math.round(((61 - Math.min(61, acc.days_left)) / 61) * 100)}%"></span></span><p>${t("2 mois offerts, puis :")}</p>` : ""}
-        <div class="price">${esc(me.price)} <small>${t("par mois, sans engagement")}</small></div>
-        <ul><li>${t("Chantiers et clients illimités")}</li><li>${t("Un lien privé par client, sans compte")}</li><li>${t("Rapport automatique chaque lundi")}</li><li>${t("Alertes de dérive et indice de fiabilité")}</li></ul>
-        <p class="muted" style="font-size:.8rem">${acc.status === "expired" ? t("Pour activer votre abonnement, écrivez-nous depuis l'adresse de votre compte : nous l'activons sous 24 h. Le paiement en ligne (carte, Orange Money, Wave) arrive bientôt.") : t("Le paiement en ligne (carte, Orange Money, Wave) arrive bientôt. D'ici là, nous activons les abonnements sur demande.")}</p>
+        <div class="card-h" style="margin:0"><h2>Archfield</h2><span class="chip ok">${t("Gratuit")}</span></div>
+        <p>${t("Archfield est gratuit pour les entreprises : chantiers et clients illimités. Plus vos clients voient le chantier avancer et l'argent bien utilisé, plus ils vous font confiance et vous recommandent.")}</p>
+        <ul><li>${t("Un lien privé par client, sans compte")}</li><li>${t("Photos vérifiées : date et lieu de prise de vue")}</li><li>${t("Devis, versements et dépenses au même endroit")}</li><li>${t("Rapport automatique chaque lundi")}</li></ul>
       </section>
       ${installCard()}
       <section class="card card-p planbox"><h2>${t("Apparence et langue")}</h2><p class="muted" style="font-size:.86rem">${t("Soleil : thème clair. Lune : thème sombre. Écran : suit le réglage de votre téléphone ou de votre ordinateur.")}</p><div>${prefs()}</div></section>
@@ -308,7 +311,9 @@
         <div class="row2">${me.has_password ? `<div class="field"><label for="pw-current">${t("Mot de passe actuel")}</label><input id="pw-current" name="current" type="password" required autocomplete="current-password"></div>` : ""}
         <div class="field"><label for="pw-new">${t("Nouveau mot de passe")}</label><input id="pw-new" name="password" type="password" required minlength="8" autocomplete="new-password"></div></div>
         <div><button class="btn" type="submit">${me.has_password ? t("Changer le mot de passe") : t("Enregistrer le mot de passe")}</button></div></form>
-      <section class="navy" style="max-width:560px"><h2>${t("Votre indice de fiabilité")}</h2>${d.reliability.pct == null ? `<p>${t("Il apparaîtra après votre premier chantier livré.")}</p>` : `<span class="big">${d.reliability.pct} %</span><p>${plural(d.reliability.delivered, "des étapes livrées dans les délais, sur {n} chantier terminé. Vos clients le voient sur leur lien privé.", "des étapes livrées dans les délais, sur {n} chantiers terminés. Vos clients le voient sur leur lien privé.")}</p>`}</section>
+      <section class="card card-p planbox"><h2>${t("Sécurité")}</h2>
+        <p class="muted" style="font-size:.86rem">${t("Téléphone perdu, ordinateur partagé ? Déconnectez tous vos autres appareils : il faudra s'y reconnecter avec le mot de passe.")}</p>
+        <div><button type="button" class="btn ghost" data-logout-others>${t("Déconnecter mes autres appareils")}</button></div></section>
       <section class="card card-p planbox"><h2>${t("Vos données")}</h2>
         <p class="muted" style="font-size:.86rem">${t("Téléchargez toutes les données de votre compte : chantiers, étapes, journal, documents et rapports.")} <a href="/confidentialite" target="_blank" rel="noopener">${t("Politique de confidentialité")}</a></p>
         <div class="row-acts"><a class="btn" href="/api/me/export" download>${t("Télécharger mes données")}</a><button type="button" class="btn ghost" data-cookies>${t("Gérer les cookies")}</button></div></section>
@@ -331,14 +336,58 @@
     });
   }
 
+  /* ---------- Publications en attente de réseau (chantier sans couverture) ---------- */
+  // Sans réseau, la publication (texte, photos, position) est gardée sur le téléphone et part dès que le réseau revient.
+  const idb = () => new Promise((resolve, reject) => {
+    const r = indexedDB.open("archfield", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("outbox", { keyPath: "id", autoIncrement: true });
+    r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);
+  });
+  const store = async (mode, fn) => { const db = await idb(); return new Promise((resolve, reject) => { const q = fn(db.transaction("outbox", mode).objectStore("outbox")); q.onsuccess = () => resolve(q.result); q.onerror = () => reject(q.error); }); };
+  const outboxAll = () => store("readonly", (o) => o.getAll()).catch(() => []);
+  const outboxAdd = (item) => store("readwrite", (o) => o.add(item));
+  const outboxDel = (id) => store("readwrite", (o) => o.delete(id)).catch(() => {});
+  let outboxCount = 0, flushing = false;
+  const outboxBar = () => (outboxCount ? `<div class="outbox">${ic("warn", 18)}<span>${plural(outboxCount, "{n} publication attend le réseau pour partir.", "{n} publications attendent le réseau pour partir.")}</span><button type="button" class="btn ghost" data-outbox-retry>${t("Réessayer")}</button></div>` : "");
+  function updateForm(it) {
+    const form = new FormData();
+    form.append("text", it.text); form.append("step_id", it.stepId || ""); form.append("done", it.done ? "1" : "0");
+    form.append("meta", JSON.stringify(it.photos.map((p) => p.meta)));
+    if (it.pos) { form.append("lat", it.pos.lat); form.append("lng", it.pos.lng); form.append("accuracy", it.pos.accuracy); }
+    it.photos.forEach((p) => form.append("photos", p.file, p.name));
+    return form;
+  }
+  async function flushOutbox(manual) {
+    if (flushing) return;
+    flushing = true;
+    let sent = 0;
+    try {
+      for (const it of await outboxAll()) {
+        try { await upload(`/api/sites/${it.siteId}/updates`, updateForm(it)); await outboxDel(it.id); sent++; }
+        catch (e) { if (e.offline) break; await outboxDel(it.id); toast(t("Une publication en attente a été refusée : {msg}", { msg: e.message })); }
+      }
+    } finally { flushing = false; }
+    const before = outboxCount;
+    outboxCount = (await outboxAll()).length;
+    if (sent) toast(plural(sent, "{n} publication en attente est partie.", "{n} publications en attente sont parties."));
+    else if (manual && outboxCount) toast(t("Toujours pas de réseau. Nouvel essai automatique dès qu'il revient."));
+    if (sent || before !== outboxCount) route();
+  }
+  window.addEventListener("online", () => flushOutbox());
+
   /* ---------- Nouvelle mise à jour ---------- */
-  let timer = null, t0 = 0, files = [];
+  // Photos prises sur place (appareil photo) ou choisies dans la galerie. La date de prise de vue et la position
+  // sont lues dans chaque photo avant qu'elle soit allégée, et la position du téléphone est demandée à l'ouverture :
+  // le serveur s'en sert pour dire au client si la publication est vérifiée.
+  let timer = null, t0 = 0, files = [], pos = null, posAsked = null;
   async function openComposer(siteId) {
     const sites = await api("/api/sites");
     if (!sites.length) return toast(t("Créez d'abord un chantier."));
     const s = sites.find((x) => x.id === Number(siteId)) || sites[0];
-    t0 = Date.now(); files = [];
+    t0 = Date.now(); files = []; pos = null;
+    posAsked = position().then((p) => { pos = p; showPos(); return p; });
     const ov = $("#composer");
+    const showPos = () => { const el = $("#cmp-pos"); if (el) el.innerHTML = pos ? `${ic("check", 14, "var(--vert)")} ${t("Position enregistrée (à {n} m près)", { n: Math.round(pos.accuracy) })}` : `${ic("warn", 14, "var(--orange)")} ${window.isSecureContext ? t("Position indisponible : activez la localisation pour que vos photos soient vérifiées.") : t("Position indisponible sur cette adresse (il faut le site en HTTPS).")}`; };
     const render = (site) => {
       const run = site.steps.findIndex((x) => x.status === "en_cours");
       const firstOpen = site.steps.findIndex((x) => x.status !== "validee" && x.status !== "a_valider");
@@ -347,8 +396,12 @@
         <div class="field"><label for="cmp-site">${t("Chantier")}</label><select id="cmp-site">${sites.map((x) => `<option value="${x.id}" ${x.id === site.id ? "selected" : ""}>${esc(siteLabel(x))} · ${esc(x.client_name)}</option>`).join("")}</select></div>
         <div class="field"><label for="cmp-step">${t("Étape")}</label><select id="cmp-step">${run < 0 && firstOpen < 0 ? `<option value="" selected>${t("Aucune étape")}</option>` : ""}${site.steps.map((x, i) => `<option value="${x.id}" ${i === (run >= 0 ? run : firstOpen) ? "selected" : ""} ${x.status === "validee" ? "disabled" : ""}>${i + 1}. ${esc(x.name)}${x.status === "validee" ? ` (${t("validée")})` : x.status === "a_valider" ? ` (${t("à valider")})` : ""}</option>`).join("")}</select></div>
         <div class="field"><span class="fl">${t("Photos")}</span>
-          <label class="drop" for="cmp-photos"><input id="cmp-photos" type="file" accept="image/*" multiple>${ic("cam", 22)}<b>${t("Prendre ou choisir des photos")}</b><span style="font-size:.72rem">${t("Jusqu'à 10 photos, datées automatiquement. Elles sont allégées avant l'envoi.")}</span></label>
-          <div class="thumbs" id="cmp-thumbs"></div></div>
+          <div class="photo-pick">
+            <label class="drop" for="cmp-camera"><input id="cmp-camera" type="file" accept="image/*" capture="environment">${ic("cam", 22)}<b>${t("Prendre une photo")}</b><span style="font-size:.72rem">${t("Recommandé : vérifiée sur place")}</span></label>
+            <label class="drop" for="cmp-photos"><input id="cmp-photos" type="file" accept="image/*" multiple>${ic("photo", 22)}<b>${t("Galerie")}</b><span style="font-size:.72rem">${t("Photos de moins de 3 jours")}</span></label>
+          </div>
+          <div class="thumbs" id="cmp-thumbs"></div>
+          <p class="pos-info" id="cmp-pos">${t("Recherche de la position du téléphone…")}</p></div>
         <div class="field"><label for="cmp-text">${t("Une phrase pour {who}", { who: esc(site.client_short) })}</label>
           <textarea id="cmp-text" maxlength="500" required placeholder="${t("Ex. : Murs de la chambre montés, on coule le chaînage samedi.")}"></textarea></div>
         <label class="check"><input type="checkbox" id="cmp-done"><span>${t("Étape terminée : demander à {who} de la valider", { who: esc(site.client_short) })}</span></label>
@@ -356,43 +409,62 @@
         <div class="acts"><button type="button" class="btn ghost" id="cmp-cancel">${t("Annuler")}</button><button type="submit" class="btn primary" id="cmp-send">${t("Publier")}</button></div>
       </form></div>`;
       ov.hidden = false;
-      $("#cmp-site").addEventListener("change", (e) => { const txt = $("#cmp-text").value; render(sites.find((x) => x.id === Number(e.target.value))); $("#cmp-text").value = txt; });
-      $("#cmp-photos").addEventListener("change", async (e) => {
-        const picked = Array.from(e.target.files || []).slice(0, 10);
+      if (pos || !posAsked) showPos(); else posAsked.then(showPos);
+      $("#cmp-site").addEventListener("change", (e) => { const txt = $("#cmp-text").value; render(sites.find((x) => x.id === Number(e.target.value))); $("#cmp-text").value = txt; drawThumbs(); });
+      const add = async (e) => {
+        const picked = Array.from(e.target.files || []).slice(0, 10 - files.length);
+        e.target.value = "";
+        if (!picked.length) return toast(t("10 photos au maximum par mise à jour."));
         $("#cmp-state").hidden = false; $("#cmp-state").textContent = t("Préparation des photos…");
-        files = await Promise.all(picked.map((f) => shrink(f)));
-        $("#cmp-thumbs").innerHTML = files.map((f) => `<img alt="" src="${URL.createObjectURL(f)}">`).join("");
-        const kb = Math.round(files.reduce((a, f) => a + f.size, 0) / 1024);
-        $("#cmp-state").textContent = t("{photos} · {size} à envoyer", { photos: plural(files.length, "{n} photo", "{n} photos"), size: kb > 1024 ? t("{n} Mo", { n: nf(kb / 1024) }) : t("{n} Ko", { n: kb }) });
-      });
+        for (const f of picked) files.push({ meta: await exifOf(f), file: await shrink(f), name: f.name.replace(/\.\w+$/, "") + ".jpg" });
+        drawThumbs();
+      };
+      $("#cmp-camera").addEventListener("change", add);
+      $("#cmp-photos").addEventListener("change", add);
       $("#cmp-cancel").addEventListener("click", closeComposer);
       $("#cmp-form").addEventListener("submit", async (e) => {
         e.preventDefault();
         const text = $("#cmp-text").value.trim();
         if (!text) return;
-        const form = new FormData();
-        form.append("text", text);
-        form.append("step_id", $("#cmp-step").value);
-        form.append("done", $("#cmp-done").checked ? "1" : "0");
-        files.forEach((f) => form.append("photos", f, f.name));
         const btn = $("#cmp-send"), st = $("#cmp-state");
-        btn.disabled = true; st.hidden = false;
-        try {
-          const r = await upload(`/api/sites/${site.id}/updates`, form, (p) => { st.textContent = t("Envoi… {pct} %", { pct: Math.round(p * 100) }); });
-          const secs = Math.max(1, Math.round((Date.now() - t0) / 1000));
+        btn.disabled = true; st.hidden = false; st.textContent = t("Envoi…");
+        await posAsked;
+        const item = { siteId: site.id, siteName: site.name, text, stepId: $("#cmp-step").value, done: $("#cmp-done").checked, pos, photos: files.map((p) => ({ file: p.file, name: p.file.name || p.name, meta: p.meta })), at: new Date().toISOString() };
+        const finish = (title, body) => {
           clearInterval(timer);
           lastSiteId = site.id; siteTab = "journal";
           if (location.hash === "#chantier-" + site.id) route(); else location.hash = "chantier-" + site.id;
           const msg = t("Bonjour {who}, nouvelle mise à jour sur votre chantier : « {text} » Les photos : {url}", { who: site.client_short, text, url: clientUrl(site.client_token) });
           ov.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="cmp-done-title"><div class="done">
-            <span class="ok-ic">${ic("check", 44)}</span><h2 id="cmp-done-title">${t("Publié en {n} s", { n: secs })}</h2>
-            <p class="muted">${r.notified ? t("{who} a reçu un e-mail avec le lien.", { who: esc(site.client_short) }) : t("{who} le voit sur son lien privé.", { who: esc(site.client_name) })} ${t("Vous pouvez aussi envoyer le lien sur WhatsApp.")}</p>
+            <span class="ok-ic">${ic("check", 44)}</span><h2 id="cmp-done-title">${title}</h2>${body}
             <div class="row-acts"><a class="btn wa" href="${waLink(site.client_phone, msg)}" target="_blank" rel="noopener">${t("Prévenir sur WhatsApp")}</a><button type="button" class="btn ghost" id="cmp-close">${t("Fermer")}</button></div>
           </div></div>`;
+          ov.hidden = false;
           $("#cmp-close").addEventListener("click", closeComposer);
-        } catch (err) { st.textContent = err.message; btn.disabled = false; }
+        };
+        try {
+          const r = await upload(`/api/sites/${site.id}/updates`, updateForm(item), (p) => { st.textContent = t("Envoi… {pct} %", { pct: Math.round(p * 100) }); });
+          const proof = r.verify === "verified" ? `<p class="proof ok">${ic("check", 16)} ${t("Publication vérifiée : photos récentes, prises sur le chantier.")}</p>`
+            : r.verify === "warning" ? `<p class="proof warn">${ic("warn", 16)} ${t("Le client verra « À vérifier » : photo ancienne ou prise loin du chantier.")}</p>`
+            : `<p class="proof part">${ic("eye", 16)} ${t("Vérification partielle : activez la localisation et prenez les photos sur place.")}</p>`;
+          finish(t("Publié en {n} s", { n: Math.max(1, Math.round((Date.now() - t0) / 1000)) }), `${proof}<p class="muted">${r.notified ? t("{who} a reçu un e-mail avec le lien.", { who: esc(site.client_short) }) : t("{who} le voit sur son lien privé.", { who: esc(site.client_name) })} ${t("Vous pouvez aussi envoyer le lien sur WhatsApp.")}</p>`);
+        } catch (err) {
+          if (!err.offline) { st.textContent = err.message; btn.disabled = false; return; }
+          // Pas de réseau : la publication attend sur le téléphone.
+          try { await outboxAdd(item); } catch (x) { st.textContent = err.message; btn.disabled = false; return; }
+          outboxCount = (await outboxAll()).length;
+          finish(t("Enregistrée, sans réseau"), `<p class="muted">${t("Votre publication est gardée sur ce téléphone. Elle partira toute seule dès que le réseau revient, avec la date et le lieu des photos.")}</p>`);
+        }
       });
       $("#cmp-text").focus();
+    };
+    const drawThumbs = () => {
+      const th = $("#cmp-thumbs");
+      if (!th) return;
+      th.innerHTML = files.map((f, i) => `<img alt="${t("Photo {i}", { i: i + 1 })}" src="${URL.createObjectURL(f.file)}">`).join("");
+      const kb = Math.round(files.reduce((a, f) => a + f.file.size, 0) / 1024);
+      const st = $("#cmp-state");
+      if (files.length) { st.hidden = false; st.textContent = t("{photos} · {size} à envoyer", { photos: plural(files.length, "{n} photo", "{n} photos"), size: kb > 1024 ? t("{n} Mo", { n: nf(kb / 1024) }) : t("{n} Ko", { n: kb }) }); }
     };
     render(s);
     clearInterval(timer);
@@ -448,6 +520,16 @@
       if (!pendingNewLink) { pendingNewLink = true; b.textContent = t("Confirmer : l'ancien lien cessera de marcher"); setTimeout(() => { pendingNewLink = false; if (b.isConnected) b.textContent = t("Changer de lien"); }, 5000); }
       else { pendingNewLink = false; act(() => api(`/api/sites/${lastSiteId}/new-link`, { method: "POST" }), t("Nouveau lien créé. Envoyez-le au client.")); }
     }
+    else if (d.ledgerCancel) {
+      if (!b.dataset.armed) { b.dataset.armed = "1"; b.textContent = t("Confirmer l'annulation"); setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = t("Annuler"); } }, 5000); return; }
+      act(() => api(`/api/ledger/${d.ledgerCancel}/cancel`, { method: "POST", body: {} }), t("Ligne annulée. Elle reste visible, barrée."));
+    }
+    else if (d.resetPosition) {
+      if (!b.dataset.armed) { b.dataset.armed = "1"; b.textContent = t("Confirmer : effacer la position"); setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = t("Effacer la position"); } }, 5000); return; }
+      act(() => api(`/api/sites/${d.resetPosition}/position/reset`, { method: "POST" }), t("Position effacée. La prochaine publication sur place l'enregistrera."));
+    }
+    else if (d.logoutOthers !== undefined) { try { const r = await api("/api/me/logout-others", { method: "POST" }); toast(plural(r.closed, "{n} autre appareil déconnecté.", "{n} autres appareils déconnectés.")); } catch (err) { toast(err.message); } }
+    else if (d.outboxRetry !== undefined) flushOutbox(true);
     else if (d.logout !== undefined) { await api("/api/logout", { method: "POST" }); location.href = "/connexion"; }
   });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#composer").hidden) closeComposer(); });
@@ -465,6 +547,8 @@
     try { code = sessionStorage.getItem("af-invite"); sessionStorage.removeItem("af-invite"); } catch (e) {}
     if (code) { try { await api(`/api/invitations/${code}/accept`, { method: "POST" }); me = await api("/api/me"); toast(t("Invitation acceptée : le chantier est dans votre liste.")); } catch (e) { toast(e.message); } }
     if (me.account_type === "client") return window.AFSpace.start(me);
+    outboxCount = (await outboxAll()).length;
     route();
+    if (outboxCount && navigator.onLine) flushOutbox();
   })();
 })();
