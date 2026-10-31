@@ -24,6 +24,14 @@ echo "-- Mises à jour de sécurité et outils…"
 sudo apt-get update -y -qq
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq unattended-upgrades fail2ban git curl >/dev/null
 
+# Petit serveur (1 Go de mémoire, ex. Oracle E2.1.Micro) : 2 Go de mémoire de secours sur le disque (swap),
+# pour que la construction et la conversion des photos d'iPhone ne manquent pas de mémoire.
+if [ "$(awk '/MemTotal/ {print $2}' /proc/meminfo)" -lt 2000000 ] && ! swapon --show | grep -q .; then
+  echo "-- Petit serveur : ajout de 2 Go de mémoire de secours (swap)…"
+  sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile >/dev/null && sudo swapon /swapfile
+  grep -q "^/swapfile" /etc/fstab || echo "/swapfile none swap sw 0 0" | sudo tee -a /etc/fstab >/dev/null
+fi
+
 # 3. Docker
 if ! command -v docker >/dev/null 2>&1; then
   echo "-- Installation de Docker…"
