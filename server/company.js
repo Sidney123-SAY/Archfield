@@ -1,6 +1,6 @@
 // Pays acceptés à l'inscription et numéro d'entreprise attendu pour chacun.
 // En France, en Belgique et en Suisse, le numéro est obligatoire et vérifié (clé de contrôle).
-// En Afrique de l'Ouest, beaucoup d'entreprises du BTP ne sont pas encore immatriculées : le numéro est facultatif.
+// En Afrique de l'Ouest et centrale, beaucoup d'entreprises du BTP ne sont pas encore immatriculées : le numéro est facultatif.
 
 const digits = (s) => String(s || "").replace(/[\s.\-/]/g, "");
 
@@ -50,20 +50,33 @@ const COUNTRIES = {
   BF: { name: "Burkina Faso", market: "af", id: "RCCM ou IFU", hint: "Facultatif", required: false, check: loose(5, 30) },
   BJ: { name: "Bénin", market: "af", id: "RCCM ou IFU", hint: "Facultatif", required: false, check: loose(5, 30) },
   TG: { name: "Togo", market: "af", id: "RCCM ou NIF", hint: "Facultatif", required: false, check: loose(5, 30) },
-  NE: { name: "Niger", market: "af", id: "RCCM ou NIF", hint: "Facultatif", required: false, check: loose(5, 30) }
+  NE: { name: "Niger", market: "af", id: "RCCM ou NIF", hint: "Facultatif", required: false, check: loose(5, 30) },
+  GW: { name: "Guinée-Bissau", market: "af", id: "RCCM ou NIF", hint: "Facultatif", required: false, check: loose(5, 30) },
+  // Afrique centrale (CEMAC) : franc CFA d'Afrique centrale (XAF), même valeur que le franc CFA de l'Ouest.
+  CM: { name: "Cameroun", market: "af", region: "ac", id: "RCCM ou NIU", hint: "Facultatif", required: false, check: loose(5, 30) },
+  GA: { name: "Gabon", market: "af", region: "ac", id: "RCCM ou NIF", hint: "Facultatif", required: false, check: loose(5, 30) },
+  CG: { name: "Congo", market: "af", region: "ac", id: "RCCM ou NIU", hint: "Facultatif", required: false, check: loose(5, 30) },
+  TD: { name: "Tchad", market: "af", region: "ac", id: "RCCM ou NIF", hint: "Facultatif", required: false, check: loose(5, 30) },
+  CF: { name: "Centrafrique", market: "af", region: "ac", id: "RCCM ou NIF", hint: "Facultatif", required: false, check: loose(5, 30) },
+  GQ: { name: "Guinée équatoriale", market: "af", region: "ac", id: "RCCM ou NIF", hint: "Facultatif", required: false, check: loose(5, 30) }
 };
+// Région (Europe, Afrique de l'Ouest, Afrique centrale) et monnaie de chaque pays.
+for (const c of Object.values(COUNTRIES)) {
+  c.region = c.region || (c.market === "eu" ? "eu" : "ao");
+  c.currency = c.market === "eu" ? "EUR" : c.region === "ac" ? "XAF" : "XOF";
+}
 
 // Renvoie { country, market, company_id } ou une erreur lisible.
 function checkCompany(country, rawId) {
   const c = COUNTRIES[country];
   if (!c) return { error: "Choisissez le pays de votre entreprise." };
   const raw = String(rawId || "").trim();
-  if (!raw) return c.required ? { error: `Indiquez votre ${c.id} : il est obligatoire pour une entreprise en ${c.name}.` } : { country, market: c.market, company_id: "" };
+  if (!raw) return c.required ? { error: `Indiquez votre ${c.id} : il est obligatoire pour une entreprise en ${c.name}.` } : { country, market: c.market, currency: c.currency, company_id: "" };
   const id = c.check(raw);
   if (!id) return { error: `${c.id} invalide : vérifiez les chiffres (${c.hint}).` };
-  return { country, market: c.market, company_id: id };
+  return { country, market: c.market, currency: c.currency, company_id: id };
 }
 
-const publicCountries = () => Object.entries(COUNTRIES).map(([code, c]) => ({ code, name: c.name, market: c.market, id: c.id, hint: c.hint, required: c.required }));
+const publicCountries = () => Object.entries(COUNTRIES).map(([code, c]) => ({ code, name: c.name, market: c.market, region: c.region, currency: c.currency, id: c.id, hint: c.hint, required: c.required }));
 
 module.exports = { COUNTRIES, checkCompany, publicCountries, siret, bce, ide };

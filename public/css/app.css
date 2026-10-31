@@ -526,3 +526,16 @@ a { color: var(--orange); }
 @media (max-width: 760px) {
   .sp-choices, .sp-plans { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Écran hors connexion (application installée) */
+.offline { min-height: 100vh; display: grid; place-content: center; justify-items: center; gap: 14px; text-align: center; padding: 24px; max-width: 420px; margin: 0 auto; }
+.offline h1 { font-family: var(--f-title); margin: 0; }
+.offline p { color: var(--muted); margin: 0 0 6px; line-height: 1.5; }
+
+/* Installer l'application */
+.install { display: grid; gap: 10px; }
+.install-steps { margin: 0; padding-left: 1.2em; color: var(--muted); font-size: .86rem; line-height: 1.6; }
+.install-nudge { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; margin-bottom: 14px; }
+.install-nudge img { flex: none; border-radius: 10px; }
+.install-nudge span { flex: 1; font-size: .84rem; line-height: 1.35; }
+.install-nudge .icon-btn { flex: none; }

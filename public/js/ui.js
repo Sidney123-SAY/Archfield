@@ -139,6 +139,37 @@
     if (!consent()) cookieBanner(false);
   });
 
+  /* ---------- Application installée (écran d'accueil du téléphone) ---------- */
+  // Le service worker ne marche qu'en HTTPS (ou sur localhost) : sur http://192.168…, le site reste un site.
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+    window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+  }
+  let installPrompt = null;
+  window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installPrompt = e; });
+  window.addEventListener("appinstalled", () => { installPrompt = null; document.querySelectorAll(".install, .install-nudge").forEach((el) => el.remove()); });
+  const standalone = () => window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const installSteps = () => isIOS()
+    ? `<ol class="install-steps"><li>${t("Ouvrez Archfield dans Safari.")}</li><li>${t("Touchez le bouton Partager (le carré avec une flèche).")}</li><li>${t("Choisissez « Sur l'écran d'accueil », puis « Ajouter ».")}</li></ol>`
+    : `<ol class="install-steps"><li>${t("Ouvrez le menu du navigateur (les trois points en haut à droite).")}</li><li>${t("Choisissez « Installer l'application » ou « Ajouter à l'écran d'accueil ».")}</li></ol>`;
+  // Carte de la page Compte. Rien quand l'application est déjà installée.
+  const installCard = () => standalone() ? "" : `<section class="card card-p planbox install"><h2>${t("Application mobile")}</h2>
+    <p class="muted" style="font-size:.86rem">${t("Installez Archfield sur votre téléphone : une icône sur l'écran d'accueil, en plein écran, sans passer par un store.")}</p>
+    <div><button type="button" class="btn primary" data-install>${ic("phone", 15)} ${t("Installer l'application")}</button></div><div data-install-steps hidden>${installSteps()}</div></section>`;
+  // Petit rappel en haut de l'application, sur téléphone, tant qu'il n'est pas fermé.
+  const installNudge = () => standalone() || store.get("af-install-nudge") || location.hash === "#compte" || !window.matchMedia("(max-width: 760px)").matches ? ""
+    : `<div class="install-nudge"><img src="/icons/icon-192.png" alt="" width="40" height="40"><span>${t("Ajoutez Archfield à votre écran d'accueil pour l'ouvrir comme une application.")}</span><button type="button" class="btn ghost" data-install>${t("Installer")}</button><button type="button" class="icon-btn" data-install-close aria-label="${t("Fermer")}">${ic("x", 14)}</button></div>`;
+  document.addEventListener("click", async (e) => {
+    if (e.target.closest("[data-install-close]")) { store.set("af-install-nudge", "1"); e.target.closest(".install-nudge").remove(); return; }
+    const b = e.target.closest("[data-install]");
+    if (!b) return;
+    if (installPrompt) { installPrompt.prompt(); const r = await installPrompt.userChoice; if (r.outcome === "accepted") installPrompt = null; return; }
+    // Pas d'installation directe (iPhone, Firefox…) : on montre la marche à suivre.
+    const box = b.closest(".install")?.querySelector("[data-install-steps]");
+    if (box) box.hidden = !box.hidden;
+    else { location.hash = "compte"; setTimeout(() => document.querySelector("[data-install-steps]")?.removeAttribute("hidden"), 400); }
+  });
+
   /* ---------- Formats ---------- */
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const fmt = (d, o) => new Intl.DateTimeFormat(LOCALE, o).format(new Date(d));
@@ -204,9 +235,17 @@
     el.textContent = msg; el.hidden = false;
     clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, 4000);
   }
+  // Copie dans le presse-papiers. Sans HTTPS (site ouvert par http://192.168… sur un téléphone), l'API moderne
+  // n'existe pas : on passe par l'ancienne méthode, puis on affiche le texte à copier à la main en dernier recours.
   async function copy(text, ok) {
-    try { await navigator.clipboard.writeText(text); toast(ok); }
-    catch (e) { window.prompt ? window.prompt(t("Copiez ce texte :"), text) : toast(text); }
+    try { await navigator.clipboard.writeText(text); return toast(ok); } catch (e) {}
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+    let done = false;
+    try { done = document.execCommand("copy"); } catch (e) {}
+    ta.remove();
+    toast(done ? ok : t("Copiez ce texte : {text}", { text }));
   }
 
   /* ---------- Morceaux d'interface communs à l'artisan et au client ---------- */
@@ -263,5 +302,5 @@
     </table></div>`;
   }
 
-  window.AF = { t, tr, lang, LANGS, translatePage, setLang, langSelect, themeToggle, prefs, setTheme, consent, cookieBanner, footerLinks, LOGO, ic, esc, fmt, time, dShort, dLong, nf, money, cap, plural, rel, api, upload, shrink, toast, copy, STATUS_CHIP, healthChip, siteCard, journal, docsTable };
+  window.AF = { t, tr, lang, LANGS, translatePage, setLang, langSelect, themeToggle, prefs, setTheme, consent, cookieBanner, footerLinks, installCard, installNudge, LOGO, ic, esc, fmt, time, dShort, dLong, nf, money, cap, plural, rel, api, upload, shrink, toast, copy, STATUS_CHIP, healthChip, siteCard, journal, docsTable };
 })();

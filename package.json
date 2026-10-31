@@ -10,6 +10,9 @@
     "seed": "node --no-warnings server/seed.js",
     "activate": "node --no-warnings server/activate.js",
     "screenshots": "node tools/screenshots.js",
+    "icons": "node tools/icons.js",
+    "qa": "node --no-warnings tools/qa.js",
+    "parcours": "node --no-warnings tools/parcours.js",
     "test": "node --no-warnings --test test/*.test.js"
   },
   "engines": {

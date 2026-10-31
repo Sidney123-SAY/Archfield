@@ -73,7 +73,8 @@ body.lp::before { background: #0B1522; }
 .lp-head-row .lp-h2 { margin-bottom: 28px; }
 .lp-arrows { display: flex; gap: 10px; margin-bottom: 34px; }
 .lp-arrow { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--beton); color: var(--ink); font-size: 1.5rem; line-height: 1; display: grid; place-items: center; }
-.lp-arrow:hover { background: var(--line); }
+.lp-arrow:hover:not(:disabled) { background: var(--line); }
+.lp-arrow:disabled { opacity: .35; cursor: default; }
 
 /* Rail de cartes à faire défiler */
 .lp-rail { display: grid; grid-auto-flow: column; grid-auto-columns: min(360px, 82vw); gap: 20px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: max(20px, calc((100vw - 1120px) / 2 + 20px)); padding: 6px max(20px, calc((100vw - 1120px) / 2 + 20px)) 28px; scrollbar-width: none; }

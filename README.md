@@ -21,12 +21,12 @@ Chaque photo, étape et date devient une donnée. L'artisan voit quelles étapes
 
 ## Modèle économique
 
-L'artisan s'abonne, pas le client : 2 mois gratuits, puis 19 €/mois en Europe ou 9 900 FCFA/mois en Afrique de l'Ouest.
+L'artisan s'abonne, pas le client : 2 mois gratuits, puis 19 €/mois en Europe ou 9 900 FCFA/mois en Afrique de l'Ouest et centrale.
 
 ## Marchés
 
 - Europe : artisans et clients pressés ou à distance.
-- Afrique de l'Ouest : entreprises du BTP qui construisent pour des clients de la diaspora.
+- Afrique de l'Ouest et centrale : entreprises du BTP qui construisent pour des clients de la diaspora.
 
 ## Lancer l'application (MVP)
 
@@ -55,6 +55,18 @@ Au démarrage (`npm start`), le terminal affiche l'adresse à ouvrir sur un tél
 - Le Wi-Fi de l'ordinateur doit être en profil « Privé » (Paramètres → Réseau et Internet → Wi-Fi → propriétés du réseau).
 - Le téléphone ne doit pas être sur la 4G ni sur un Wi-Fi invité.
 
+### Application mobile
+
+Archfield s'installe sur le téléphone comme une application (icône sur l'écran d'accueil, plein écran), sans store : sur Android, bouton « Installer l'application » (page Compte) ; sur iPhone, Safari → Partager → « Sur l'écran d'accueil ». Les écrans déjà ouverts restent consultables sans réseau, et l'application se met à jour seule à chaque changement du site.
+
+L'installation demande le HTTPS : elle marche une fois le site en ligne (ou sur `http://localhost`), pas sur l'adresse Wi-Fi `http://192.168…`. Fichiers : `public/manifest.webmanifest`, `public/sw.js` (le serveur y met un numéro de version), `public/icons/` (refaits avec `npm run icons`).
+
+### Recette automatique
+
+`npm run qa` démarre un serveur sur une base de démo jetable, ouvre chaque écran avec chaque compte de démo (ordinateur et téléphone, français et anglais), clique sur chaque bouton sans danger et liste : erreurs JavaScript, requêtes en échec, liens cassés, boutons sans effet, pages plus larges que l'écran, textes restés en français dans la version anglaise. Compter une vingtaine de minutes.
+
+`npm run parcours` joue 25 parcours complets comme un vrai utilisateur, en remplissant chaque formulaire : inscriptions (entreprise avec SIRET, client, proche invité), chantier, publication avec photo, étapes, devis et factures, validation par le client, numéro de suivi, invitation, cookies, langue, compte et suppression. Environ une minute.
+
 ### Captures de la page d'accueil
 
 Les images de `public/img` sont de vraies captures de l'application (français et anglais, clair et sombre). Après un changement d'interface : `npm run seed`, `npm start`, puis dans un autre terminal `npm run screenshots` (nécessite Playwright : `npx playwright install chromium`).
@@ -82,7 +94,7 @@ Les images de `public/img` sont de vraies captures de l'application (français e
 
 ### Inscription, langues, thème et cookies
 
-- **Inscription** : pays de l'entreprise obligatoire. En France, le SIRET est exigé, sa clé est vérifiée et il est contrôlé dans l'annuaire public des entreprises (nom et ville remplis tout seuls). Belgique : numéro BCE, Suisse : IDE, Luxembourg : RCS. En Afrique de l'Ouest (Sénégal, Côte d'Ivoire, Mali, Burkina Faso, Bénin, Togo, Niger), le numéro (NINEA, RCCM…) est facultatif. Le pays fixe la devise et le tarif.
+- **Inscription** : pays de l'entreprise obligatoire. En France, le SIRET est exigé, sa clé est vérifiée et il est contrôlé dans l'annuaire public des entreprises (nom et ville remplis tout seuls). Belgique : numéro BCE, Suisse : IDE, Luxembourg : RCS. En Afrique de l'Ouest (Sénégal, Côte d'Ivoire, Mali, Burkina Faso, Bénin, Togo, Niger, Guinée-Bissau, en francs CFA XOF) et en Afrique centrale (Cameroun, Gabon, Congo, Tchad, Centrafrique, Guinée équatoriale, en francs CFA XAF), le numéro (NINEA, RCCM…) est facultatif. Le pays fixe la devise et le tarif.
 - **Connexion avec Google** : bouton « Continuer avec Google » sur la connexion et l'inscription, dès que `GOOGLE_CLIENT_ID` et `GOOGLE_CLIENT_SECRET` sont renseignés.
   1. Sur https://console.cloud.google.com, créez un projet, puis **API et services → Identifiants → Créer des identifiants → ID client OAuth** (type « Application Web »).
   2. URI de redirection autorisée : `<BASE_URL>/auth/google/callback`, par exemple `http://localhost:3000/auth/google/callback` en local.
@@ -108,6 +120,8 @@ Les images de `public/img` sont de vraies captures de l'application (français e
 | `public/` | Pages : accueil, connexion, app artisan (`/app`), page client (`/c/<lien>`), à propos, mentions légales, confidentialité |
 | `public/js/i18n-en.js` | Traduction anglaise |
 | `tools/i18n-keys.js` | Liste des phrases à traduire (utilisé par les tests) |
+| `tools/qa.js` | Recette automatique de tous les écrans et boutons |
+| `tools/parcours.js` | Parcours complets dans le navigateur (formulaires et actions) |
 | `prototype/` | Première maquette cliquable, sans serveur |
 
 ### Mettre en ligne
@@ -119,7 +133,7 @@ docker build -t archfield .
 docker run -p 3000:3000 -v archfield-data:/data -e BASE_URL=https://votre-domaine archfield
 ```
 
-Render, Railway ou Fly.io conviennent : un service web à partir du `Dockerfile`, plus un volume monté sur `/data`. Voir `.env.example` pour les variables.
+Render, Railway, Fly.io ou une machine virtuelle gratuite (Oracle Cloud « Always Free ») conviennent : un service web à partir du `Dockerfile`, plus un volume monté sur `/data`. Voir `.env.example` pour les variables.
 
 ### Avant d'ouvrir au public
 
@@ -130,9 +144,9 @@ Render, Railway ou Fly.io conviennent : un service web à partir du `Dockerfile`
 
 ### Pas encore fait
 
-- Paiement de l'abonnement (Stripe en Europe, Orange Money et Wave en Afrique de l'Ouest).
+- Paiement de l'abonnement (Stripe en Europe, Orange Money, MTN MoMo et Wave en Afrique de l'Ouest et centrale).
 - Notifications WhatsApp automatiques (l'artisan envoie le message lui-même en un clic).
-- Plusieurs comptes par entreprise (offre Équipe), installation comme une app et envoi hors connexion.
+- Plusieurs comptes par entreprise (offre Équipe) et publication hors connexion (envoi quand le réseau revient).
 
 ## Prototype
 

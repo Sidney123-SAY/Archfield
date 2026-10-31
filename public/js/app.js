@@ -1,7 +1,7 @@
 // Application artisan : tableau de bord, chantiers, journal, photos, clients, compte.
 (function () {
   "use strict";
-  const { t, LOGO, ic, esc, prefs, themeToggle, fmt, dShort, nf, cap, plural, rel, api, upload, shrink, toast, copy, STATUS_CHIP, healthChip, siteCard, journal, docsTable } = window.AF;
+  const { t, LOGO, ic, esc, prefs, themeToggle, installCard, installNudge, fmt, dShort, nf, cap, plural, rel, api, upload, shrink, toast, copy, STATUS_CHIP, healthChip, siteCard, journal, docsTable } = window.AF;
   const $ = (s, el) => (el || document).querySelector(s);
   const app = $("#app");
 
@@ -13,7 +13,7 @@
   const clientUrl = (tok) => `${location.origin}/c/${tok}`;
   const siteLabel = (s) => [s.name, s.location.split(",")[0]].filter(Boolean).join(" — ");
   const days = (n) => t("{n} j", { n: nf(n) });
-  const cur = () => (me.currency === "XOF" ? "FCFA" : "€");
+  const cur = () => (me.currency === "EUR" ? "€" : "FCFA");
 
   /* ---------- Coquille ---------- */
   const NAV = [["tableau-de-bord", "Tableau de bord", "dash"], ["chantiers", "Chantiers", "home"], ["journal", "Journal", "list"], ["clients", "Clients", "users"], ["compte", "Abonnement", "card"]];
@@ -38,7 +38,7 @@
       </aside>
       <div class="content">
         <div class="mhead"><a class="logo" href="#journal">${LOGO(30)} Archfield</a><span class="mhead-r">${themeToggle()}<a class="avatar" href="#compte" title="${esc(me.contact_name)}" style="text-decoration:none">${esc(initials(me.contact_name))}</a></span></div>
-        <div class="content-in">${me.access.active ? "" : `<div class="expired">${ic("warn", 18)}<span>${t("Votre essai gratuit est terminé. Vous pouvez consulter vos chantiers, mais plus publier.")} <a href="#compte">${t("Activer l'abonnement")}</a></span></div>`}${body}</div>
+        <div class="content-in">${installNudge()}${me.access.active ? "" : `<div class="expired">${ic("warn", 18)}<span>${t("Votre essai gratuit est terminé. Vous pouvez consulter vos chantiers, mais plus publier.")} <a href="#compte">${t("Activer l'abonnement")}</a></span></div>`}${body}</div>
       </div>
       <nav class="tabbar" aria-label="${t("Onglets")}">${TABS.map(([k, l, i]) => `<button type="button" data-go="${k}" ${tabOn(k) ? 'aria-current="page"' : ""}>${ic(i, 24)}<span>${t(l)}</span></button>`).join("")}</nav>
     </div>`;
@@ -53,7 +53,7 @@
     const sub = `${esc(me.company)}${me.city ? " · " + esc(me.city) : ""}`;
     if (!d.sites.length && d.reliability.delivered === 0) {
       return shell("tableau-de-bord", `<div class="pagehead"><div><p class="sub">${sub}</p><h1>${t("Tableau de bord")}</h1></div></div>
-        ${!isPro() ? `<section class="card empty"><h2>${t("Pas encore de chantier")}</h2><p>${t("Le chantier qu'on vous confie apparaîtra ici dès que vous aurez accepté l'invitation.")}</p></section>` : ""}<section class="card empty" ${isPro() ? "" : "hidden"}><h2>${t("Créez votre premier chantier")}</h2><p>${t("Ajoutez le client et les étapes prévues. Archfield vous donne un lien privé à envoyer au client par WhatsApp ou par e-mail, sans compte à créer.")}</p><a class="btn primary" href="#nouveau-chantier">${ic("plus", 16)} ${t("Nouveau chantier")}</a></section>`);
+        ${!isPro() ? noSiteForProche() : ""}<section class="card empty" ${isPro() ? "" : "hidden"}><h2>${t("Créez votre premier chantier")}</h2><p>${t("Ajoutez le client et les étapes prévues. Archfield vous donne un lien privé à envoyer au client par WhatsApp ou par e-mail, sans compte à créer.")}</p><a class="btn primary" href="#nouveau-chantier">${ic("plus", 16)} ${t("Nouveau chantier")}</a></section>`);
     }
     const max = Math.max(1, ...d.byStep.map((b) => Math.max(b.planned, b.actual))) * 1.05;
     const chart = d.byStep.length ? d.byStep.map((b) => {
@@ -104,12 +104,16 @@
     shell("chantiers", `<div class="pagehead"><div><p class="sub">${t("{a} en cours · {d}", { a: active.length, d: plural(delivered.length, "{n} livré", "{n} livrés") })}</p><h1>${t("Chantiers")}</h1></div>
       ${isPro() ? `<div class="acts"><a class="btn primary" href="#nouveau-chantier">${ic("plus", 15)} ${t("Nouveau chantier")}</a></div>` : ""}</div>
       ${isMobile() && isPro() ? `<a class="btn primary" href="#nouveau-chantier">${ic("plus", 15)} ${t("Nouveau chantier")}</a>` : ""}
-      ${active.length ? `<div class="sites">${active.map(card).join("")}</div>` : `<section class="card empty"><h2>${t("Aucun chantier en cours")}</h2><p>${t("Créez un chantier pour obtenir le lien privé de votre client.")}</p><a class="btn primary" href="#nouveau-chantier">${t("Nouveau chantier")}</a></section>`}
+      ${active.length ? `<div class="sites">${active.map(card).join("")}</div>` : isPro() ? `<section class="card empty"><h2>${t("Aucun chantier en cours")}</h2><p>${t("Créez un chantier pour obtenir le lien privé de votre client.")}</p><a class="btn primary" href="#nouveau-chantier">${t("Nouveau chantier")}</a></section>` : noSiteForProche()}
       ${delivered.length ? `<h2 class="section-t">${t("Chantiers livrés")}</h2><div class="sites">${delivered.map(card).join("")}</div>` : ""}`);
   }
 
+  // Un proche ne crée pas de chantier : il gère ceux qu'on lui confie par invitation.
+  const noSiteForProche = () => `<section class="card empty"><h2>${t("Pas encore de chantier")}</h2><p>${t("Le chantier qu'on vous confie apparaîtra ici dès que vous aurez accepté l'invitation.")}</p></section>`;
+
   /* ---------- Nouveau chantier ---------- */
   async function pageNewSite() {
+    if (!isPro()) { history.replaceState(null, "", "#chantiers"); return pageSites(); }
     templates = templates || (await api("/api/templates"));
     const kind0 = me.market === "af" ? "ext" : "int";
     const af = me.market === "af";
@@ -249,7 +253,7 @@
     if (!lastSiteId) { try { lastSiteId = Number(localStorage.getItem("af-last-site")) || null; } catch (e) {} }
     const sites = await api("/api/sites");
     const pick = sites.find((s) => s.id === lastSiteId) || sites.sort((a, b) => String(b.last_update_at || "").localeCompare(String(a.last_update_at || "")))[0];
-    if (!pick) return shell("journal", `<section class="card empty"><h2>${t("Pas encore de chantier")}</h2><p>${t("Créez un chantier pour publier votre première mise à jour.")}</p><a class="btn primary" href="#nouveau-chantier">${t("Nouveau chantier")}</a></section>`);
+    if (!pick) return shell("journal", isPro() ? `<section class="card empty"><h2>${t("Pas encore de chantier")}</h2><p>${t("Créez un chantier pour publier votre première mise à jour.")}</p><a class="btn primary" href="#nouveau-chantier">${t("Nouveau chantier")}</a></section>` : noSiteForProche());
     siteTab = "journal";
     history.replaceState(null, "", "#chantier-" + pick.id);
     return pageSite(pick.id);
@@ -291,9 +295,10 @@
         <ul><li>${t("Chantiers et clients illimités")}</li><li>${t("Un lien privé par client, sans compte")}</li><li>${t("Rapport automatique chaque lundi")}</li><li>${t("Alertes de dérive et indice de fiabilité")}</li></ul>
         <p class="muted" style="font-size:.8rem">${acc.status === "expired" ? t("Pour activer votre abonnement, écrivez-nous depuis l'adresse de votre compte : nous l'activons sous 24 h. Le paiement en ligne (carte, Orange Money, Wave) arrive bientôt.") : t("Le paiement en ligne (carte, Orange Money, Wave) arrive bientôt. D'ici là, nous activons les abonnements sur demande.")}</p>
       </section>
+      ${installCard()}
       <section class="card card-p planbox"><h2>${t("Apparence et langue")}</h2><p class="muted" style="font-size:.86rem">${t("Soleil : thème clair. Lune : thème sombre. Écran : suit le réglage de votre téléphone ou de votre ordinateur.")}</p><div>${prefs()}</div></section>
-      <form class="card card-p form" id="profile" style="max-width:560px"><h2>${t("Votre entreprise")}</h2>
-        <div class="field"><label for="pf-company">${t("Nom de l'entreprise")}</label><input id="pf-company" name="company" required value="${esc(me.company)}"></div>
+      <form class="card card-p form" id="profile" style="max-width:560px"><h2>${isPro() ? t("Votre entreprise") : t("Vos informations")}</h2>
+        ${isPro() ? `<div class="field"><label for="pf-company">${t("Nom de l'entreprise")}</label><input id="pf-company" name="company" required value="${esc(me.company)}"></div>` : ""}
         ${me.company_id ? `<p class="muted" style="font-size:.8rem">${t("Numéro d'entreprise : {id}", { id: esc(me.company_id) })}</p>` : ""}
         <div class="row2"><div class="field"><label for="pf-contact">${t("Votre nom")}</label><input id="pf-contact" name="contact_name" required value="${esc(me.contact_name)}"></div>
         <div class="field"><label for="pf-city">${t("Ville")}</label><input id="pf-city" name="city" value="${esc(me.city)}"></div></div>
@@ -308,7 +313,7 @@
         <p class="muted" style="font-size:.86rem">${t("Téléchargez toutes les données de votre compte : chantiers, étapes, journal, documents et rapports.")} <a href="/confidentialite" target="_blank" rel="noopener">${t("Politique de confidentialité")}</a></p>
         <div class="row-acts"><a class="btn" href="/api/me/export" download>${t("Télécharger mes données")}</a><button type="button" class="btn ghost" data-cookies>${t("Gérer les cookies")}</button></div></section>
       <form class="card card-p form" id="delete-account" style="max-width:560px"><h2>${t("Supprimer le compte")}</h2>
-        <p class="muted" style="font-size:.86rem">${t("Tous vos chantiers, photos et documents sont effacés définitivement, et les liens de vos clients cessent de marcher. Téléchargez vos données avant.")}</p>
+        <p class="muted" style="font-size:.86rem">${isPro() ? t("Tous vos chantiers, photos et documents sont effacés définitivement, et les liens de vos clients cessent de marcher. Téléchargez vos données avant.") : t("Les chantiers qu'on vous a confiés reviennent à leur propriétaire, avec tout leur journal.")}</p>
         <div class="field"><label for="del-password">${me.has_password ? t("Votre mot de passe, pour confirmer") : t("Votre adresse e-mail, pour confirmer")}</label><input id="del-password" name="password" type="${me.has_password ? "password" : "email"}" required autocomplete="${me.has_password ? "current-password" : "off"}"></div>
         <div><button class="btn danger" type="submit">${t("Supprimer définitivement mon compte")}</button></div></form>
       <div><button type="button" class="btn ghost" data-logout>${t("Se déconnecter")}</button></div>`);
@@ -340,7 +345,7 @@
       ov.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="cmp-title"><form id="cmp-form">
         <div class="sh"><h2 id="cmp-title">${t("Nouvelle mise à jour")}</h2><span class="timer" id="cmp-timer">0 s</span></div>
         <div class="field"><label for="cmp-site">${t("Chantier")}</label><select id="cmp-site">${sites.map((x) => `<option value="${x.id}" ${x.id === site.id ? "selected" : ""}>${esc(siteLabel(x))} · ${esc(x.client_name)}</option>`).join("")}</select></div>
-        <div class="field"><label for="cmp-step">${t("Étape")}</label><select id="cmp-step">${site.steps.map((x, i) => `<option value="${x.id}" ${i === (run >= 0 ? run : firstOpen) ? "selected" : ""} ${x.status === "validee" ? "disabled" : ""}>${i + 1}. ${esc(x.name)}${x.status === "validee" ? ` (${t("validée")})` : x.status === "a_valider" ? ` (${t("à valider")})` : ""}</option>`).join("")}</select></div>
+        <div class="field"><label for="cmp-step">${t("Étape")}</label><select id="cmp-step">${run < 0 && firstOpen < 0 ? `<option value="" selected>${t("Aucune étape")}</option>` : ""}${site.steps.map((x, i) => `<option value="${x.id}" ${i === (run >= 0 ? run : firstOpen) ? "selected" : ""} ${x.status === "validee" ? "disabled" : ""}>${i + 1}. ${esc(x.name)}${x.status === "validee" ? ` (${t("validée")})` : x.status === "a_valider" ? ` (${t("à valider")})` : ""}</option>`).join("")}</select></div>
         <div class="field"><span class="fl">${t("Photos")}</span>
           <label class="drop" for="cmp-photos"><input id="cmp-photos" type="file" accept="image/*" multiple>${ic("cam", 22)}<b>${t("Prendre ou choisir des photos")}</b><span style="font-size:.72rem">${t("Jusqu'à 10 photos, datées automatiquement. Elles sont allégées avant l'envoi.")}</span></label>
           <div class="thumbs" id="cmp-thumbs"></div></div>
@@ -405,7 +410,7 @@
       await (pages[h] || pageDashboard)();
     } catch (e) { errorBox(h, e); }
   }
-  window.addEventListener("hashchange", () => { if (!me || me.account_type === "client") return; if (!/^#chantier-/.test(location.hash)) siteTab = "journal"; route().then(() => window.scrollTo(0, 0)); });
+  window.addEventListener("hashchange", () => { if (!me || me.account_type === "client") return; if (!$("#composer").hidden && !$("#cmp-done-title")) closeComposer(); if (!/^#chantier-/.test(location.hash)) siteTab = "journal"; route().then(() => window.scrollTo(0, 0)); });
 
   let pendingNewLink = false;
   document.addEventListener("click", async (e) => {
@@ -449,7 +454,12 @@
   $("#composer").addEventListener("click", (e) => { if (e.target.id === "composer") closeComposer(); });
 
   (async () => {
-    try { me = await api("/api/me"); } catch (e) { return; }
+    try { me = await api("/api/me"); }
+    catch (e) {
+      // Pas de réseau (ou serveur injoignable) : on le dit au lieu de rester sur « Chargement… ».
+      if (!/\/connexion$/.test(location.pathname)) app.innerHTML = `<main class="offline"><img src="/favicon.svg" alt="" width="64" height="64"><h1>${t("Pas de connexion")}</h1><p>${esc(e.message)}</p><a class="btn primary" href="">${t("Réessayer")}</a></main>`;
+      return;
+    }
     // Invitation acceptée après une connexion (Google ou e-mail) qui a ramené ici.
     let code = null;
     try { code = sessionStorage.getItem("af-invite"); sessionStorage.removeItem("af-invite"); } catch (e) {}

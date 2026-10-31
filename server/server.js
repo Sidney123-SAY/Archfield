@@ -19,7 +19,7 @@ const PROD = process.env.NODE_ENV === "production";
 const PUBLIC = path.join(__dirname, "..", "public");
 const TRIAL_DAYS = 61;
 const NOTIFY_EVERY_H = 3; // au plus un e-mail « nouvelle mise à jour » toutes les 3 heures par chantier
-const MARKETS = { eu: { currency: "EUR", price: "19 €" }, af: { currency: "XOF", price: "9 900 FCFA" } };
+const MARKETS = { eu: { price: "19 €" }, af: { price: "9 900 FCFA" } };
 const TEMPLATES = {
   ext: [["Terrassement", 6], ["Fondations", 14], ["Soubassement", 7], ["Élévation des murs", 18], ["Dalle et chaînage", 12], ["Toiture", 9], ["Menuiseries", 10], ["Enduits et finitions", 20]],
   int: [["Démolition", 3], ["Plomberie", 5], ["Électricité", 4], ["Plâtrerie", 6], ["Carrelage", 4], ["Peinture", 4]]
@@ -55,7 +55,9 @@ app.use("/api", (req, res, next) => {
 });
 
 const buckets = new Map();
+const LIMIT_FACTOR = Number(process.env.LIMIT_FACTOR) || 1; // relevé par la recette automatique (tools/qa.js)
 function limit(name, max, windowMs, key = (req) => req.ip) {
+  max *= LIMIT_FACTOR;
   return (req, res, next) => {
     const k = name + "|" + key(req), now = Date.now();
     let b = buckets.get(k);
@@ -156,9 +158,10 @@ app.post("/api/signup", limit("signup", 10, 60 * 60e3), wrap(async (req, res) =>
   if (type === "pro") co = checkCompany(b.country, b.company_id);
   else {
     // Client ou proche : pas de numéro d'entreprise ; la zone (euros ou FCFA) suit le pays, ou l'inviteur pour un proche.
-    const owner = invite ? get("SELECT market, country FROM artisans WHERE id = ?", invite.created_by) : null;
+    const owner = invite ? get("SELECT market, currency FROM artisans WHERE id = ?", invite.created_by) : null;
     const country = COUNTRIES[b.country] ? b.country : "";
-    co = { country, company_id: "", market: owner ? owner.market : COUNTRIES[country]?.market || "eu" };
+    co = owner ? { country, company_id: "", market: owner.market, currency: owner.currency }
+      : { country, company_id: "", market: COUNTRIES[country]?.market || "eu", currency: COUNTRIES[country]?.currency || "EUR" };
   }
   if (co.error) fail(400, co.error);
   let mail, hash, googleSub = null;
@@ -176,7 +179,7 @@ app.post("/api/signup", limit("signup", 10, 60 * 60e3), wrap(async (req, res) =>
     const r = run(
       `INSERT INTO artisans (email, password_hash, account_type, company, contact_name, city, country, company_id, market, currency, google_sub, trial_ends_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       mail, hash, type, type === "pro" ? str(b.company, 120, "entreprise") : contact, contact, str(b.city, 120, "ville", false), co.country, co.company_id,
-      co.market, MARKETS[co.market].currency, googleSub, new Date(Date.now() + (type === "client" ? space.CLIENT_TRIAL_DAYS : TRIAL_DAYS) * DAY).toISOString(), nowIso());
+      co.market, co.currency, googleSub, new Date(Date.now() + (type === "client" ? space.CLIENT_TRIAL_DAYS : TRIAL_DAYS) * DAY).toISOString(), nowIso());
     if (b.google_token) run("DELETE FROM oauth_pending WHERE token_hash = ?", sha256(String(b.google_token)));
     return Number(r.lastInsertRowid);
   });
@@ -355,10 +358,11 @@ function startNextIfIdle(siteId, afterPosition) {
 api.get("/me", (req, res) => res.json(publicArtisan(req.artisan)));
 api.patch("/me", (req, res) => {
   const b = req.body || {}, a = req.artisan;
+  const contact = b.contact_name !== undefined ? str(b.contact_name, 120, "nom") : a.contact_name;
+  // Un client ou un proche n'a pas d'entreprise : son nom en tient lieu.
   run("UPDATE artisans SET company = ?, contact_name = ?, city = ? WHERE id = ?",
-    b.company !== undefined ? str(b.company, 120, "entreprise") : a.company,
-    b.contact_name !== undefined ? str(b.contact_name, 120, "nom") : a.contact_name,
-    b.city !== undefined ? str(b.city, 120, "ville", false) : a.city, a.id);
+    a.account_type !== "pro" ? contact : b.company !== undefined ? str(b.company, 120, "entreprise") : a.company,
+    contact, b.city !== undefined ? str(b.city, 120, "ville", false) : a.city, a.id);
   res.json(publicArtisan(get("SELECT * FROM artisans WHERE id = ?", a.id)));
 });
 api.post("/me/password", wrap(async (req, res) => {
@@ -718,6 +722,24 @@ app.get("/a-propos", page("a-propos.html"));
 app.get("/mentions-legales", page("mentions-legales.html"));
 app.get("/app", page("app.html"));
 app.get("/c/:token", page("client.html"));
+app.get("/hors-connexion", page("offline.html"));
+// Service worker : sa version suit le contenu du site, pour que l'application installée se mette à jour seule.
+let swCache = { at: 0, body: "" };
+function siteVersion(dir = PUBLIC) {
+  const h = crypto.createHash("sha1");
+  for (const e of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+    const f = path.join(dir, e.name);
+    if (e.isDirectory()) h.update(siteVersion(f));
+    else { const st = fs.statSync(f); h.update(`${e.name}:${st.size}:${st.mtimeMs}`); }
+  }
+  return h.digest("hex").slice(0, 12);
+}
+app.get("/sw.js", (req, res) => {
+  if (Date.now() - swCache.at > 5000) swCache = { at: Date.now(), body: fs.readFileSync(path.join(PUBLIC, "sw.js"), "utf8").replace("__VERSION__", siteVersion()) };
+  res.type("application/javascript").setHeader("Cache-Control", "no-cache");
+  res.send(swCache.body);
+});
+app.get("/manifest.webmanifest", (req, res) => { res.type("application/manifest+json"); res.sendFile(path.join(PUBLIC, "manifest.webmanifest")); });
 app.use(express.static(PUBLIC, { index: false, maxAge: PROD ? "1h" : 0 }));
 
 app.use((err, req, res, next) => {

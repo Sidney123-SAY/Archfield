@@ -16,12 +16,20 @@
     if (!img.src.endsWith(src)) img.src = src;
   });
 
-  // Flèches du rail de cartes
+  // Flèches du rail de cartes : grisées au début et à la fin, cachées si tout tient à l'écran.
   const rail = document.getElementById("rail");
-  document.querySelectorAll("[data-scroll]").forEach((b) => b.addEventListener("click", () => {
+  const arrows = [...document.querySelectorAll("[data-scroll]")];
+  arrows.forEach((b) => b.addEventListener("click", () => {
     const tile = rail.querySelector(".lp-tile");
     rail.scrollBy({ left: Number(b.dataset.scroll) * (tile ? tile.offsetWidth + 20 : 360), behavior: "smooth" });
   }));
+  const syncArrows = () => {
+    if (!rail || !arrows.length) return;
+    const max = rail.scrollWidth - rail.clientWidth;
+    arrows[0].parentElement.hidden = max <= 2;
+    arrows.forEach((b) => { b.disabled = Number(b.dataset.scroll) < 0 ? rail.scrollLeft <= 2 : rail.scrollLeft >= max - 2; });
+  };
+  if (rail) { rail.addEventListener("scroll", syncArrows, { passive: true }); window.addEventListener("resize", syncArrows); window.addEventListener("load", syncArrows); syncArrows(); }
 
   // Les sections apparaissent en douceur quand elles arrivent à l'écran ; elles restent visibles sans JavaScript.
   if ("IntersectionObserver" in window && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {

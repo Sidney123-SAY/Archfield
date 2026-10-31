@@ -52,7 +52,7 @@ test("numéros d'entreprise : SIRET, BCE, IDE", () => {
   assert.equal(checkCompany("BE", "0403170701").market, "eu");
 });
 
-test("inscription : SIRET obligatoire et vérifié en France, facultatif au Sénégal", async () => {
+test("inscription : SIRET obligatoire et vérifié en France, facultatif en Afrique de l'Ouest et centrale", async () => {
   const body = { email: "fr@example.com", password: "motdepasse", company: "Rhône Rénov", contact_name: "Marc", country: "FR" };
   const post = (b) => req("/api/signup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) });
   assert.equal((await post(body)).status, 400);
@@ -65,6 +65,14 @@ test("inscription : SIRET obligatoire et vérifié en France, facultatif au Sén
   const sn = await post({ ...body, email: "sn@example.com", country: "SN", company_id: "" });
   assert.equal(sn.status, 201);
   assert.equal((await (await req("/api/me", { headers: { Cookie: cookieOf(sn, "af_session") } })).json()).currency, "XOF");
+  // Afrique centrale : franc CFA d'Afrique centrale (XAF), même tarif en FCFA.
+  const cm = await post({ ...body, email: "cm@example.com", country: "CM", company_id: "RC/DLA/2024/B/123" });
+  assert.equal(cm.status, 201);
+  const cmMe = await (await req("/api/me", { headers: { Cookie: cookieOf(cm, "af_session") } })).json();
+  assert.equal(cmMe.currency, "XAF");
+  assert.equal(cmMe.price, "9 900 FCFA");
+  const client = await post({ email: "ga@example.com", password: "motdepasse", contact_name: "Léa", account_type: "client", country: "GA" });
+  assert.equal((await (await req("/api/me", { headers: { Cookie: cookieOf(client, "af_session") } })).json()).currency, "XAF");
   assert.equal((await req("/api/entreprise/12345678901234")).status, 400);
 });
 

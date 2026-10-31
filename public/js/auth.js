@@ -133,10 +133,11 @@
     if (c.google) document.querySelectorAll(".google-zone").forEach((el) => { el.hidden = false; });
     if (c.demo) $("#demo").hidden = false;
     countries = c.countries || [];
-    const opts = (m) => countries.filter((x) => x.market === m).map((x) => `<option value="${x.code}">${esc(t(x.name))}</option>`).join("");
+    const opts = (r) => countries.filter((x) => x.region === r).map((x) => `<option value="${x.code}">${esc(t(x.name))}</option>`).join("");
     const choose = `<option value="" disabled selected>${t("Choisir…")}</option>`;
-    $("#su-country").innerHTML = `${choose}<optgroup label="${t("Europe")}">${opts("eu")}</optgroup><optgroup label="${t("Afrique de l'Ouest")}">${opts("af")}</optgroup>`;
-    $("#su-home").innerHTML = `${choose}<optgroup label="${t("Europe")}">${opts("eu")}${HOME_EXTRA.slice(3, 6).map(([k, n]) => `<option value="${k}">${t(n)}</option>`).join("")}</optgroup><optgroup label="${t("Afrique de l'Ouest")}">${opts("af")}</optgroup><optgroup label="${t("Ailleurs")}">${HOME_EXTRA.filter(([k]) => ["CA", "US", "GB", "XX"].includes(k)).map(([k, n]) => `<option value="${k}">${t(n)}</option>`).join("")}</optgroup>`;
+    const africa = `<optgroup label="${t("Afrique de l'Ouest")}">${opts("ao")}</optgroup><optgroup label="${t("Afrique centrale")}">${opts("ac")}</optgroup>`;
+    $("#su-country").innerHTML = `${choose}<optgroup label="${t("Europe")}">${opts("eu")}</optgroup>${africa}`;
+    $("#su-home").innerHTML = `${choose}<optgroup label="${t("Europe")}">${opts("eu")}${HOME_EXTRA.slice(3, 6).map(([k, n]) => `<option value="${k}">${t(n)}</option>`).join("")}</optgroup>${africa}<optgroup label="${t("Ailleurs")}">${HOME_EXTRA.filter(([k]) => ["CA", "US", "GB", "XX"].includes(k)).map(([k, n]) => `<option value="${k}">${t(n)}</option>`).join("")}</optgroup>`;
     const guess = /^(fr|en)-(\w\w)$/i.exec(navigator.language || "");
     if (guess) {
       const code = guess[2].toUpperCase();

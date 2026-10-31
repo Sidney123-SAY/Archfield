@@ -1,7 +1,7 @@
 // Espace client : tous ses chantiers au même endroit, ajout par numéro de suivi, chantier confié à une entreprise ou à un proche.
 (function () {
   "use strict";
-  const { t, LOGO, ic, esc, prefs, themeToggle, dShort, nf, plural, rel, api, toast, copy, healthChip } = window.AF;
+  const { t, LOGO, ic, esc, prefs, themeToggle, installCard, installNudge, dShort, nf, plural, rel, api, toast, copy, healthChip } = window.AF;
   const $ = (s) => document.querySelector(s);
   const app = $("#app");
   let me = null;
@@ -29,7 +29,7 @@
       </aside>
       <div class="content">
         <div class="mhead"><a class="logo" href="#mes-chantiers">${LOGO(30)} Archfield</a><span class="mhead-r">${themeToggle()}<a class="avatar" href="#compte" title="${esc(me.contact_name)}" style="text-decoration:none">${esc(initials(me.contact_name))}</a></span></div>
-        <div class="content-in">${body}</div>
+        <div class="content-in">${installNudge()}${body}</div>
       </div>
       <nav class="tabbar" aria-label="${t("Onglets")}">${NAV.map(([k, l, i]) => `<button type="button" data-go="${k}" ${on(k) ? 'aria-current="page"' : ""}>${ic(i, 24)}<span>${t(k === "ajouter" ? "Ajouter" : l)}</span></button>`).join("")}</nav>
     </div>`;
@@ -188,6 +188,7 @@
   /* ---------- Compte ---------- */
   function pageAccount() {
     shell("compte", `<div class="pagehead"><div><p class="sub">${esc(me.email)}${me.google ? " · " + t("connecté avec Google") : ""}</p><h1>${t("Compte")}</h1></div></div>
+      ${installCard()}
       <section class="card card-p planbox"><h2>${t("Apparence et langue")}</h2><div>${prefs()}</div></section>
       <form class="card card-p form" id="profile" style="max-width:560px"><h2>${t("Vos informations")}</h2>
         <div class="row2"><div class="field"><label for="pf-contact">${t("Votre nom")}</label><input id="pf-contact" name="contact_name" required value="${esc(me.contact_name)}"></div>
