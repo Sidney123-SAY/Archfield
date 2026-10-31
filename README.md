@@ -126,6 +126,8 @@ Les images de `public/img` sont de vraies captures de l'application (français e
 
 ### Mettre en ligne
 
+Guide pas à pas (serveur gratuit Oracle Cloud ou petit serveur payant, adresse gratuite DuckDNS, HTTPS automatique, sauvegardes, mises à jour) : **[deploy/HEBERGEMENT.md](deploy/HEBERGEMENT.md)**. En résumé, sur le serveur : `cp .env.example .env`, renseigner `DOMAIN` et `BASE_URL`, puis `docker compose up -d --build`.
+
 L'application tient dans un seul conteneur. Le dossier `DATA_DIR` contient la base et les photos : il doit être sur un disque persistant.
 
 ```bash

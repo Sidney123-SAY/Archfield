@@ -723,6 +723,8 @@ app.get("/mentions-legales", page("mentions-legales.html"));
 app.get("/app", page("app.html"));
 app.get("/c/:token", page("client.html"));
 app.get("/hors-connexion", page("offline.html"));
+// Surveillance (UptimeRobot…) : répond « ok » si le serveur et la base répondent.
+app.get("/healthz", (req, res) => { get("SELECT 1"); res.type("text").send("ok"); });
 // Service worker : sa version suit le contenu du site, pour que l'application installée se mette à jour seule.
 let swCache = { at: 0, body: "" };
 function siteVersion(dir = PUBLIC) {

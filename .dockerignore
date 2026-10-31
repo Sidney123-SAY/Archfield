@@ -3,3 +3,11 @@ data
 prototype
 test
 .git
+.env
+backups
+captures
+deploy
+marketing
+tools
+*.zip
+*.bundle
