@@ -25,7 +25,7 @@ Ce qui tourne sur le serveur (`compose.yaml` à la racine du projet) :
 
 Plus tard, un vrai nom de domaine (`archfield.app`, `archfield.fr`, environ 10 à 20 € par an) fera plus sérieux : il suffira de le faire pointer vers la même adresse IP et de changer `DOMAIN` et `BASE_URL` (étape 4).
 
-## 3. Se connecter au serveur et installer Docker
+## 3. Se connecter au serveur
 
 Depuis Windows, ouvrez PowerShell (remplacez le chemin de la clé et l'adresse IP) :
 
@@ -33,50 +33,28 @@ Depuis Windows, ouvrez PowerShell (remplacez le chemin de la clé et l'adresse I
 ssh -i C:\Users\Sidney\Downloads\ssh-key.key ubuntu@123.45.67.89
 ```
 
-Puis, sur le serveur :
+La première fois, répondez `yes` à la question sur l'empreinte du serveur. Si Windows refuse la clé (« permissions too open »), faites un clic droit sur le fichier de la clé → Propriétés → Sécurité, et ne laissez que votre compte Windows.
 
-```bash
-curl -fsSL https://get.docker.com | sudo sh
-sudo usermod -aG docker ubuntu
-# Oracle uniquement : le pare-feu d'Ubuntu bloque aussi les ports du site
-sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
-sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
-sudo netfilter-persistent save
-# Sécurité : mises à jour automatiques d'Ubuntu et blocage des attaques sur SSH
-sudo apt install -y unattended-upgrades fail2ban
-exit
-```
+## 4. Installer Archfield (une commande)
 
-Reconnectez-vous avec la même commande `ssh` (pour que Docker soit utilisable sans `sudo`).
-
-## 4. Installer Archfield
+Sur le serveur :
 
 ```bash
 git clone -b claude/artifact-session-g0q340 https://github.com/Sidney123-SAY/Arcfield.git
-cd Arcfield
-cp .env.example .env
-nano .env
+bash Arcfield/deploy/installer.sh
 ```
 
-Si le dépôt est privé, Git demande un identifiant et un mot de passe : donnez votre nom GitHub et, comme mot de passe, un jeton créé sur GitHub (Settings → Developer settings → Personal access tokens → Fine-grained token, accès en lecture au dépôt Arcfield).
+Si le dépôt est privé, Git demande un identifiant et un mot de passe : donnez votre nom GitHub et, comme mot de passe, un jeton créé sur GitHub (Settings → Developer settings → Personal access tokens → Fine-grained token, accès en lecture seule au dépôt Arcfield).
 
-Dans `.env`, changez au minimum (Ctrl+O pour enregistrer, Ctrl+X pour quitter) :
+Le script demande l'adresse du site (ex. `archfield.duckdns.org`) et votre e-mail, puis fait tout seul :
+- les mises à jour de sécurité automatiques d'Ubuntu et le blocage des attaques SSH (fail2ban) ;
+- l'installation de Docker ;
+- l'ouverture des ports 80 et 443 sur les serveurs Oracle ;
+- le fichier `.env` (production, démo désactivée), lisible par vous seul ;
+- la construction et le démarrage du site, avec le HTTPS ;
+- la sauvegarde chaque nuit à 3 h 30.
 
-```
-DOMAIN=archfield.duckdns.org
-BASE_URL=https://archfield.duckdns.org
-DEMO=off
-CONTACT_EMAIL=votre-adresse@example.com
-```
-
-`CONTACT_EMAIL` reçoit les demandes de visite de contrôle (il faut aussi le service d'e-mails, étape 7).
-
-Protégez ce fichier (il contiendra vos mots de passe d'e-mail et de Google), puis lancez :
-
-```bash
-chmod 600 .env
-docker compose up -d --build
-```
+On peut le relancer sans risque. Pour modifier la configuration plus tard : `nano ~/Arcfield/.env` (Ctrl+O pour enregistrer, Ctrl+X pour quitter), puis `cd ~/Arcfield && docker compose up -d`.
 
 Après une à deux minutes, ouvrez `https://archfield.duckdns.org` : le site est en ligne, avec le cadenas HTTPS. Sur votre téléphone, la page Compte propose « Installer l'application ».
 
@@ -91,31 +69,38 @@ Le chargement de la démo ne touche qu'aux comptes de démo, jamais aux vrais co
 
 ## 5. Sauvegardes chaque nuit
 
-```bash
-crontab -e
-```
-
-Ajoutez cette ligne à la fin (sauvegarde à 3 h 30 chaque nuit) :
-
-```
-30 3 * * * /home/ubuntu/Arcfield/deploy/sauvegarde.sh >> /home/ubuntu/sauvegarde.log 2>&1
-```
-
-Les archives sont dans `~/Arcfield/backups` (14 jours gardés). De temps en temps, rapatriez-en une sur votre ordinateur, depuis PowerShell :
+Le script d'installation les a programmées : une archive par nuit dans `~/Arcfield/backups` (14 jours gardés), plus une avant chaque mise à jour. De temps en temps, rapatriez-en une sur votre ordinateur, depuis PowerShell :
 
 ```powershell
 scp -i C:\Users\Sidney\Downloads\ssh-key.key ubuntu@123.45.67.89:Arcfield/backups/archfield-2026-11-01.tar.gz .
 ```
 
-## 6. Mettre à jour le site
+## 6. Faire des modifications après la mise en ligne
 
-Après chaque nouvelle version sur GitHub :
+Le site en ligne ne change jamais tout seul : il suit le code sur GitHub, et vous décidez quand il se met à jour.
+
+1. **Modifier** : on travaille comme aujourd'hui, sur votre ordinateur (VS Code, `npm start`) ou en me demandant les changements. Rien ne touche le site en ligne.
+2. **Vérifier** sur votre ordinateur : `npm test`, et un tour sur `http://localhost:3000`.
+3. **Envoyer sur GitHub** : vos commits ou les miens, sur la branche suivie par le serveur.
+4. **Mettre en ligne**, sur le serveur :
 
 ```bash
 cd ~/Arcfield && ./deploy/mettre-a-jour.sh
 ```
 
-L'application redémarre en quelques secondes ; les données et les comptes restent.
+Le script sauvegarde d'abord la base et les photos, récupère la nouvelle version, reconstruit et redémarre : quelques secondes de coupure. Les comptes, chantiers, photos et montants restent. Si la base a besoin de nouvelles colonnes, elles sont ajoutées toutes seules au démarrage.
+
+5. **En cas de problème** avec la nouvelle version :
+
+```bash
+cd ~/Arcfield && ./deploy/revenir-en-arriere.sh
+```
+
+On revient à la version d'avant, sans perdre de données.
+
+Les téléphones qui ont installé l'application la mettent à jour d'eux-mêmes à la prochaine ouverture : rien à faire de leur côté.
+
+Plus tard, quand il y aura de vrais utilisateurs : une branche `main` pour la version en ligne (on n'y met que ce qui est vérifié) et une branche de travail pour le reste, et éventuellement une mise à jour automatique à chaque envoi sur `main`.
 
 ## 7. Ensuite
 
