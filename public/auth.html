@@ -34,12 +34,12 @@
       <form id="login" class="au-panel" data-api="/api/login" hidden>
         <h1 class="au-title" data-i18n>Se connecter</h1>
         <p class="au-sub"><span data-i18n>Vous n'avez pas de compte ?</span> <a href="/inscription" class="au-link" id="to-signup"><span data-i18n>S'inscrire</span> ›</a></p>
-        <div class="google-zone" hidden><a class="btn au-google" href="/auth/google"><span class="g-ic"></span><span data-i18n>Continuer avec Google</span></a><p class="au-or"><span data-i18n>ou se connecter par e-mail</span></p></div>
+        <div class="google-zone" hidden><a class="btn au-google" href="/auth/google" data-provider="google"><span class="g-ic"></span><span data-i18n>Continuer avec Google</span></a><a class="btn au-apple" href="/auth/apple" data-provider="apple"><span class="a-ic"></span><span data-i18n>Continuer avec Apple</span></a><p class="au-or"><span data-i18n>ou se connecter par e-mail</span></p></div>
         <div class="au-field"><label for="li-email" data-i18n>E-mail</label><input id="li-email" name="email" type="email" autocomplete="email" required></div>
         <div class="au-field"><label for="li-password" data-i18n>Mot de passe</label><div class="au-pw"><input id="li-password" name="password" type="password" autocomplete="current-password" required><button type="button" class="au-eye" data-eye aria-label="Afficher le mot de passe" data-i18n-label></button></div></div>
-        <a class="au-forgot" href="/mot-de-passe-oublie" data-i18n>Mot de passe oublié ?</a>
         <div class="error-box" hidden></div>
         <button class="btn primary au-submit" type="submit" data-i18n>Se connecter</button>
+        <a class="au-forgot" href="/mot-de-passe-oublie" data-i18n>Mot de passe oublié ?</a>
         <div class="au-demo" id="demo" hidden>
           <p data-i18n>Essayer sans compte, avec des données d'exemple :</p>
           <div class="au-chips"><button type="button" data-demo="client" data-i18n>Client (diaspora)</button><button type="button" data-demo="eu" data-i18n>Artisan à Lyon</button><button type="button" data-demo="af" data-i18n>Entreprise à Saly</button><button type="button" data-demo="proche" data-i18n>Proche sur place</button></div>
@@ -91,7 +91,7 @@
 
         <div class="au-step" data-step="account">
           <h1 class="au-title" data-i18n>Dernière étape : votre accès</h1>
-          <div class="google-zone" hidden><a class="btn au-google" href="/auth/google"><span class="g-ic"></span><span data-i18n>Continuer avec Google</span></a><p class="au-or"><span data-i18n>ou avec votre e-mail</span></p></div>
+          <div class="google-zone" hidden><a class="btn au-google" href="/auth/google" data-provider="google"><span class="g-ic"></span><span data-i18n>Continuer avec Google</span></a><a class="btn au-apple" href="/auth/apple" data-provider="apple"><span class="a-ic"></span><span data-i18n>Continuer avec Apple</span></a><p class="au-or"><span data-i18n>ou avec votre e-mail</span></p></div>
           <div class="au-field"><label for="su-email" data-i18n>E-mail</label><input id="su-email" name="email" type="email" autocomplete="email"></div>
           <div class="au-field"><label for="su-password" data-i18n>Mot de passe</label><div class="au-pw"><input id="su-password" name="password" type="password" minlength="8" autocomplete="new-password"><button type="button" class="au-eye" data-eye aria-label="Afficher le mot de passe" data-i18n-label></button></div><span class="hint" data-i18n>8 caractères au moins.</span></div>
           <p class="hint muted" data-i18n>En créant un compte, vous acceptez la <a href="/confidentialite">politique de confidentialité</a>.</p>
@@ -142,11 +142,11 @@
     </div>
     <div class="au-pitch">
       <h2><span data-i18n>Suivez vos chantiers</span> <span class="au-accent" data-i18n>où que vous soyez</span></h2>
-      <p data-i18n>Photos datées, étapes à valider, devis et factures : tout l'avancement, sans appeler l'artisan.</p>
+      <p data-i18n>Photos vérifiées, étapes à valider, versements et dépenses : ce qui est construit et ce que devient votre argent, sans appeler pour savoir.</p>
       <ul class="au-badges">
-        <li><span data-ic="cam"></span><b data-i18n>Photos datées</b></li>
-        <li><span data-ic="lock"></span><b data-i18n>Photos privées</b></li>
-        <li><span data-ic="globe"></span><b data-i18n>Europe et Afrique</b></li>
+        <li><span data-ic="cam"></span><b data-i18n>Photos vérifiées</b></li>
+        <li><span data-ic="card"></span><b data-i18n>Argent suivi</b></li>
+        <li><span data-ic="lock"></span><b data-i18n>Tout reste privé</b></li>
         <li><span data-ic="phone"></span><b data-i18n>Téléphone et ordinateur</b></li>
       </ul>
     </div>

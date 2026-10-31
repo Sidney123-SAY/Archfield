@@ -11,13 +11,22 @@
   const ERRORS = {
     google: "La connexion avec Google n'a pas abouti. Réessayez, ou utilisez votre e-mail.",
     "google-email": "Votre adresse Google n'est pas vérifiée. Vérifiez-la chez Google, ou inscrivez-vous avec votre e-mail.",
-    "google-indisponible": "La connexion avec Google n'est pas encore activée sur ce site."
+    "google-indisponible": "La connexion avec Google n'est pas encore activée sur ce site.",
+    apple: "La connexion avec Apple n'a pas abouti. Réessayez, ou utilisez votre e-mail.",
+    "apple-email": "Votre adresse Apple n'est pas vérifiée. Inscrivez-vous avec votre e-mail.",
+    "apple-indisponible": "La connexion avec Apple n'est pas encore activée sur ce site."
   };
   // Pays de résidence proposés aux clients (la diaspora vit souvent hors de la liste des pays d'entreprise).
   const HOME_EXTRA = [["CA", "Canada"], ["US", "États-Unis"], ["GB", "Royaume-Uni"], ["IT", "Italie"], ["ES", "Espagne"], ["DE", "Allemagne"], ["XX", "Autre pays"]];
 
   document.querySelectorAll("[data-ic]").forEach((el) => { el.innerHTML = ic(el.dataset.ic, 20); });
   document.querySelectorAll(".g-ic").forEach((el) => { el.innerHTML = ic("google", 20); });
+  document.querySelectorAll(".a-ic").forEach((el) => { el.innerHTML = ic("apple", 20); });
+  // Comme chez Finary : « Se connecter » reste grisé tant que l'e-mail et le mot de passe ne sont pas remplis.
+  const loginForm = $("#login"), loginBtn = loginForm.querySelector("[type=submit]");
+  const syncLogin = () => { loginBtn.disabled = !($("#li-email").value.trim() && $("#li-password").value); };
+  loginForm.addEventListener("input", syncLogin);
+  setTimeout(syncLogin, 300); // après le remplissage automatique du navigateur
   document.querySelectorAll("[data-eye]").forEach((b) => {
     b.innerHTML = ic("eye", 18);
     b.addEventListener("click", () => { const i = b.parentElement.querySelector("input"); i.type = i.type === "password" ? "text" : "password"; });
@@ -130,7 +139,10 @@
   $("#su-company-id").addEventListener("input", () => { if ($("#su-company-id").value.replace(/\D/g, "").length === 14) checkSiret(); });
 
   api("/api/config", { authRedirect: false }).then((c) => {
-    if (c.google) document.querySelectorAll(".google-zone").forEach((el) => { el.hidden = false; });
+    // Boutons Google et Apple : visibles quand ils sont configurés, et toujours en démonstration
+    // (un clic explique alors qu'ils ne sont pas encore activés).
+    document.querySelectorAll("[data-provider]").forEach((el) => { el.hidden = !(c[el.dataset.provider] || c.demo); });
+    if (c.google || c.apple || c.demo) document.querySelectorAll(".google-zone").forEach((el) => { el.hidden = false; });
     if (c.demo) $("#demo").hidden = false;
     countries = c.countries || [];
     const opts = (r) => countries.filter((x) => x.region === r).map((x) => `<option value="${x.code}">${esc(t(x.name))}</option>`).join("");
@@ -209,7 +221,7 @@
     if (googleToken) {
       try {
         const p = await api("/api/oauth-pending/" + encodeURIComponent(googleToken), { authRedirect: false });
-        $("#google-pending").innerHTML = `${ic("check", 18)} ${t("Compte Google : {email}. Il reste quelques questions.", { email: esc(p.email) })}`;
+        $("#google-pending").innerHTML = `${ic("check", 18)} ${t(p.provider === "apple" ? "Compte Apple : {email}. Il reste quelques questions." : "Compte Google : {email}. Il reste quelques questions.", { email: esc(p.email) })}`;
         $("#google-pending").hidden = false;
         if (p.name && !$("#su-contact").value) $("#su-contact").value = p.name;
       } catch (e) { showError($("#signup"), e.message); }

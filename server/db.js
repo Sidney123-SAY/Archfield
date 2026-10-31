@@ -129,6 +129,8 @@ CREATE TABLE IF NOT EXISTS oauth_pending (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_artisans_google ON artisans(google_sub) WHERE google_sub IS NOT NULL;
 `);
+addColumn("artisans", "apple_sub", "TEXT");
+db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_artisans_apple ON artisans(apple_sub) WHERE apple_sub IS NOT NULL");
 
 // Espace client : comptes « client » (propriétaire) et « proche » (particulier qui publie pour le client),
 // numéro de suivi par chantier, invitations à gérer un chantier.

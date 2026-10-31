@@ -108,7 +108,7 @@ const hasPassword = (a) => !a.password_hash.startsWith("!");
 const sponsorsOf = (a) => all("SELECT DISTINCT o.contact_name FROM sites s JOIN artisans o ON o.id = s.owner_id WHERE s.artisan_id = ? AND s.owner_id <> ?", a.id, a.id).map((x) => x.contact_name);
 const publicArtisan = (a) => ({
   id: a.id, email: a.email, account_type: a.account_type, company: a.company, contact_name: a.contact_name, city: a.city, country: a.country, company_id: a.company_id,
-  market: a.market, currency: a.currency, trial_ends_at: a.trial_ends_at, google: !!a.google_sub, has_password: hasPassword(a), created_at: a.created_at,
+  market: a.market, currency: a.currency, trial_ends_at: a.trial_ends_at, google: !!a.google_sub, apple: !!a.apple_sub, has_password: hasPassword(a), created_at: a.created_at,
   // Archfield est gratuit pour les entreprises et les proches : c'est le client (propriétaire) qui paie l'offre Plus.
   access: { status: "free", active: true, until: null, days_left: 0 },
   client: a.account_type === "client" ? space.clientInfo(a) : undefined,
@@ -147,7 +147,7 @@ const passwordOk = (p) => {
   return s;
 };
 
-// Inscription : par e-mail et mot de passe, ou après « Continuer avec Google » (google_token).
+// Inscription : par e-mail et mot de passe, ou après « Continuer avec Google / Apple » (google_token : jeton de l'identité en attente).
 app.post("/api/signup", limit("signup", 10, 60 * 60e3), wrap(async (req, res) => {
   const b = req.body || {};
   const invite = b.invite_code ? spaceApi.findInvitation(b.invite_code) : null;
@@ -163,11 +163,12 @@ app.post("/api/signup", limit("signup", 10, 60 * 60e3), wrap(async (req, res) =>
       : { country, company_id: "", market: COUNTRIES[country]?.market || "eu", currency: COUNTRIES[country]?.currency || "EUR" };
   }
   if (co.error) fail(400, co.error);
-  let mail, hash, googleSub = null;
+  let mail, hash, googleSub = null, appleSub = null;
   if (b.google_token) {
     const p = get("SELECT * FROM oauth_pending WHERE token_hash = ? AND expires_at > ?", sha256(String(b.google_token)), nowIso());
-    if (!p) fail(400, "La connexion Google a expiré. Cliquez à nouveau sur « Continuer avec Google ».");
-    mail = p.email; googleSub = p.subject; hash = "!google";
+    if (!p) fail(400, "La connexion a expiré. Recommencez avec « Continuer avec Google » ou « Continuer avec Apple ».");
+    mail = p.email; hash = "!" + p.provider;
+    if (p.provider === "apple") appleSub = p.subject; else googleSub = p.subject;
   } else {
     mail = email(b.email, "e-mail", true);
     hash = await bcrypt.hash(passwordOk(b.password), 10);
@@ -176,9 +177,9 @@ app.post("/api/signup", limit("signup", 10, 60 * 60e3), wrap(async (req, res) =>
   const contact = str(b.contact_name, 120, "nom");
   const id = tx(() => {
     const r = run(
-      `INSERT INTO artisans (email, password_hash, account_type, company, contact_name, city, country, company_id, market, currency, google_sub, trial_ends_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO artisans (email, password_hash, account_type, company, contact_name, city, country, company_id, market, currency, google_sub, apple_sub, trial_ends_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       mail, hash, type, type === "pro" ? str(b.company, 120, "entreprise") : contact, contact, str(b.city, 120, "ville", false), co.country, co.company_id,
-      co.market, co.currency, googleSub, new Date(Date.now() + (type === "client" ? space.CLIENT_TRIAL_DAYS : TRIAL_DAYS) * DAY).toISOString(), nowIso());
+      co.market, co.currency, googleSub, appleSub, new Date(Date.now() + (type === "client" ? space.CLIENT_TRIAL_DAYS : TRIAL_DAYS) * DAY).toISOString(), nowIso());
     if (b.google_token) run("DELETE FROM oauth_pending WHERE token_hash = ?", sha256(String(b.google_token)));
     return Number(r.lastInsertRowid);
   });
@@ -191,7 +192,7 @@ app.post("/api/login", wrap(async (req, res) => {
   const mail = str(req.body?.email, 200, "e-mail").toLowerCase();
   const t = throttle(req.ip + "|" + mail);
   const a = get("SELECT * FROM artisans WHERE email = ?", mail);
-  if (a && !hasPassword(a)) fail(400, "Ce compte se connecte avec Google. Cliquez sur « Continuer avec Google ».");
+  if (a && !hasPassword(a)) fail(400, a.apple_sub && !a.google_sub ? "Ce compte se connecte avec Apple. Cliquez sur « Continuer avec Apple »." : "Ce compte se connecte avec Google. Cliquez sur « Continuer avec Google ».");
   if (!a || !(await bcrypt.compare(String(req.body?.password || ""), a.password_hash))) { t.failed(); fail(401, "E-mail ou mot de passe incorrect."); }
   t.ok();
   openSession(res, a.id);
@@ -265,7 +266,7 @@ app.post("/api/password/reset", limit("reset", 20, 60 * 60e3), wrap(async (req, 
 }));
 
 // Les comptes de démo ne sont affichés sur la page de connexion que si DEMO=on.
-app.get("/api/config", (req, res) => res.json({ demo: DEMO_ON, google: GOOGLE.enabled, countries: publicCountries() }));
+app.get("/api/config", (req, res) => res.json({ demo: DEMO_ON, google: GOOGLE.enabled, apple: APPLE.enabled, countries: publicCountries() }));
 
 /* ---------- Connexion avec Google (OpenID Connect) ---------- */
 const GOOGLE = {
@@ -307,22 +308,89 @@ app.get("/auth/google/callback", limit("oauth", 30, 10 * 60e3), wrap(async (req,
     return back("google");
   }
   if (!user.email_verified) return back("google-email");
-  const mail = String(user.email).toLowerCase();
-  const a = get("SELECT * FROM artisans WHERE google_sub = ?", user.sub) || get("SELECT * FROM artisans WHERE email = ?", mail);
+  oauthDone(res, "google", user.sub, user.email, user.name);
+}));
+
+// Fin commune à Google et Apple : compte connu (par identifiant ou par e-mail) → connexion ;
+// sinon, l'identité est gardée 30 minutes, le temps de répondre aux questions de l'inscription.
+function oauthDone(res, provider, sub, email, name) {
+  const col = provider === "apple" ? "apple_sub" : "google_sub";
+  const mail = String(email).toLowerCase();
+  const a = get(`SELECT * FROM artisans WHERE ${col} = ?`, String(sub)) || get("SELECT * FROM artisans WHERE email = ?", mail);
   if (a) {
-    if (!a.google_sub) run("UPDATE artisans SET google_sub = ? WHERE id = ?", user.sub, a.id);
+    if (!a[col]) run(`UPDATE artisans SET ${col} = ? WHERE id = ?`, String(sub), a.id);
     openSession(res, a.id);
-    return res.redirect("/app");
+    return res.redirect(303, "/app");
   }
-  // Nouveau compte : on garde l'identité Google 30 minutes, le temps de remplir l'entreprise et le pays.
   const t = token(24);
-  run("INSERT INTO oauth_pending (token_hash, provider, subject, email, name, expires_at) VALUES (?, 'google', ?, ?, ?, ?)", sha256(t), user.sub, mail, String(user.name || ""), new Date(Date.now() + 30 * 60e3).toISOString());
-  res.redirect(`/inscription?google=${t}`);
+  run("INSERT INTO oauth_pending (token_hash, provider, subject, email, name, expires_at) VALUES (?, ?, ?, ?, ?, ?)", sha256(t), provider, String(sub), mail, String(name || ""), new Date(Date.now() + 30 * 60e3).toISOString());
+  res.redirect(303, `/inscription?google=${t}`);
+}
+
+/* ---------- Connexion avec Apple (Sign in with Apple, OpenID Connect) ---------- */
+// Il faut un compte Apple Developer : un « Services ID » (APPLE_CLIENT_ID), l'identifiant d'équipe (APPLE_TEAM_ID)
+// et une clé « Sign in with Apple » (APPLE_KEY_ID, APPLE_PRIVATE_KEY : contenu du fichier .p8).
+// Apple renvoie l'utilisateur par un formulaire POST venu de son site : le cookie de session (SameSite=Lax) n'y est
+// pas joint, donc l'état de la demande est gardé côté serveur, 10 minutes.
+const APPLE = {
+  id: process.env.APPLE_CLIENT_ID, team: process.env.APPLE_TEAM_ID, keyId: process.env.APPLE_KEY_ID,
+  key: (process.env.APPLE_PRIVATE_KEY || "").replace(/\\n/g, "\n"),
+  authUrl: process.env.APPLE_AUTH_URL || "https://appleid.apple.com/auth/authorize",
+  tokenUrl: process.env.APPLE_TOKEN_URL || "https://appleid.apple.com/auth/token",
+  issuer: "https://appleid.apple.com"
+};
+APPLE.enabled = !!(APPLE.id && APPLE.team && APPLE.keyId && APPLE.key);
+const appleRedirect = () => `${BASE_URL}/auth/apple/callback`;
+const appleStates = new Map(); // état → { nonce, expire }
+const b64url = (x) => Buffer.from(typeof x === "string" ? x : JSON.stringify(x)).toString("base64url");
+// Le « mot de passe » de l'application auprès d'Apple : un jeton signé avec la clé privée (ES256), valable 5 minutes.
+function appleClientSecret() {
+  const now = Math.floor(Date.now() / 1000);
+  const data = `${b64url({ alg: "ES256", kid: APPLE.keyId })}.${b64url({ iss: APPLE.team, iat: now, exp: now + 300, aud: APPLE.issuer, sub: APPLE.id })}`;
+  return `${data}.${crypto.sign("sha256", Buffer.from(data), { key: APPLE.key, dsaEncoding: "ieee-p1363" }).toString("base64url")}`;
+}
+
+app.get("/auth/apple", limit("oauth", 30, 10 * 60e3), (req, res) => {
+  if (!APPLE.enabled) return res.redirect("/connexion?erreur=apple-indisponible");
+  const state = token(24), nonce = token(16), now = Date.now();
+  for (const [k, v] of appleStates) if (v.expire < now) appleStates.delete(k);
+  appleStates.set(state, { nonce, expire: now + 10 * 60e3 });
+  const q = new URLSearchParams({ client_id: APPLE.id, redirect_uri: appleRedirect(), response_type: "code", response_mode: "form_post", scope: "name email", state, nonce });
+  res.redirect(`${APPLE.authUrl}?${q}`);
+});
+
+app.post("/auth/apple/callback", limit("oauth", 30, 10 * 60e3), express.urlencoded({ extended: false, limit: "20kb" }), wrap(async (req, res) => {
+  const back = (code) => res.redirect(303, "/connexion?erreur=" + code);
+  const b = req.body || {};
+  const st = appleStates.get(String(b.state || ""));
+  appleStates.delete(String(b.state || ""));
+  if (!APPLE.enabled || !st || st.expire < Date.now() || !b.code) return back("apple");
+  let claims;
+  try {
+    const tr = await fetch(APPLE.tokenUrl, {
+      method: "POST", signal: AbortSignal.timeout(8000), headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ client_id: APPLE.id, client_secret: appleClientSecret(), code: String(b.code), grant_type: "authorization_code", redirect_uri: appleRedirect() })
+    });
+    const tok = await tr.json();
+    if (!tr.ok || !tok.id_token) throw new Error("jeton refusé");
+    // Le jeton d'identité vient directement d'Apple, par une connexion HTTPS que nous avons ouverte (OpenID Connect,
+    // § 3.1.3.7) : on contrôle son émetteur, son destinataire, sa date et le nonce de la demande.
+    claims = JSON.parse(Buffer.from(String(tok.id_token).split(".")[1] || "", "base64url").toString());
+    if (claims.iss !== APPLE.issuer || claims.aud !== APPLE.id || !(claims.exp * 1000 > Date.now()) || claims.nonce !== st.nonce || !claims.sub || !claims.email) throw new Error("jeton invalide");
+  } catch (e) {
+    console.error("Connexion Apple échouée :", e.message);
+    return back("apple");
+  }
+  if (!(claims.email_verified === true || claims.email_verified === "true")) return back("apple-email");
+  // Le nom n'est envoyé par Apple qu'à la toute première connexion.
+  let name = "";
+  try { const u = JSON.parse(b.user || "{}"); name = [u.name?.firstName, u.name?.lastName].filter(Boolean).join(" "); } catch (e) {}
+  oauthDone(res, "apple", claims.sub, claims.email, name);
 }));
 
 app.get("/api/oauth-pending/:token", (req, res) => {
-  const p = get("SELECT email, name FROM oauth_pending WHERE token_hash = ? AND expires_at > ?", sha256(req.params.token), nowIso());
-  if (!p) fail(404, "La connexion Google a expiré. Cliquez à nouveau sur « Continuer avec Google ».");
+  const p = get("SELECT provider, email, name FROM oauth_pending WHERE token_hash = ? AND expires_at > ?", sha256(req.params.token), nowIso());
+  if (!p) fail(404, "La connexion a expiré. Recommencez avec « Continuer avec Google » ou « Continuer avec Apple ».");
   res.json(p);
 });
 

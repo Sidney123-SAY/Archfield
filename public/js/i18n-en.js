@@ -1150,5 +1150,15 @@ window.AF_EN = {
   "motif": "reason",
   "date souhaitée": "preferred date",
   "précisions": "details",
-  "téléphone": "phone"
+  "téléphone": "phone",
+  "Continuer avec Apple": "Continue with Apple",
+  "La connexion avec Apple n'a pas abouti. Réessayez, ou utilisez votre e-mail.": "Signing in with Apple didn't work. Try again, or use your email.",
+  "Votre adresse Apple n'est pas vérifiée. Inscrivez-vous avec votre e-mail.": "Your Apple address isn't verified. Sign up with your email.",
+  "La connexion avec Apple n'est pas encore activée sur ce site.": "Sign in with Apple isn't enabled on this site yet.",
+  "Compte Apple : {email}. Il reste quelques questions.": "Apple account: {email}. Just a few more questions.",
+  "La connexion a expiré. Recommencez avec « Continuer avec Google » ou « Continuer avec Apple ».": "The sign-in expired. Start again with “Continue with Google” or “Continue with Apple”.",
+  "Ce compte se connecte avec Apple. Cliquez sur « Continuer avec Apple ».": "This account signs in with Apple. Click “Continue with Apple”.",
+  "Photos vérifiées, étapes à valider, versements et dépenses : ce qui est construit et ce que devient votre argent, sans appeler pour savoir.": "Verified photos, steps to approve, payments and expenses: what is built and what happens to your money, without calling to ask.",
+  "Argent suivi": "Money tracked",
+  "Tout reste privé": "Everything stays private"
 };
