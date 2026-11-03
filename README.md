@@ -70,7 +70,7 @@ L'installation demande le HTTPS : elle marche une fois le site en ligne (ou sur 
 
 ### Vraies photos
 
-Les maisons dessinées de la démo et l'emplacement photo de la page d'accueil se remplacent par de vraies photos : voir [demo/photos/LISEZMOI.md](demo/photos/LISEZMOI.md). Puis `npm run seed` et `npm run screenshots`.
+Les maisons dessinées du journal de démo se remplacent par de vraies photos : voir [demo/photos/LISEZMOI.md](demo/photos/LISEZMOI.md). Puis `npm run seed` et `npm run screenshots`. Le plan de façade de la page d'accueil (`public/img/facade.svg`) se régénère avec `python3 tools/facade.py public/img/facade.svg`.
 
 ### Captures de la page d'accueil
 

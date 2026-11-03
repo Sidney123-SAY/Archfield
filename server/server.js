@@ -266,9 +266,7 @@ app.post("/api/password/reset", limit("reset", 20, 60 * 60e3), wrap(async (req, 
 }));
 
 // Les comptes de démo ne sont affichés sur la page de connexion que si DEMO=on.
-// Photos de la page d'accueil présentes dans public/img/photos (aucune requête vers une photo absente).
-const sitePhotos = () => { try { return fs.readdirSync(path.join(PUBLIC, "img", "photos")).filter((f) => /\.(jpe?g|webp)$/i.test(f)); } catch (e) { return []; } };
-app.get("/api/config", (req, res) => res.json({ demo: DEMO_ON, google: GOOGLE.enabled, apple: APPLE.enabled, countries: publicCountries(), photos: sitePhotos() }));
+app.get("/api/config", (req, res) => res.json({ demo: DEMO_ON, google: GOOGLE.enabled, apple: APPLE.enabled, countries: publicCountries() }));
 
 /* ---------- Connexion avec Google (OpenID Connect) ---------- */
 const GOOGLE = {

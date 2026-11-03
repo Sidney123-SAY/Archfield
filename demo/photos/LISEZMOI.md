@@ -1,9 +1,7 @@
-# Vraies photos pour la démo et la page d'accueil
-
-## Photos de la démo (journal des chantiers d'exemple)
+# Vraies photos pour la démo
 
 Déposez ici des photos JPEG de vrais chantiers (les vôtres, ou celles d'un artisan d'accord pour qu'on les montre).
-`npm run seed` les utilise à la place des maisons dessinées, et `npm run screenshots` refait alors les captures de la page d'accueil.
+`npm run seed` les utilise à la place des maisons dessinées, et `npm run screenshots` refait alors les captures de l'application.
 
 Nommez chaque fichier `<type>-<niveau>-<numéro>.jpg` :
 - type : `ext` pour la construction (maison au pays), `int` pour la rénovation intérieure ;
@@ -13,9 +11,5 @@ Nommez chaque fichier `<type>-<niveau>-<numéro>.jpg` :
 - numéro : 1, 2, 3… pour avoir plusieurs photos d'un même niveau.
 
 Exemples : `ext-1-1.jpg`, `ext-3-1.jpg`, `ext-3-2.jpg`, `int-2-1.jpg`. Format paysage de préférence, 1600 px de large suffisent.
-
-## Photo de la page d'accueil
-
-Une grande photo de chantier (format portrait de préférence, au moins 1600 px de haut), enregistrée sous `public/img/photos/chantier.jpg`. Elle apparaît dans l'ouverture de la page d'accueil, avec le téléphone par-dessus. Sans ce fichier, la page s'affiche sans photo.
 
 Utilisez uniquement des photos dont vous avez les droits : les vôtres, celles d'un artisan qui l'accepte par écrit, ou des photos sous licence libre (Unsplash, Pexels) en respectant leur licence.

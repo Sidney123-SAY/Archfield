@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#F7F5F0">
+<meta name="theme-color" content="#14263D">
 <title>Archfield</title>
 <meta name="description" content="Archfield montre à celui qui fait construire ce qui est vraiment construit, avec des photos vérifiées, et ce que devient son argent, étape par étape.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -22,7 +22,7 @@
 </head>
 <body class="lp">
 
-<header class="lp-nav">
+<header class="lp-nav" id="lp-nav">
   <div class="lp-wrap lp-nav-in">
     <a class="logo" href="/" id="logo" aria-label="Archfield">Archfield</a>
     <nav class="lp-links" aria-label="Sections" data-i18n-label>
@@ -40,26 +40,31 @@
 </header>
 
 <main>
-  <!-- Ouverture : le message, et le produit tel qu'il est -->
-  <section class="lp-hero">
+  <!-- Ouverture : plan de façade sur bleu encre, la maison s'élève, deux fiches de l'application -->
+  <section class="lp-hero" data-dark-section>
     <div class="lp-wrap lp-hero-in">
       <div class="lp-hero-text">
         <p class="lp-kicker" data-i18n>Suivi de chantier à distance</p>
         <h1 class="lp-h1" data-i18n>Construire au pays, sans y être.</h1>
         <p class="lp-lead" data-i18n>Photos vérifiées, étapes à valider et chaque franc versé : Archfield montre ce qui est vraiment construit à ceux qui font bâtir loin de leur chantier.</p>
         <div class="lp-ctas">
-          <a class="lp-btn lp-btn-dark" href="/inscription" data-i18n>Créer mon espace</a>
-          <a class="lp-arrow-link" href="/c/demo-saly-awa" id="demo-link" hidden><span data-i18n>Voir un chantier en exemple</span></a>
+          <a class="lp-btn lp-btn-light" href="/inscription" data-i18n>Créer mon espace</a>
+          <a class="lp-arrow-link lp-on-dark" href="/c/demo-saly-awa" id="demo-link" hidden><span data-i18n>Voir un chantier en exemple</span></a>
         </div>
         <p class="lp-fine" data-i18n>Gratuit pour les entreprises et les proches qui publient. Offre Plus à 9,99 € ou 5 000 FCFA par mois, deux mois offerts.</p>
       </div>
-      <figure class="lp-hero-media" data-photo-frame>
-        <img class="lp-photo" data-photo="chantier.jpg" alt="Chantier de maison en construction" data-i18n-alt>
-        <div class="lp-device">
-          <img class="shot shot-light" data-shot="phone-client" alt="Suivi d'un chantier sur téléphone" data-i18n-alt src="/img/phone-client-fr-light.jpg" width="780" height="1688">
-          <img class="shot shot-dark" data-shot="phone-client" data-dark alt="" src="/img/phone-client-fr-dark.jpg" width="780" height="1688" loading="lazy">
+      <div class="lp-hero-plan">
+        <div class="fx" data-facade data-stage-to="4"><img src="/img/facade.svg" alt="Plan de façade d'une villa en construction" data-i18n-alt></div>
+        <div class="ui-card ui-a">
+          <p class="ui-head"><span class="ui-badge ok" data-i18n>Vérifiée</span><span class="ui-meta" data-i18n>Aujourd'hui, 10:42</span></p>
+          <p class="ui-text" data-i18n>Murs du salon montés à 2,10 m.</p>
+          <p class="ui-small" data-i18n>Photo prise à 10:38, à 24 m de la position du chantier.</p>
         </div>
-      </figure>
+        <div class="ui-card ui-b">
+          <p class="ui-k" data-i18n>Argent du chantier</p>
+          <div class="ui-bars"><span data-i18n>Versé</span><i><b class="paid" style="width:65%"></b></i><em>65 %</em><span data-i18n>Réalisé</span><i><b class="done" style="width:47%"></b></i><em>47 %</em></div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -71,47 +76,59 @@
     </div>
   </section>
 
-  <!-- Le produit en trois chapitres -->
-  <section class="lp-section" id="produit">
-    <div class="lp-wrap">
-      <article class="lp-chapter">
-        <div class="lp-chapter-text">
-          <p class="lp-num">01</p>
+  <!-- Le produit : la maison se construit au défilement, une fiche de l'application à chaque étape -->
+  <section class="lp-story" id="produit" data-dark-section>
+    <div class="lp-wrap lp-story-in">
+      <div class="lp-story-steps">
+        <article class="lp-step" data-stage="1" data-card="photo">
+          <p class="lp-num">01 · <span data-i18n>Fondations</span></p>
           <h2 class="lp-h2" data-i18n>Des photos qui prouvent.</h2>
           <p class="lp-p" data-i18n>Chaque photo garde sa date de prise de vue et le lieu où elle a été prise. Une photo ancienne, ou prise loin du chantier, est signalée dans le journal avant que vous ne la preniez pour argent comptant.</p>
-          <dl class="lp-facts"><div><dt data-i18n>Date</dt><dd data-i18n>lue dans le téléphone, pas saisie</dd></div><div><dt data-i18n>Lieu</dt><dd data-i18n>comparé à la position du chantier</dd></div></dl>
-        </div>
-        <div class="lp-visual">
-          <img class="shot shot-light" data-shot="entry" alt="Publication vérifiée dans le journal du chantier" data-i18n-alt src="/img/entry-fr-light.jpg" loading="lazy">
-          <img class="shot shot-dark" data-shot="entry" data-dark alt="" src="/img/entry-fr-dark.jpg" loading="lazy">
-        </div>
-      </article>
-      <article class="lp-chapter rev">
-        <div class="lp-chapter-text">
-          <p class="lp-num">02</p>
+        </article>
+        <article class="lp-step" data-stage="3" data-card="money">
+          <p class="lp-num">02 · <span data-i18n>Élévation des murs</span></p>
           <h2 class="lp-h2" data-i18n>Payer au rythme des travaux.</h2>
           <p class="lp-p" data-i18n>Devis, versements, dépenses avec reçus. Archfield compare en permanence ce que vous avez versé à ce qui est construit, et vous prévient quand l'écart se creuse. Une dépense ne s'efface jamais en silence.</p>
-          <dl class="lp-facts"><div><dt data-i18n>Versements</dt><dd data-i18n>Wave, Orange Money, MTN MoMo, virement</dd></div><div><dt data-i18n>Échéancier</dt><dd data-i18n>un montant prévu à chaque étape validée</dd></div></dl>
-        </div>
-        <div class="lp-visual">
-          <img class="shot shot-light" data-shot="money" alt="Argent du chantier : budget, versé, dépenses et travaux réalisés" data-i18n-alt src="/img/money-fr-light.jpg" loading="lazy">
-          <img class="shot shot-dark" data-shot="money" data-dark alt="" src="/img/money-fr-dark.jpg" loading="lazy">
-        </div>
-      </article>
-      <article class="lp-chapter">
-        <div class="lp-chapter-text">
-          <p class="lp-num">03</p>
+        </article>
+        <article class="lp-step" data-stage="5" data-card="validate">
+          <p class="lp-num">03 · <span data-i18n>Dalle et toiture</span></p>
+          <h2 class="lp-h2" data-i18n>Vous validez, puis vous payez.</h2>
+          <p class="lp-p" data-i18n>Une étape terminée attend votre validation, photos à l'appui. Le versement prévu pour cette étape ne part qu'ensuite. Un doute ? Demandez une visite de contrôle sur place.</p>
+        </article>
+        <article class="lp-step" data-stage="6" data-card="report">
+          <p class="lp-num">04 · <span data-i18n>Finitions</span></p>
           <h2 class="lp-h2" data-i18n>Quelqu'un sur place, même sans vous.</h2>
-          <p class="lp-p" data-i18n>Confiez le chantier à une entreprise ou à un proche : ils publient depuis leur téléphone, même sans réseau sur le terrain, et la publication part dès que le réseau revient. Un doute ? Demandez une visite de contrôle.</p>
-          <dl class="lp-facts"><div><dt data-i18n>Pour eux</dt><dd data-i18n>gratuit, sans formation</dd></div><div><dt data-i18n>Pour vous</dt><dd data-i18n>un journal et un rapport chaque lundi</dd></div></dl>
-        </div>
-        <div class="lp-visual lp-visual-phone">
-          <div class="lp-device">
-            <img class="shot shot-light" data-shot="phone-artisan" alt="Application de l'entreprise sur téléphone" data-i18n-alt src="/img/phone-artisan-fr-light.jpg" width="780" height="1688" loading="lazy">
-            <img class="shot shot-dark" data-shot="phone-artisan" data-dark alt="" src="/img/phone-artisan-fr-dark.jpg" width="780" height="1688" loading="lazy">
+          <p class="lp-p" data-i18n>Confiez le chantier à une entreprise ou à un proche : ils publient depuis leur téléphone, même sans réseau sur le terrain, et chaque lundi vous recevez le résumé de la semaine.</p>
+        </article>
+      </div>
+      <div class="lp-story-stage">
+        <div class="lp-story-sticky">
+          <div class="fx" data-facade data-stage-to="1"><img src="/img/facade.svg" alt="" loading="lazy"></div>
+          <div class="ui-slot">
+            <div class="ui-card" data-card-id="photo">
+              <p class="ui-head"><span class="ui-badge ok" data-i18n>Vérifiée</span><span class="ui-meta" data-i18n>Lundi, 9:15</span></p>
+              <p class="ui-text" data-i18n>Semelles coulées côté rue, ferraillage contrôlé.</p>
+              <p class="ui-small" data-i18n>3 photos prises sur place ce matin, à 18 m de la position du chantier.</p>
+            </div>
+            <div class="ui-card" data-card-id="money">
+              <p class="ui-k" data-i18n>Argent du chantier</p>
+              <div class="ui-bars"><span data-i18n>Versé</span><i><b class="paid" style="width:65%"></b></i><em>65 %</em><span data-i18n>Réalisé</span><i><b class="done" style="width:47%"></b></i><em>47 %</em></div>
+              <p class="ui-alert" data-i18n>Vous avez versé plus que ce qui est construit. Avant le prochain versement, demandez où en est le chantier.</p>
+            </div>
+            <div class="ui-card" data-card-id="validate">
+              <p class="ui-head"><span class="ui-badge wait" data-i18n>À valider</span><span class="ui-meta" data-i18n>Dalle et chaînage</span></p>
+              <p class="ui-text" data-i18n>Sarr Construction indique que l'étape est terminée.</p>
+              <p class="ui-small" data-i18n>Versement prévu à la validation : 3 255 000 FCFA</p>
+              <p class="ui-actions"><span class="ui-btn" data-i18n>Voir les photos</span><span class="ui-btn dark" data-i18n>Valider l'étape</span></p>
+            </div>
+            <div class="ui-card" data-card-id="report">
+              <p class="ui-head"><span class="ui-badge" data-i18n>Rapport du lundi</span><span class="ui-meta" data-i18n>Semaine du 3 au 9</span></p>
+              <p class="ui-text" data-i18n>4 mises à jour, 11 photos vérifiées, 2 dépenses avec reçu.</p>
+              <p class="ui-small" data-i18n>Étape suivante : enduits et finitions.</p>
+            </div>
           </div>
         </div>
-      </article>
+      </div>
     </div>
   </section>
 
@@ -128,7 +145,7 @@
   </section>
 
   <!-- Pour les entreprises -->
-  <section class="lp-band" id="entreprises">
+  <section class="lp-band" id="entreprises" data-dark-section>
     <div class="lp-wrap lp-band-in">
       <div>
         <p class="lp-label lp-label-light" data-i18n>Entreprises du BTP</p>

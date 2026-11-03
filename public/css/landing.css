@@ -1,6 +1,6 @@
-/* Page d'accueil. Esprit éditorial : papier chaud, titres en Source Serif 4, texte en Geist, filets fins,
-   boutons rectangulaires, une seule couleur d'accent, et le produit montré tel qu'il est (captures nettes, sans effets).
-   Les photos de chantier (public/img/photos/) s'affichent dès qu'elles existent ; sans elles, la mise en page reste juste. */
+/* Page d'accueil. Esprit éditorial : papier chaud et bleu encre, titres en Source Serif 4, texte en Geist, filets fins,
+   boutons rectangulaires, une seule couleur d'accent. Le visuel principal est un plan de façade d'architecte
+   (public/img/facade.svg, généré par tools/facade.py) : la maison se construit au défilement, avec les fiches de l'application. */
 
 .lp {
   --lp-paper: #F7F5F0;
@@ -47,25 +47,72 @@ body.lp::before { background: var(--lp-paper); }
 .lp-nav-r { margin-left: auto; display: flex; align-items: center; gap: 18px; }
 .lp-signin { color: var(--lp-ink); text-decoration: none; font-size: .9rem; white-space: nowrap; }
 .lp-signin:hover { text-decoration: underline; text-underline-offset: 3px; }
+.lp-nav.on-dark { background: rgba(20, 38, 61, .72); border-bottom-color: rgba(255, 255, 255, .08); }
+.lp-nav.on-dark .logo, .lp-nav.on-dark .lp-signin { color: #fff; }
+.lp-nav.on-dark .lp-links a { color: #C9D2DD; }
+.lp-nav.on-dark .lp-links a:hover { color: #fff; }
+.lp-nav.on-dark .lp-btn-dark { background: #fff; color: #14263D !important; }
+.lp-nav.on-dark .lp-prefs .lang-pick select { color: #fff; border-color: rgba(255, 255, 255, .2); }
+.lp-nav.on-dark .lp-prefs .theme-toggle { border-color: rgba(255, 255, 255, .2); }
+.lp-nav.on-dark .lp-prefs .theme-toggle button { color: #A9B4C2; }
+.lp-nav { transition: background-color .25s, border-color .25s; }
+.lp-btn-light { background: #fff; color: #14263D !important; }
+.lp-btn-light:hover { background: #E6EAF0; }
 .lp-prefs .lang-pick select, .lp-foot-bottom .lang-pick select { background-color: transparent; border-color: var(--lp-line); color: var(--lp-ink); }
 .lp-prefs .theme-toggle, .lp-foot-bottom .theme-toggle { background: transparent; border-color: var(--lp-line); }
 
-/* Ouverture */
-.lp-hero { padding-block: clamp(48px, 7vw, 96px) clamp(64px, 8vw, 120px); }
-.lp-hero-in { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(40px, 6vw, 88px); align-items: center; }
+/* Ouverture : bleu encre, plan de façade, la barre de navigation passe par-dessus */
+.lp-hero { background: #14263D; color: #C9D2DD; margin-top: -65px; padding-block: calc(65px + clamp(40px, 6vw, 88px)) clamp(64px, 8vw, 112px); overflow: hidden; }
+.lp-hero-in { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(32px, 5vw, 72px); align-items: center; }
 .lp-hero-text { display: grid; gap: 26px; justify-items: start; }
 .lp-kicker, .lp-label { font-size: .78rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--lp-muted); margin: 0; }
-.lp-label-light { color: #A9B4C2; }
-.lp-h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(2.7rem, 1.6rem + 4.2vw, 5.4rem); line-height: 1.02; letter-spacing: -.025em; color: var(--lp-ink); margin: 0; max-width: 12ch; text-wrap: balance; }
-.lp-lead { font-size: clamp(1.05rem, 1rem + .3vw, 1.22rem); line-height: 1.6; color: var(--lp-text); margin: 0; max-width: 34em; }
+.lp-hero .lp-kicker, .lp-label-light { color: #A9B4C2; }
+.lp-h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(2.7rem, 1.6rem + 4vw, 5.2rem); line-height: 1.02; letter-spacing: -.025em; color: #fff; margin: 0; max-width: 11ch; text-wrap: balance; }
+.lp-lead { font-size: clamp(1.05rem, 1rem + .3vw, 1.2rem); line-height: 1.6; color: #C9D2DD; margin: 0; max-width: 32em; }
 .lp-ctas { display: flex; align-items: center; gap: 16px 28px; flex-wrap: wrap; }
-.lp-fine { font-size: .84rem; line-height: 1.5; color: var(--lp-muted); margin: 0; max-width: 36em; }
+.lp-fine { font-size: .84rem; line-height: 1.5; color: #8FA0B5; margin: 0; max-width: 34em; }
+.lp-hero-plan { position: relative; }
+.lp-hero-plan .ui-a { position: absolute; left: -3%; top: -6%; }
+.lp-hero-plan .ui-b { position: absolute; right: 2%; bottom: -2%; }
+.fx { width: 100%; }
+.fx > img, .fx > svg { display: block; width: 100%; height: auto; }
 
-.lp-hero-media { position: relative; margin: 0; aspect-ratio: 4 / 5; background: var(--lp-sand); border-radius: 4px; overflow: hidden; display: grid; place-items: end center; }
-.lp-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: none; }
-.lp-hero-media.has-photo .lp-photo { display: block; }
-.lp-hero-media .lp-device { width: min(58%, 340px); margin-bottom: -14%; }
-.lp-hero-media.has-photo .lp-device { position: absolute; left: 7%; bottom: -10%; width: min(46%, 280px); margin: 0; }
+/* Fiches de l'application, dessinées en HTML (nettes à toutes les tailles) */
+.ui-card { width: 280px; background: #fff; color: #14263D; border-radius: 8px; padding: 14px 16px; display: grid; gap: 7px; font-size: .82rem; box-shadow: 0 24px 48px -20px rgba(0, 0, 0, .55), 0 0 0 1px rgba(20, 38, 61, .06); }
+.ui-card p { margin: 0; }
+.ui-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.ui-badge { font-size: .7rem; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: #EEF0F3; color: #14263D; }
+.ui-badge.ok { background: #E2F1E7; color: #1F6A41; }
+.ui-badge.wait { background: #FCF1DB; color: #7A4E06; }
+.ui-meta { font-size: .72rem; color: #6B7079; }
+.ui-text { font-weight: 500; line-height: 1.4; }
+.ui-small { font-size: .76rem; color: #6B7079; line-height: 1.45; }
+.ui-k { font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: #6B7079; font-weight: 500; }
+.ui-bars { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 7px 10px; align-items: center; font-size: .76rem; color: #3A4250; }
+.ui-bars i { display: block; height: 6px; background: #ECE7DD; border-radius: 3px; overflow: hidden; }
+.ui-bars b { display: block; height: 100%; border-radius: 3px; }
+.ui-bars .paid { background: #D99A2B; }
+.ui-bars .done { background: #26774B; }
+.ui-bars em { font-style: normal; font-weight: 600; font-variant-numeric: tabular-nums; color: #14263D; }
+.ui-alert { font-size: .76rem; line-height: 1.45; background: #FCF1DB; color: #7A4E06; padding: 8px 10px; border-radius: 6px; }
+.ui-actions { display: flex; gap: 8px; margin-top: 2px !important; }
+.ui-btn { font-size: .74rem; font-weight: 500; border: 1px solid #DDD7CC; border-radius: 5px; padding: 5px 10px; }
+.ui-btn.dark { background: #14263D; color: #fff; border-color: #14263D; }
+
+/* Récit : la maison se construit au défilement */
+.lp-story { background: #14263D; color: #C9D2DD; border-top: 1px solid rgba(255, 255, 255, .08); }
+.lp-story-in { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(32px, 5vw, 72px); }
+.lp-step { min-height: 88vh; display: grid; align-content: center; gap: 18px; opacity: .3; transition: opacity .5s ease; }
+.lp-step.active { opacity: 1; }
+.lp-story .lp-num { color: #F0A27A; letter-spacing: .04em; }
+.lp-story .lp-h2 { color: #fff; }
+.lp-story .lp-p { color: #C9D2DD; }
+.lp-story-sticky { position: sticky; top: 64px; height: calc(100vh - 64px); display: grid; align-content: center; gap: 28px; }
+.ui-slot { position: relative; height: 180px; }
+.ui-slot .ui-card { position: absolute; left: 50%; top: 0; width: 340px; transform: translate(-50%, 14px); opacity: 0; transition: opacity .45s ease, transform .45s ease; pointer-events: none; }
+.ui-slot .ui-card.show { opacity: 1; transform: translate(-50%, 0); }
+@media (prefers-reduced-motion: reduce) { .ui-slot .ui-card, .lp-step, .facade .st { transition: none !important; } }
+.ui-inline { display: none !important; }
 
 /* Téléphone : cadre sobre autour d'une vraie capture */
 .lp-device { position: relative; border-radius: 40px; padding: 9px; background: #0E1013; box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 40px 70px -30px rgba(18, 24, 32, .45); }
@@ -92,21 +139,6 @@ body.lp::before { background: var(--lp-paper); }
 .lp-intro { border-top: 1px solid var(--lp-line); }
 .lp-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: clamp(24px, 5vw, 80px); }
 .lp-statement { font-family: var(--f-display); font-size: clamp(1.45rem, 1.1rem + 1.25vw, 2.2rem); line-height: 1.35; letter-spacing: -.01em; color: var(--lp-ink); margin: 0; max-width: 30em; }
-
-/* Chapitres du produit */
-.lp-chapter { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(32px, 6vw, 96px); align-items: center; padding-block: clamp(40px, 6vw, 80px); border-top: 1px solid var(--lp-line); }
-.lp-chapter:first-child { border-top: 0; padding-top: 0; }
-.lp-chapter.rev { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
-.lp-chapter.rev .lp-chapter-text { order: 2; }
-.lp-chapter-text { display: grid; gap: 20px; }
-.lp-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin: 12px 0 0; }
-.lp-facts div { border-top: 1px solid var(--lp-line); padding-top: 14px; display: grid; gap: 4px; }
-.lp-facts dt { font-size: .78rem; letter-spacing: .1em; text-transform: uppercase; color: var(--lp-ink); font-weight: 500; }
-.lp-facts dd { margin: 0; font-size: .92rem; color: var(--lp-muted); line-height: 1.5; }
-.lp-visual { background: var(--lp-sand); border-radius: 4px; padding: clamp(20px, 3.6vw, 52px); display: grid; place-items: center; }
-.lp-visual > .shot { width: 100%; max-width: 560px; height: auto; border-radius: 10px; border: 1px solid var(--lp-line); box-shadow: 0 24px 48px -28px rgba(18, 24, 32, .35); }
-.lp-visual-phone { padding-bottom: 0; overflow: hidden; align-items: end; }
-.lp-visual-phone .lp-device { width: min(62%, 320px); margin-bottom: -18%; }
 
 /* Étapes */
 .lp-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(24px, 4vw, 56px); }
@@ -171,9 +203,18 @@ body.lp::before { background: var(--lp-paper); }
 @media (max-width: 1000px) {
   .lp-links { display: none; }
   .lp-prefs { display: none; }
-  .lp-hero-in, .lp-chapter, .lp-chapter.rev, .lp-band-in { grid-template-columns: minmax(0, 1fr); }
-  .lp-chapter.rev .lp-chapter-text { order: 0; }
-  .lp-hero-media { aspect-ratio: 1 / 1; }
+  .lp-hero-in, .lp-band-in { grid-template-columns: minmax(0, 1fr); }
+  .lp-hero-plan { margin-top: 24px; padding-bottom: 72px; }
+  .lp-hero-plan .ui-a { top: -14%; }
+  .lp-hero-plan .ui-b { bottom: 0; }
+  /* Récit sur téléphone : le plan et la fiche restent en haut, le texte défile dessous */
+  .lp-story-in { display: flex; flex-direction: column; gap: 0; }
+  .lp-story-stage { order: -1; position: sticky; top: 64px; z-index: 2; background: #14263D; padding-block: 16px 8px; border-bottom: 1px solid rgba(255, 255, 255, .08); }
+  .lp-story-sticky { position: static; height: auto; gap: 0; }
+  .lp-story-stage .fx { max-width: 520px; margin: 0 auto; }
+  .ui-slot { display: none; }
+  .ui-inline { display: grid !important; width: 100%; max-width: 420px; margin-top: 8px; }
+  .lp-step { min-height: 70vh; }
   .lp-two { grid-template-columns: minmax(0, 1fr); }
   .lp-plans { grid-template-columns: minmax(0, 1fr); }
   .lp-plan { border-left: 0; border-top: 1px solid var(--lp-line); padding-left: 0; padding-right: 0; }
@@ -186,9 +227,11 @@ body.lp::before { background: var(--lp-paper); }
   .lp-nav-r { gap: 12px; }
   .lp-signin { font-size: .86rem; }
   .lp-steps { grid-template-columns: minmax(0, 1fr); }
-  .lp-facts { grid-template-columns: minmax(0, 1fr); gap: 14px; }
-  .lp-hero-media { aspect-ratio: 4 / 5; }
-  .lp-hero-media .lp-device { width: 66%; }
+  .ui-card { width: 240px; font-size: .76rem; padding: 12px 13px; }
+  .ui-slot .ui-card { width: min(320px, 92%); }
+  .lp-hero-plan .ui-a { left: -4px; }
+  .lp-hero-plan .ui-b { right: -4px; }
+  .lp-step { min-height: 64vh; }
 }
 @media (max-width: 420px) {
   .lp-nav-in { gap: 10px; }

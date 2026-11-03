@@ -1,4 +1,5 @@
-// Pages publiques : logo, lien de démo, captures dans la bonne langue, photos de chantier si elles existent, apparition au défilement.
+// Pages publiques : logo, lien de démo, captures dans la bonne langue, plan de façade qui se construit au défilement,
+// barre de navigation claire ou sombre selon la section en dessous, apparition douce des sections.
 (function () {
   "use strict";
   const { LOGO, api, lang } = window.AF;
@@ -8,15 +9,7 @@
   if (year) year.textContent = new Date().getFullYear();
 
   const demoLink = document.getElementById("demo-link");
-  // Photos de chantier (public/img/photos/) : chargées seulement si le serveur dit qu'elles existent.
-  api("/api/config", { authRedirect: false }).then((c) => {
-    if (demoLink) demoLink.hidden = !c.demo;
-    document.querySelectorAll("img[data-photo]").forEach((img) => {
-      if (!(c.photos || []).includes(img.dataset.photo)) return img.remove();
-      img.addEventListener("load", () => img.closest("[data-photo-frame]")?.classList.add("has-photo"), { once: true });
-      img.src = "/img/photos/" + img.dataset.photo;
-    });
-  }).catch(() => {});
+  if (demoLink) api("/api/config", { authRedirect: false }).then((c) => { demoLink.hidden = !c.demo; }).catch(() => {});
 
   // Captures de l'application : /img/<nom>-<langue>-<thème>.jpg
   document.querySelectorAll("img[data-shot]").forEach((img) => {
@@ -24,10 +17,59 @@
     if (!img.src.endsWith(src)) img.src = src;
   });
 
+  const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Plan de façade : le fichier SVG est inséré dans la page pour que ses étapes (data-stage) se pilotent ici.
+  const plans = [...document.querySelectorAll("[data-facade]")];
+  const setStage = (box, n) => { const svg = box.querySelector("svg"); if (svg) svg.setAttribute("data-stage", String(n)); };
+  if (plans.length) fetch("/img/facade.svg").then((r) => (r.ok ? r.text() : Promise.reject())).then((svg) => {
+    plans.forEach((box, i) => {
+      const alt = box.querySelector("img")?.alt;
+      box.innerHTML = svg;
+      const el = box.querySelector("svg");
+      if (alt) el.setAttribute("aria-label", alt); else el.setAttribute("aria-hidden", "true");
+      setStage(box, still ? box.dataset.stageTo : 0);
+    });
+    // Ouverture : la maison s'élève jusqu'aux murs de l'étage.
+    const hero = plans[0], to = Number(hero.dataset.stageTo || 4);
+    if (!still) for (let n = 1; n <= to; n++) setTimeout(() => setStage(hero, n), 350 + n * 520);
+    startStory();
+  }).catch(() => {});
+
+  // Récit : l'étape lue au milieu de l'écran règle le plan et la fiche affichée.
+  function startStory() {
+    const steps = [...document.querySelectorAll(".lp-step")];
+    const box = document.querySelector(".lp-story [data-facade]");
+    if (!steps.length || !box) return;
+    // Sur téléphone, chaque fiche s'affiche dans son étape (copie), sous le plan resté en haut de l'écran.
+    steps.forEach((step) => {
+      const card = document.querySelector(`.ui-slot [data-card-id="${step.dataset.card}"]`);
+      if (card) { const copy = card.cloneNode(true); copy.removeAttribute("data-card-id"); copy.classList.add("ui-inline"); step.appendChild(copy); }
+    });
+    const show = (step) => {
+      steps.forEach((x) => x.classList.toggle("active", x === step));
+      setStage(box, step.dataset.stage);
+      document.querySelectorAll(".ui-slot .ui-card").forEach((c) => c.classList.toggle("show", c.dataset.cardId === step.dataset.card));
+    };
+    show(steps[0]);
+    const io = new IntersectionObserver((entries) => entries.forEach((e) => { if (e.isIntersecting) show(e.target); }), { rootMargin: "-45% 0px -45% 0px" });
+    steps.forEach((x) => io.observe(x));
+  }
+
+  // Barre de navigation : version claire sur fond bleu encre (ouverture, récit, bande entreprises).
+  const nav = document.getElementById("lp-nav");
+  const darks = [...document.querySelectorAll("[data-dark-section]")];
+  if (nav && darks.length) {
+    let ticking = false;
+    const sync = () => { ticking = false; nav.classList.toggle("on-dark", darks.some((d) => { const r = d.getBoundingClientRect(); return r.top <= 32 && r.bottom >= 32; })); };
+    window.addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(sync); } }, { passive: true });
+    sync();
+  }
+
   // Les sections apparaissent en douceur quand elles arrivent à l'écran ; elles restent visibles sans JavaScript.
-  if ("IntersectionObserver" in window && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  if ("IntersectionObserver" in window && !still) {
     const io = new IntersectionObserver((entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.remove("pending"); io.unobserve(e.target); } }), { rootMargin: "0px 0px -8% 0px" });
-    document.querySelectorAll(".lp-intro .lp-wrap, .lp-chapter, .lp-steps li, .lp-band-in, .lp-plan, .lp-faq-wrap, .lp-close .lp-wrap").forEach((el) => {
+    document.querySelectorAll(".lp-intro .lp-wrap, .lp-steps li, .lp-band-in, .lp-plan, .lp-faq-wrap, .lp-close .lp-wrap").forEach((el) => {
       if (el.getBoundingClientRect().top > window.innerHeight) { el.classList.add("reveal", "pending"); io.observe(el); }
     });
   }

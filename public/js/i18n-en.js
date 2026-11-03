@@ -1208,5 +1208,26 @@ window.AF_EN = {
   "Publication vérifiée dans le journal du chantier": "Verified update in the site log",
   "Argent du chantier : budget, versé, dépenses et travaux réalisés": "Site money: budget, paid, expenses and work done",
   "Application de l'entreprise sur téléphone": "Company app on a phone",
-  "Tableau de bord de l'entreprise": "Company dashboard"
+  "Tableau de bord de l'entreprise": "Company dashboard",
+  // Page d'accueil : plan de façade et récit
+  "Vérifiée": "Verified",
+  "Aujourd'hui, 10:42": "Today, 10:42",
+  "Murs du salon montés à 2,10 m.": "Living room walls up to 2.10 m.",
+  "Photo prise à 10:38, à 24 m de la position du chantier.": "Photo taken at 10:38, 24 m from the site's location.",
+  "Dalle et toiture": "Slab and roof",
+  "Vous validez, puis vous payez.": "You approve, then you pay.",
+  "Une étape terminée attend votre validation, photos à l'appui. Le versement prévu pour cette étape ne part qu'ensuite. Un doute ? Demandez une visite de contrôle sur place.": "A finished step waits for your approval, with photos to back it up. The payment due for that step only goes out afterwards. In doubt? Request an inspection visit on site.",
+  "Finitions": "Finishing",
+  "Confiez le chantier à une entreprise ou à un proche : ils publient depuis leur téléphone, même sans réseau sur le terrain, et chaque lundi vous recevez le résumé de la semaine.": "Entrust the site to a company or a relative: they post from their phone, even with no network on site, and every Monday you get a summary of the week.",
+  "Lundi, 9:15": "Monday, 9:15",
+  "Semelles coulées côté rue, ferraillage contrôlé.": "Footings poured on the street side, rebar checked.",
+  "3 photos prises sur place ce matin, à 18 m de la position du chantier.": "3 photos taken on site this morning, 18 m from the site's location.",
+  "Vous avez versé plus que ce qui est construit. Avant le prochain versement, demandez où en est le chantier.": "You have paid more than what is built. Before the next payment, ask where the site stands.",
+  "Sarr Construction indique que l'étape est terminée.": "Sarr Construction says the step is finished.",
+  "Versement prévu à la validation : 3 255 000 FCFA": "Payment due on approval: 3,255,000 FCFA",
+  "Voir les photos": "See the photos",
+  "Semaine du 3 au 9": "Week of the 3rd to the 9th",
+  "4 mises à jour, 11 photos vérifiées, 2 dépenses avec reçu.": "4 updates, 11 verified photos, 2 expenses with receipts.",
+  "Étape suivante : enduits et finitions.": "Next step: rendering and finishing.",
+  "Plan de façade d'une villa en construction": "Elevation drawing of a villa under construction"
 };
