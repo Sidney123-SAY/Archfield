@@ -144,6 +144,10 @@
   // Le service worker ne marche qu'en HTTPS (ou sur localhost) : sur http://192.168…, le site reste un site.
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
     window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+    // Nouvelle version du site installée pendant la visite : on recharge une fois pour tout afficher à jour.
+    const hadWorker = !!navigator.serviceWorker.controller;
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => { if (hadWorker && !reloaded) { reloaded = true; location.reload(); } });
   }
   let installPrompt = null;
   window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installPrompt = e; });
