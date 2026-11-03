@@ -39,7 +39,20 @@ function phrasesFor(step) {
   const key = Object.keys(PHRASES).find((k) => n.includes(k)) || (n.includes("mur") ? "murs" : n.includes("depose") ? "demolition" : n.includes("sol") ? "carrelage" : n.includes("enduit") || n.includes("cuisine") || n.includes("sanitaire") ? "finitions" : n.includes("charpente") || n.includes("couverture") ? "toiture" : "default");
   return PHRASES[key];
 }
+// Vraies photos de démo si le dossier demo/photos en contient (voir demo/photos/LISEZMOI.md), sinon scènes dessinées.
+// Nom des fichiers : <type>-<niveau>-<n>.jpg, type « ext » (construction) ou « int » (rénovation),
+// niveau = avancement de 0 (terrain) à 6 (finitions), ex. ext-0-1.jpg, ext-3-2.jpg, int-2-1.jpg.
+const DEMO_PHOTOS = path.join(__dirname, "..", "demo", "photos");
+const realPhotos = fs.existsSync(DEMO_PHOTOS) ? fs.readdirSync(DEMO_PHOTOS).filter((f) => /\.jpe?g$/i.test(f)) : [];
 function photoFile(kind, level) {
+  const pool = realPhotos.filter((f) => f.startsWith(`${kind}-${level}-`));
+  const near = pool.length ? pool : realPhotos.filter((f) => f.startsWith(`${kind}-`)).sort((a, b) => Math.abs(Number(a.split("-")[1]) - level) - Math.abs(Number(b.split("-")[1]) - level));
+  if (near.length) {
+    const pick = pool.length ? pool[Math.floor(rand() * pool.length)] : near[0];
+    const f = tok(18) + ".jpg";
+    fs.copyFileSync(path.join(DEMO_PHOTOS, pick), path.join(UPLOAD_DIR, f));
+    return f;
+  }
   const f = tok(18) + ".svg";
   fs.writeFileSync(path.join(UPLOAD_DIR, f), scene(kind, level, Math.floor(rand() * 900)));
   return f;

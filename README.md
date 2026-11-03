@@ -68,6 +68,10 @@ L'installation demande le HTTPS : elle marche une fois le site en ligne (ou sur 
 
 `npm run parcours` joue 29 parcours complets comme un vrai utilisateur, en remplissant chaque formulaire : inscriptions (entreprise avec SIRET, client, proche invité), chantier, publication avec photo vérifiée, publication sans réseau, étapes, argent (dépenses avec reçu, versements, annulation), devis et factures, validation par le client, visite de contrôle, numéro de suivi, invitation, cookies, langue, compte et suppression. Environ une minute.
 
+### Vraies photos
+
+Les maisons dessinées de la démo et l'emplacement photo de la page d'accueil se remplacent par de vraies photos : voir [demo/photos/LISEZMOI.md](demo/photos/LISEZMOI.md). Puis `npm run seed` et `npm run screenshots`.
+
 ### Captures de la page d'accueil
 
 Les images de `public/img` sont de vraies captures de l'application (français et anglais, clair et sombre). Après un changement d'interface : `npm run seed`, `npm start`, puis dans un autre terminal `npm run screenshots` (Playwright est installé par `npm ci` ; la première fois, téléchargez le navigateur avec `npx playwright install chromium`).

@@ -1,21 +1,23 @@
-/* Layout : barre de démo, puis l'app artisan (barre latérale bleu encre sur ordinateur, onglets en bas sur téléphone) ou le lien privé du client. Identité Archfield : encre, orange, béton, vert, ambre. */
+/* Layout : barre de démo, puis l'app artisan (barre latérale bleu encre sur ordinateur, onglets en bas sur téléphone) ou le lien privé du client.
+   Identité Archfield : encre, orange, béton (gris chaud), vert, ambre. Titres éditoriaux en Source Serif 4, interface en Geist.
+   Formes sobres : filets fins plutôt qu'ombres, rayons courts, boutons rectangulaires. */
 :root {
   --encre: #14263D;
   --panel: #14263D;
   --panel-ink: #ffffff;
   --panel-muted: #C9D2DD;
   --orange: #C2410C;
-  --beton: #F1F3F5;
+  --beton: #F4F2EE;
   --vert: #26774B;
   --ambre: #D99A2B;
   --surface: #ffffff;
   --ink: #14263D;
   --on-ink: #ffffff;
   --on-accent: #ffffff;
-  --muted: #5E6A7A;
-  --line: #E2E6EB;
-  --gris-barre: #C8CED6;
-  --hover: #F6F7F9;
+  --muted: #5D6570;
+  --line: #E4E0D8;
+  --gris-barre: #CFCAC0;
+  --hover: #F8F6F2;
   --orange-soft: #FBEAE2;
   --vert-soft: #E2F1E7;
   --ambre-soft: #FCF1DB;
@@ -26,32 +28,33 @@
   --danger-line: #E7B7AE;
   --focus-ring: rgba(20, 38, 61, .12);
   --demo: #0B1727;
-  --shadow: 0 1px 2px rgba(20, 38, 61, .05), 0 4px 14px rgba(20, 38, 61, .05);
-  --f-title: "Archivo", "Helvetica Neue", Arial, sans-serif;
-  --f-ui: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --r: 12px;
+  --shadow: 0 1px 2px rgba(20, 38, 61, .04);
+  --f-title: "Geist", "Helvetica Neue", Arial, sans-serif;
+  --f-ui: "Geist", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --r: 10px;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --panel: #0E1A2A; --panel-ink: #F1F4F8; --panel-muted: #A9B6C6;
-    --orange: #EA6A32; --beton: #0A131E; --vert: #4DB27C; --ambre: #E3AE4A;
-    --surface: #132131; --ink: #E8EDF3; --on-ink: #0A131E; --on-accent: #0A131E; --muted: #9AA8B9;
-    --line: #24354A; --gris-barre: #3B4D63; --hover: #18283A;
+    --panel: #10161D; --panel-ink: #F1F4F8; --panel-muted: #A9B6C6;
+    --orange: #EA6A32; --beton: #0D1117; --vert: #4DB27C; --ambre: #E3AE4A;
+    --surface: #151A21; --ink: #ECE9E3; --on-ink: #0A131E; --on-accent: #0A131E; --muted: #9AA8B9;
+    --line: #2A313B; --gris-barre: #3E4652; --hover: #1B2129;
     --orange-soft: #3A1E10; --vert-soft: #12301F; --ambre-soft: #35270D; --ambre-ink: #F0C46E; --warn-strong: #F7D893;
     --danger-bg: #3C1913; --danger-ink: #F4A897; --danger-line: #6B3328; --focus-ring: rgba(232, 237, 243, .16);
-    --shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 4px 14px rgba(0, 0, 0, .25);
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --panel: #0E1A2A; --panel-ink: #F1F4F8; --panel-muted: #A9B6C6;
-  --orange: #EA6A32; --beton: #0A131E; --vert: #4DB27C; --ambre: #E3AE4A;
-  --surface: #132131; --ink: #E8EDF3; --on-ink: #0A131E; --on-accent: #0A131E; --muted: #9AA8B9;
-  --line: #24354A; --gris-barre: #3B4D63; --hover: #18283A;
+  --panel: #10161D; --panel-ink: #F1F4F8; --panel-muted: #A9B6C6;
+  --orange: #EA6A32; --beton: #0D1117; --vert: #4DB27C; --ambre: #E3AE4A;
+  --surface: #151A21; --ink: #ECE9E3; --on-ink: #0A131E; --on-accent: #0A131E; --muted: #9AA8B9;
+  --line: #2A313B; --gris-barre: #3E4652; --hover: #1B2129;
   --orange-soft: #3A1E10; --vert-soft: #12301F; --ambre-soft: #35270D; --ambre-ink: #F0C46E; --warn-strong: #F7D893;
   --danger-bg: #3C1913; --danger-ink: #F4A897; --danger-line: #6B3328; --focus-ring: rgba(232, 237, 243, .16);
-  --shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 4px 14px rgba(0, 0, 0, .25);
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3);
   color-scheme: dark;
 }
 
@@ -60,7 +63,7 @@
 html, body { min-height: 100%; }
 body { margin: 0; background: var(--beton); color: var(--ink); font: 14px/1.5 var(--f-ui); -webkit-font-smoothing: antialiased; }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--beton); }
-h1, h2, h3 { font-family: var(--f-title); margin: 0; line-height: 1.2; text-wrap: balance; color: var(--ink); }
+h1, h2, h3 { font-family: var(--f-title); font-weight: 600; letter-spacing: -.012em; margin: 0; line-height: 1.2; text-wrap: balance; color: var(--ink); }
 h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -.01em; }
 h2 { font-size: 1.05rem; font-weight: 700; }
 h3 { font-size: .95rem; font-weight: 700; }
@@ -112,7 +115,7 @@ button { cursor: pointer; }
 .btn.ok { background: var(--vert); border-color: var(--vert); color: var(--on-accent); }
 .pill { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); padding: 7px 12px; border-radius: 8px; font-size: .82rem; font-weight: 500; }
 
-.card { background: var(--surface); border-radius: var(--r); box-shadow: var(--shadow); }
+.card { background: var(--surface); border-radius: var(--r); border: 1px solid var(--line); box-shadow: var(--shadow); }
 .card-p { padding: 16px 18px; }
 .card-h { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
 
@@ -193,7 +196,7 @@ td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
 .sitecard .stage { font-size: .9rem; }
 .warnbox { display: flex; gap: 8px; align-items: center; background: var(--ambre-soft); color: var(--ambre-ink); border-radius: 10px; padding: 9px 12px; font-size: .88rem; font-weight: 500; }
 .okbox { display: flex; gap: 8px; align-items: center; background: var(--vert-soft); color: var(--vert); border-radius: 10px; padding: 9px 12px; font-size: .88rem; font-weight: 500; }
-.bigbtn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; border: 0; background: var(--orange); color: var(--on-accent); border-radius: 14px; min-height: 56px; font-size: 1.05rem; font-weight: 600; box-shadow: 0 6px 16px rgba(194, 65, 12, .25); }
+.bigbtn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; border: 0; background: var(--orange); color: var(--on-accent); border-radius: 10px; min-height: 54px; font-size: 1.02rem; font-weight: 600; }
 .bigbtn:hover { filter: brightness(1.06); }
 .section-t { font-size: .74rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-top: 6px; }
 .entry { padding: 14px 16px; display: grid; gap: 10px; }
@@ -464,7 +467,7 @@ a { color: var(--orange); }
 
 /* ---------- Bandeau cookies : carte en bas à gauche, trois boutons égaux ---------- */
 .cookie-banner { position: fixed; z-index: 40; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); width: min(440px, calc(100vw - 32px)); }
-.cookie-banner .cb-in { background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 18px 50px rgba(10, 19, 30, .28); overflow: hidden; max-height: calc(100vh - 32px); display: flex; flex-direction: column; }
+.cookie-banner .cb-in { background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 12px 40px rgba(10, 19, 30, .18); overflow: hidden; max-height: calc(100vh - 32px); display: flex; flex-direction: column; }
 .cb-body { position: relative; padding: 24px 24px 14px; display: grid; gap: 10px; overflow-y: auto; }
 .cb-body::before { content: ""; position: absolute; top: -40px; right: -40px; width: 170px; height: 150px; border-radius: 50%; background: radial-gradient(circle at 40% 60%, rgba(234, 106, 50, .35), rgba(234, 106, 50, 0) 70%); pointer-events: none; }
 .cb-mark { position: absolute; top: 18px; right: 22px; color: var(--ink); }
@@ -586,3 +589,8 @@ a { color: var(--orange); }
 @media (max-width: 760px) { .m-figs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .sp-stack { display: grid; gap: 12px; }
 .sp-stack p { margin: 0; }
+
+/* Pages publiques (à propos, mentions légales, confidentialité) : titres éditoriaux */
+.legal h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(2.1rem, 1.6rem + 2vw, 3.2rem); line-height: 1.08; letter-spacing: -.02em; }
+.legal h2 { font-family: var(--f-display); font-weight: 400; font-size: 1.5rem; letter-spacing: -.01em; }
+.legal p, .legal li { font-size: 1rem; line-height: 1.7; }

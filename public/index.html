@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0E1A2A">
+<meta name="theme-color" content="#F7F5F0">
 <title>Archfield</title>
 <meta name="description" content="Archfield montre à celui qui fait construire ce qui est vraiment construit, avec des photos vérifiées, et ce que devient son argent, étape par étape.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -16,143 +16,128 @@
 <script src="/js/theme.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
 <link rel="stylesheet" href="/css/app.css">
 <link rel="stylesheet" href="/css/landing.css">
 </head>
 <body class="lp">
 
-<!-- Barre de navigation translucide, collée en haut -->
 <header class="lp-nav">
   <div class="lp-wrap lp-nav-in">
     <a class="logo" href="/" id="logo" aria-label="Archfield">Archfield</a>
     <nav class="lp-links" aria-label="Sections" data-i18n-label>
-      <a href="#fonctionnalites" data-i18n>Fonctionnalités</a>
-      <a href="#comment" data-i18n>Comment ça marche</a>
+      <a href="#produit" data-i18n>Le produit</a>
+      <a href="#entreprises" data-i18n>Entreprises</a>
       <a href="#tarifs" data-i18n>Tarifs</a>
       <a href="#faq" data-i18n>Questions</a>
     </nav>
     <div class="lp-nav-r">
-      <div data-prefs class="on-dark lp-prefs"></div>
+      <div data-prefs class="lp-prefs"></div>
       <a class="lp-signin" href="/connexion" data-i18n>Se connecter</a>
-      <a class="btn primary lp-cta-sm" href="/inscription" data-i18n>Commencer</a>
+      <a class="lp-btn lp-btn-dark lp-btn-sm" href="/inscription" data-i18n>Créer un compte</a>
     </div>
   </div>
 </header>
 
 <main>
-  <!-- Bandeau d'ouverture -->
+  <!-- Ouverture : le message, et le produit tel qu'il est -->
   <section class="lp-hero">
-    <div class="lp-glow" aria-hidden="true"></div>
     <div class="lp-wrap lp-hero-in">
-      <p class="lp-eyebrow" data-i18n>Suivi de chantier et d'argent, à distance</p>
-      <h1 class="lp-h1"><span data-i18n>Votre chantier,</span> <span class="lp-dim" data-i18n>comme si vous y étiez.</span></h1>
-      <p class="lp-lead" data-i18n>Vous construisez loin de chez vous, ou vous n'avez pas le temps d'aller sur place ? Archfield vous montre ce qui est vraiment construit, avec des photos vérifiées, et ce que devient votre argent, étape par étape.</p>
-      <div class="lp-ctas">
-        <a class="btn primary lp-cta" href="/inscription" data-i18n>Créer mon espace, 2 mois offerts</a>
-        <a class="lp-textlink" href="/c/demo-saly-awa" id="demo-link" hidden><span data-i18n>Voir un chantier de démo</span> <span aria-hidden="true">›</span></a>
+      <div class="lp-hero-text">
+        <p class="lp-kicker" data-i18n>Suivi de chantier à distance</p>
+        <h1 class="lp-h1" data-i18n>Construire au pays, sans y être.</h1>
+        <p class="lp-lead" data-i18n>Photos vérifiées, étapes à valider et chaque franc versé : Archfield montre ce qui est vraiment construit à ceux qui font bâtir loin de leur chantier.</p>
+        <div class="lp-ctas">
+          <a class="lp-btn lp-btn-dark" href="/inscription" data-i18n>Créer mon espace</a>
+          <a class="lp-arrow-link" href="/c/demo-saly-awa" id="demo-link" hidden><span data-i18n>Voir un chantier en exemple</span></a>
+        </div>
+        <p class="lp-fine" data-i18n>Gratuit pour les entreprises et les proches qui publient. Offre Plus à 9,99 € ou 5 000 FCFA par mois, deux mois offerts.</p>
       </div>
-      <p class="lp-fine" data-i18n>Sans carte bancaire · Gratuit pour les entreprises du BTP · Sans engagement</p>
+      <figure class="lp-hero-media" data-photo-frame>
+        <img class="lp-photo" data-photo="chantier.jpg" alt="Chantier de maison en construction" data-i18n-alt>
+        <div class="lp-device">
+          <img class="shot shot-light" data-shot="phone-client" alt="Suivi d'un chantier sur téléphone" data-i18n-alt src="/img/phone-client-fr-light.jpg" width="780" height="1688">
+          <img class="shot shot-dark" data-shot="phone-client" data-dark alt="" src="/img/phone-client-fr-dark.jpg" width="780" height="1688" loading="lazy">
+        </div>
+      </figure>
+    </div>
+  </section>
 
-      <div class="lp-stage" aria-hidden="true">
-        <div class="lp-laptop">
-          <div class="lp-laptop-screen">
-            <img class="shot shot-light" data-shot="dashboard" alt="" src="/img/dashboard-fr-light.jpg" width="2040" height="1290">
-            <img class="shot shot-dark" data-shot="dashboard" data-dark alt="" src="/img/dashboard-fr-dark.jpg" width="2040" height="1290" loading="lazy">
+  <!-- Le constat -->
+  <section class="lp-section lp-intro">
+    <div class="lp-wrap lp-two">
+      <p class="lp-label" data-i18n>Pourquoi Archfield</p>
+      <p class="lp-statement" data-i18n>On envoie l'argent par Wave, on reçoit trois photos floues sur WhatsApp, et on espère que les murs montent. Archfield remplace cet échange par un suivi clair : ce qui est fait, quand, où, et ce que cela a coûté.</p>
+    </div>
+  </section>
+
+  <!-- Le produit en trois chapitres -->
+  <section class="lp-section" id="produit">
+    <div class="lp-wrap">
+      <article class="lp-chapter">
+        <div class="lp-chapter-text">
+          <p class="lp-num">01</p>
+          <h2 class="lp-h2" data-i18n>Des photos qui prouvent.</h2>
+          <p class="lp-p" data-i18n>Chaque photo garde sa date de prise de vue et le lieu où elle a été prise. Une photo ancienne, ou prise loin du chantier, est signalée dans le journal avant que vous ne la preniez pour argent comptant.</p>
+          <dl class="lp-facts"><div><dt data-i18n>Date</dt><dd data-i18n>lue dans le téléphone, pas saisie</dd></div><div><dt data-i18n>Lieu</dt><dd data-i18n>comparé à la position du chantier</dd></div></dl>
+        </div>
+        <div class="lp-visual">
+          <img class="shot shot-light" data-shot="entry" alt="Publication vérifiée dans le journal du chantier" data-i18n-alt src="/img/entry-fr-light.jpg" loading="lazy">
+          <img class="shot shot-dark" data-shot="entry" data-dark alt="" src="/img/entry-fr-dark.jpg" loading="lazy">
+        </div>
+      </article>
+      <article class="lp-chapter rev">
+        <div class="lp-chapter-text">
+          <p class="lp-num">02</p>
+          <h2 class="lp-h2" data-i18n>Payer au rythme des travaux.</h2>
+          <p class="lp-p" data-i18n>Devis, versements, dépenses avec reçus. Archfield compare en permanence ce que vous avez versé à ce qui est construit, et vous prévient quand l'écart se creuse. Une dépense ne s'efface jamais en silence.</p>
+          <dl class="lp-facts"><div><dt data-i18n>Versements</dt><dd data-i18n>Wave, Orange Money, MTN MoMo, virement</dd></div><div><dt data-i18n>Échéancier</dt><dd data-i18n>un montant prévu à chaque étape validée</dd></div></dl>
+        </div>
+        <div class="lp-visual">
+          <img class="shot shot-light" data-shot="money" alt="Argent du chantier : budget, versé, dépenses et travaux réalisés" data-i18n-alt src="/img/money-fr-light.jpg" loading="lazy">
+          <img class="shot shot-dark" data-shot="money" data-dark alt="" src="/img/money-fr-dark.jpg" loading="lazy">
+        </div>
+      </article>
+      <article class="lp-chapter">
+        <div class="lp-chapter-text">
+          <p class="lp-num">03</p>
+          <h2 class="lp-h2" data-i18n>Quelqu'un sur place, même sans vous.</h2>
+          <p class="lp-p" data-i18n>Confiez le chantier à une entreprise ou à un proche : ils publient depuis leur téléphone, même sans réseau sur le terrain, et la publication part dès que le réseau revient. Un doute ? Demandez une visite de contrôle.</p>
+          <dl class="lp-facts"><div><dt data-i18n>Pour eux</dt><dd data-i18n>gratuit, sans formation</dd></div><div><dt data-i18n>Pour vous</dt><dd data-i18n>un journal et un rapport chaque lundi</dd></div></dl>
+        </div>
+        <div class="lp-visual lp-visual-phone">
+          <div class="lp-device">
+            <img class="shot shot-light" data-shot="phone-artisan" alt="Application de l'entreprise sur téléphone" data-i18n-alt src="/img/phone-artisan-fr-light.jpg" width="780" height="1688" loading="lazy">
+            <img class="shot shot-dark" data-shot="phone-artisan" data-dark alt="" src="/img/phone-artisan-fr-dark.jpg" width="780" height="1688" loading="lazy">
           </div>
-          <div class="lp-laptop-base"></div>
         </div>
-        <div class="lp-phone lp-phone-hero">
-          <img class="shot shot-light" data-shot="phone-client" alt="" src="/img/phone-client-fr-light.jpg" width="780" height="1688">
-          <img class="shot shot-dark" data-shot="phone-client" data-dark alt="" src="/img/phone-client-fr-dark.jpg" width="780" height="1688" loading="lazy">
-        </div>
-      </div>
+      </article>
     </div>
   </section>
 
-  <!-- Chiffres clés -->
-  <section class="lp-stats" aria-label="En bref" data-i18n-label>
-    <div class="lp-wrap lp-stats-in">
-      <div><b data-i18n>Date et lieu</b><span data-i18n>vérifiés sur chaque photo</span></div>
-      <div><b data-i18n>Versé / réalisé</b><span data-i18n>comparés à chaque étape</span></div>
-      <div><b data-i18n>Sans réseau</b><span data-i18n>la publication part quand il revient</span></div>
-      <div><b>0 €</b><span data-i18n>pour l'entreprise qui publie</span></div>
-    </div>
-  </section>
-
-  <!-- Cartes qui défilent -->
-  <section class="lp-section" id="fonctionnalites">
+  <!-- Comment ça marche -->
+  <section class="lp-section lp-ruled" id="comment">
     <div class="lp-wrap">
-      <div class="lp-head-row">
-        <h2 class="lp-h2"><span data-i18n>Ce qui est construit.</span> <span class="lp-dim2" data-i18n>Ce qui est payé.</span></h2>
-        <div class="lp-arrows"><button type="button" class="lp-arrow" data-scroll="-1" aria-label="Précédent" data-i18n-label>‹</button><button type="button" class="lp-arrow" data-scroll="1" aria-label="Suivant" data-i18n-label>›</button></div>
-      </div>
-    </div>
-    <div class="lp-rail" id="rail" tabindex="0" aria-label="Fonctionnalités" data-i18n-label>
-      <article class="lp-tile t-orange"><p class="lp-tile-k" data-i18n>Photos vérifiées</p><h3 data-i18n>Une vieille photo ne passe plus.</h3><p data-i18n>Chaque photo garde sa date de prise de vue et le lieu où elle a été prise. Si elle date ou vient d'ailleurs, vous le voyez tout de suite.</p></article>
-      <article class="lp-tile t-green"><p class="lp-tile-k" data-i18n>Argent</p><h3 data-i18n>Jamais plus payé que construit.</h3><p data-i18n>Devis, versements et dépenses avec reçus : Archfield compare ce que vous avez versé aux travaux réalisés et vous alerte si vous payez trop tôt.</p></article>
-      <article class="lp-tile t-ink"><p class="lp-tile-k" data-i18n>Étapes</p><h3 data-i18n>Vous validez avant de payer la suite.</h3><p data-i18n>Fondations, murs, toiture : chaque étape terminée attend votre validation, avec le versement prévu à ce moment-là.</p></article>
-      <article class="lp-tile t-amber"><p class="lp-tile-k" data-i18n>Zones éloignées</p><h3 data-i18n>Même sans réseau sur le chantier.</h3><p data-i18n>La publication est gardée sur le téléphone et part dès que le réseau revient, avec la date et le lieu d'origine.</p></article>
-      <article class="lp-tile t-ink"><p class="lp-tile-k" data-i18n>Visite de contrôle</p><h3 data-i18n>Quelqu'un de confiance passe sur place.</h3><p data-i18n>Un doute ? Demandez une visite : une personne vérifie l'avancement et vous envoie un compte rendu avec photos.</p></article>
-      <article class="lp-tile t-orange"><p class="lp-tile-k" data-i18n>Rapport du lundi</p><h3 data-i18n>Le résumé de la semaine, tout seul.</h3><p data-i18n>Chaque lundi matin : l'avancement, les photos de la semaine et la prochaine étape.</p></article>
-    </div>
-  </section>
-
-  <!-- Pour le client -->
-  <section class="lp-section lp-split">
-    <div class="lp-wrap lp-split-in">
-      <div class="lp-copy">
-        <p class="lp-eyebrow2" data-i18n>Pour celui qui fait construire</p>
-        <h2 class="lp-h2" data-i18n>De Paris, du bureau ou de l'autre bout du pays.</h2>
-        <p class="lp-p" data-i18n>Diaspora qui construit au pays, cadre ou chef d'entreprise sans une heure pour aller sur le chantier, terrain éloigné de la ville : vous voyez l'avancement réel et suivez chaque franc versé, sans appeler pour savoir.</p>
-        <ul class="lp-checks"><li data-i18n>Tous vos chantiers au même endroit, ajoutés avec leur numéro de suivi</li><li data-i18n>Confiez le chantier à une entreprise ou à un proche sur place</li><li data-i18n>Alerte quand vous avez payé plus que ce qui est construit</li></ul>
-      </div>
-      <div class="lp-visual">
-        <div class="lp-phone">
-          <img class="shot shot-light" data-shot="phone-client" alt="Page du client sur téléphone" data-i18n-alt src="/img/phone-client-fr-light.jpg" width="780" height="1688" loading="lazy">
-          <img class="shot shot-dark" data-shot="phone-client" data-dark alt="" src="/img/phone-client-fr-dark.jpg" width="780" height="1688" loading="lazy">
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Pour l'entreprise -->
-  <section class="lp-section lp-split lp-alt">
-    <div class="lp-wrap lp-split-in rev">
-      <div class="lp-copy">
-        <p class="lp-eyebrow2" data-i18n>Pour l'entreprise ou le proche sur place</p>
-        <h2 class="lp-h2" data-i18n>30 secondes depuis le chantier. Gratuit.</h2>
-        <p class="lp-p" data-i18n>Une photo, une phrase, c'est publié. Les dépenses se notent avec la photo du reçu. Un client rassuré paie à temps et vous recommande.</p>
-        <ul class="lp-checks"><li data-i18n>Accusé « Vu par » à chaque publication</li><li data-i18n>Dépenses justifiées par la photo du reçu</li><li data-i18n>Lien à envoyer par WhatsApp en un clic</li></ul>
-      </div>
-      <div class="lp-visual">
-        <div class="lp-phone">
-          <img class="shot shot-light" data-shot="phone-artisan" alt="Application de l'artisan sur téléphone" data-i18n-alt src="/img/phone-artisan-fr-light.jpg" width="780" height="1688" loading="lazy">
-          <img class="shot shot-dark" data-shot="phone-artisan" data-dark alt="" src="/img/phone-artisan-fr-dark.jpg" width="780" height="1688" loading="lazy">
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Comment ça marche : vraie séquence, donc numérotée -->
-  <section class="lp-section" id="comment">
-    <div class="lp-wrap">
-      <h2 class="lp-h2 lp-center"><span data-i18n>Prêt en trois étapes.</span> <span class="lp-dim2" data-i18n>Sans formation.</span></h2>
+      <div class="lp-head"><h2 class="lp-h2" data-i18n>Comment ça marche</h2></div>
       <ol class="lp-steps">
-        <li><span class="lp-num">1</span><h3 data-i18n>Créez votre espace</h3><p data-i18n>Ajoutez votre chantier avec le numéro de suivi de votre entreprise, ou créez-le vous-même avec ses étapes et le budget.</p></li>
-        <li><span class="lp-num">2</span><h3 data-i18n>Confiez-le</h3><p data-i18n>À une entreprise du BTP ou à un proche sur place, par un lien d'invitation envoyé sur WhatsApp. Pour eux, c'est gratuit.</p></li>
-        <li><span class="lp-num">3</span><h3 data-i18n>Suivez et payez au bon moment</h3><p data-i18n>Photos vérifiées, étapes à valider, versements et dépenses : vous payez la suite quand l'étape est vraiment faite.</p></li>
+        <li><p class="lp-num">01</p><h3 data-i18n>Créez votre espace</h3><p data-i18n>Ajoutez votre chantier avec le numéro de suivi de votre entreprise, ou créez-le vous-même avec ses étapes et son budget.</p></li>
+        <li><p class="lp-num">02</p><h3 data-i18n>Confiez-le</h3><p data-i18n>À une entreprise du BTP ou à un proche sur place, par un lien d'invitation envoyé sur WhatsApp.</p></li>
+        <li><p class="lp-num">03</p><h3 data-i18n>Suivez et payez au bon moment</h3><p data-i18n>Vous validez chaque étape terminée, puis vous versez la suite. Pas avant.</p></li>
       </ol>
     </div>
   </section>
 
-  <!-- Pour qui -->
-  <section class="lp-section lp-alt">
-    <div class="lp-wrap">
-      <h2 class="lp-h2 lp-center" data-i18n>Quand vous ne pouvez pas être sur place.</h2>
-      <div class="lp-markets">
-        <article class="lp-market dark"><p class="lp-tile-k" data-i18n>Diaspora</p><h3 data-i18n>Construire au pays depuis l'étranger.</h3><p data-i18n>Sénégal, Côte d'Ivoire, Cameroun, Mali… Votre maison avance, preuves à l'appui, et votre argent est suivi.</p></article>
-        <article class="lp-market"><p class="lp-tile-k" data-i18n>Afrique de l'Ouest et centrale</p><h3 data-i18n>Pas le temps, ou un terrain loin de la ville.</h3><p data-i18n>Salarié, cadre ou chef d'entreprise : votre proche ou votre entreprise publie, vous suivez entre deux réunions.</p></article>
+  <!-- Pour les entreprises -->
+  <section class="lp-band" id="entreprises">
+    <div class="lp-wrap lp-band-in">
+      <div>
+        <p class="lp-label lp-label-light" data-i18n>Entreprises du BTP</p>
+        <h2 class="lp-h2" data-i18n>Vos clients voient le travail. Ils paient à temps.</h2>
+        <p class="lp-p" data-i18n>Archfield est gratuit pour les entreprises. Publiez en trente secondes depuis le chantier, envoyez le lien par WhatsApp, et laissez le rapport du lundi faire le reste. Un client qui voit avancer sa maison vous recommande.</p>
+        <a class="lp-arrow-link lp-on-dark" href="/inscription" data-i18n>Inscrire mon entreprise</a>
+      </div>
+      <div class="lp-band-shot">
+        <img class="shot" data-shot="dashboard" data-dark alt="Tableau de bord de l'entreprise" data-i18n-alt src="/img/dashboard-fr-dark.jpg" width="2040" height="1290" loading="lazy">
       </div>
     </div>
   </section>
@@ -160,19 +145,40 @@
   <!-- Tarifs -->
   <section class="lp-section" id="tarifs">
     <div class="lp-wrap">
-      <h2 class="lp-h2 lp-center"><span data-i18n>Un prix simple.</span> <span class="lp-dim2" data-i18n>Gratuit pour ceux qui publient.</span></h2>
-      <div class="lp-prices lp-prices-3">
-        <article class="lp-price"><p class="lp-tile-k" data-i18n>Entreprises et proches</p><p class="lp-amt">0 €</p><ul class="lp-checks"><li data-i18n>Chantiers et clients illimités</li><li data-i18n>Photos vérifiées, étapes, dépenses avec reçus</li><li data-i18n>Rapport du lundi automatique</li></ul><a class="btn lp-cta lp-cta-ghost" href="/inscription" data-i18n>Inscrire mon entreprise</a></article>
-        <article class="lp-price"><p class="lp-tile-k" data-i18n>Client · Gratuit</p><p class="lp-amt">0 €</p><ul class="lp-checks"><li data-i18n>Tous vos chantiers au même endroit</li><li data-i18n>Photos vérifiées, étapes, devis et rapports</li><li data-i18n>Ajout par numéro de suivi</li></ul><a class="btn lp-cta lp-cta-ghost" href="/inscription" data-i18n>Créer mon espace</a></article>
-        <article class="lp-price lp-featured"><p class="lp-tile-k" data-i18n>Client · Plus</p><p class="lp-amt">9,99 €<small data-i18n>/ mois</small></p><p class="lp-alt-price">5 000 FCFA <span data-i18n>/ mois</span></p><ul class="lp-checks"><li data-i18n>Suivi de l'argent : versements, dépenses, alertes</li><li data-i18n>Jusqu'à 5 proches qui publient pour vous</li><li data-i18n>Visites de contrôle sur demande</li></ul><a class="btn primary lp-cta" href="/inscription" data-i18n>Essayer 2 mois gratuitement</a></article>
+      <div class="lp-head"><h2 class="lp-h2" data-i18n>Tarifs</h2><p class="lp-p" data-i18n>Celui qui publie ne paie rien. Celui qui fait construire choisit.</p></div>
+      <div class="lp-plans">
+        <div class="lp-plan">
+          <p class="lp-plan-k" data-i18n>Entreprises et proches</p>
+          <p class="lp-plan-price">0 €</p>
+          <p class="lp-plan-note" data-i18n>Pour ceux qui publient l'avancement.</p>
+          <ul><li data-i18n>Chantiers et clients illimités</li><li data-i18n>Photos vérifiées, étapes, dépenses avec reçus</li><li data-i18n>Rapport du lundi automatique</li></ul>
+          <a class="lp-btn lp-btn-line" href="/inscription" data-i18n>Inscrire mon entreprise</a>
+        </div>
+        <div class="lp-plan">
+          <p class="lp-plan-k" data-i18n>Client</p>
+          <p class="lp-plan-price">0 €</p>
+          <p class="lp-plan-note" data-i18n>Pour suivre un chantier confié à une entreprise.</p>
+          <ul><li data-i18n>Tous vos chantiers au même endroit</li><li data-i18n>Photos vérifiées, étapes, devis et rapports</li><li data-i18n>Ajout par numéro de suivi</li></ul>
+          <a class="lp-btn lp-btn-line" href="/inscription" data-i18n>Créer mon espace</a>
+        </div>
+        <div class="lp-plan lp-plan-main">
+          <p class="lp-plan-k" data-i18n>Client Plus</p>
+          <p class="lp-plan-price">9,99 € <small data-i18n>par mois</small></p>
+          <p class="lp-plan-note">5 000 FCFA <span data-i18n>par mois · deux mois offerts</span></p>
+          <ul><li data-i18n>Suivi de l'argent : versements, dépenses, alertes</li><li data-i18n>Jusqu'à 5 proches qui publient pour vous</li><li data-i18n>Visites de contrôle sur demande</li></ul>
+          <a class="lp-btn lp-btn-dark" href="/inscription" data-i18n>Essayer deux mois</a>
+        </div>
       </div>
     </div>
   </section>
 
   <!-- Questions fréquentes -->
-  <section class="lp-section lp-alt" id="faq">
-    <div class="lp-wrap lp-narrow">
-      <h2 class="lp-h2 lp-center" data-i18n>Questions fréquentes</h2>
+  <section class="lp-section lp-ruled" id="faq">
+    <div class="lp-wrap lp-two lp-faq-wrap">
+      <div>
+        <h2 class="lp-h2" data-i18n>Questions fréquentes</h2>
+        <p class="lp-p lp-small"><span data-i18n>Une autre question ?</span> <a href="/a-propos" data-i18n>Écrivez-nous</a></p>
+      </div>
       <div class="lp-faq">
         <details><summary data-i18n>Comment savoir qu'une photo n'est pas ancienne ou prise ailleurs ?</summary><p data-i18n>Le téléphone note la date de prise de vue et, si la localisation est activée, le lieu. Archfield les compare à la date d'envoi et à la position du chantier : une photo ancienne ou prise loin est signalée « À vérifier » dans votre journal.</p></details>
         <details><summary data-i18n>Je vis en Afrique mais je n'ai pas le temps d'aller sur le chantier. C'est pour moi ?</summary><p data-i18n>Oui. Archfield est fait pour tous ceux qui ne peuvent pas être sur place : diaspora, salariés, chefs d'entreprise, terrains loin de la ville. Votre entreprise ou un proche publie, vous suivez depuis votre téléphone.</p></details>
@@ -180,20 +186,17 @@
         <details><summary data-i18n>Comment suivre mon argent ?</summary><p data-i18n>Notez chaque versement (Wave, Orange Money, virement…). L'entreprise ou votre proche note ses dépenses avec la photo du reçu. Archfield compare le total versé aux travaux réalisés et vous alerte si vous payez trop tôt. Une ligne ne peut pas être effacée en cachette : une annulation reste visible.</p></details>
         <details><summary data-i18n>Puis-je confier mon chantier à un membre de ma famille ?</summary><p data-i18n>Oui. Créez le chantier dans votre espace et invitez votre proche : il publie l'avancement et note les dépenses depuis son téléphone, sans rien payer. Il vous faut l'offre Plus (jusqu'à 5 proches).</p></details>
         <details><summary data-i18n>Y a-t-il une application mobile ?</summary><p data-i18n>Oui. Ouvrez Archfield sur votre téléphone, puis « Ajouter à l'écran d'accueil » (sur iPhone, depuis le bouton Partager de Safari). L'application s'installe en quelques secondes, sans passer par un store, et s'ouvre en plein écran.</p></details>
-        <details><summary data-i18n>Qui paie ?</summary><p data-i18n>Celui qui fait construire, s'il veut l'offre Plus. Les entreprises du BTP et les proches qui publient utilisent Archfield gratuitement.</p></details>
         <details><summary data-i18n>Qui peut voir les photos et les montants ?</summary><p data-i18n>Seulement les personnes du chantier : celui qui le gère, son propriétaire et ceux qui ont son lien privé. Rien n'est jamais public, et le lien peut être changé à tout moment.</p></details>
         <details><summary data-i18n>Faut-il un numéro d'entreprise ?</summary><p data-i18n>En France, le SIRET est demandé à l'inscription. En Afrique de l'Ouest et centrale, le NINEA, le RCCM ou le NIU est facultatif.</p></details>
-        <details><summary data-i18n>Puis-je supprimer mes données ?</summary><p data-i18n>Oui, à tout moment : vous pouvez télécharger toutes vos données, supprimer un chantier ou votre compte depuis l'application.</p></details>
       </div>
     </div>
   </section>
 
   <!-- Dernier appel -->
-  <section class="lp-final">
-    <div class="lp-wrap lp-center">
-      <h2 class="lp-h2" data-i18n>Votre argent mérite des preuves.</h2>
-      <p class="lp-lead" data-i18n>Créez votre espace en deux minutes, 2 mois offerts.</p>
-      <div class="lp-ctas lp-ctas-c"><a class="btn primary lp-cta" href="/inscription" data-i18n>Créer mon espace, 2 mois offerts</a></div>
+  <section class="lp-section lp-close">
+    <div class="lp-wrap">
+      <h2 class="lp-h2 lp-h2-big" data-i18n>Votre argent mérite des preuves.</h2>
+      <div class="lp-ctas"><a class="lp-btn lp-btn-dark" href="/inscription" data-i18n>Créer mon espace</a><a class="lp-arrow-link" href="/connexion" data-i18n>J'ai déjà un compte</a></div>
     </div>
   </section>
 </main>
@@ -201,12 +204,15 @@
 <footer class="lp-footer">
   <div class="lp-wrap">
     <div class="lp-foot-grid">
-      <div class="lp-foot-brand"><span class="logo" id="logo-foot">Archfield</span><p data-i18n>Votre chantier, comme si vous y étiez.</p><div data-prefs></div></div>
-      <div><h3 data-i18n>Produit</h3><a href="#fonctionnalites" data-i18n>Fonctionnalités</a><a href="#tarifs" data-i18n>Tarifs</a><a href="/inscription" data-i18n>Créer mon espace</a><a href="/connexion" data-i18n>Se connecter</a></div>
-      <div><h3 data-i18n>Archfield</h3><a href="/a-propos" data-i18n>À propos</a><a href="#faq" data-i18n>Questions</a></div>
+      <div class="lp-foot-brand"><span class="logo" id="logo-foot">Archfield</span><p data-i18n>Suivi de chantier et d'argent, à distance. Pour la diaspora et l'Afrique de l'Ouest et centrale.</p></div>
+      <div><h3 data-i18n>Produit</h3><a href="#produit" data-i18n>Le produit</a><a href="#tarifs" data-i18n>Tarifs</a><a href="#faq" data-i18n>Questions</a><a href="/connexion" data-i18n>Se connecter</a></div>
+      <div><h3 data-i18n>Pour qui</h3><a href="/inscription" data-i18n>Particuliers</a><a href="#entreprises" data-i18n>Entreprises du BTP</a><a href="/a-propos" data-i18n>À propos</a></div>
       <div><h3 data-i18n>Légal</h3><a href="/mentions-legales" data-i18n>Mentions légales</a><a href="/confidentialite" data-i18n>Confidentialité</a><a href="#" data-cookies data-i18n>Gérer les cookies</a></div>
     </div>
-    <p class="lp-copyright">© <span id="year">2026</span> Archfield</p>
+    <div class="lp-foot-bottom">
+      <p>© <span id="year">2026</span> Archfield</p>
+      <div data-prefs></div>
+    </div>
   </div>
 </footer>
 

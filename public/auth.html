@@ -16,7 +16,7 @@
 <script src="/js/theme.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
 <link rel="stylesheet" href="/css/app.css">
 <link rel="stylesheet" href="/css/landing.css">
 <link rel="stylesheet" href="/css/auth.css">
@@ -124,31 +124,16 @@
     <footer class="au-foot" data-footer-links></footer>
   </section>
 
-  <!-- Colonne visuelle (ordinateur seulement) -->
+  <!-- Colonne visuelle (ordinateur seulement) : le message, puis l'application telle qu'elle est -->
   <aside class="au-visual" aria-hidden="true">
-    <div class="lp-glow"></div>
-    <div class="au-stage">
-      <div class="lp-laptop">
-        <div class="lp-laptop-screen">
-          <img class="shot shot-light" data-shot="dashboard" alt="" src="/img/dashboard-fr-light.jpg" width="2040" height="1290">
-          <img class="shot shot-dark" data-shot="dashboard" data-dark alt="" src="/img/dashboard-fr-dark.jpg" width="2040" height="1290" loading="lazy">
-        </div>
-        <div class="lp-laptop-base"></div>
-      </div>
-      <div class="lp-phone au-phone">
-        <img class="shot shot-light" data-shot="phone-client" alt="" src="/img/phone-client-fr-light.jpg" width="780" height="1688">
-        <img class="shot shot-dark" data-shot="phone-client" data-dark alt="" src="/img/phone-client-fr-dark.jpg" width="780" height="1688" loading="lazy">
-      </div>
-    </div>
     <div class="au-pitch">
-      <h2><span data-i18n>Suivez vos chantiers</span> <span class="au-accent" data-i18n>où que vous soyez</span></h2>
+      <p class="au-pitch-k" data-i18n>Archfield</p>
+      <h2 data-i18n>Suivez vos chantiers où que vous soyez.</h2>
       <p data-i18n>Photos vérifiées, étapes à valider, versements et dépenses : ce qui est construit et ce que devient votre argent, sans appeler pour savoir.</p>
-      <ul class="au-badges">
-        <li><span data-ic="cam"></span><b data-i18n>Photos vérifiées</b></li>
-        <li><span data-ic="card"></span><b data-i18n>Argent suivi</b></li>
-        <li><span data-ic="lock"></span><b data-i18n>Tout reste privé</b></li>
-        <li><span data-ic="phone"></span><b data-i18n>Téléphone et ordinateur</b></li>
-      </ul>
+    </div>
+    <div class="au-device lp-device">
+      <img class="shot shot-light" data-shot="phone-client" alt="" src="/img/phone-client-fr-light.jpg" width="780" height="1688">
+      <img class="shot shot-dark" data-shot="phone-client" data-dark alt="" src="/img/phone-client-fr-dark.jpg" width="780" height="1688" loading="lazy">
     </div>
   </aside>
 </div>
