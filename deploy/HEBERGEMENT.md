@@ -40,7 +40,7 @@ La première fois, répondez `yes` à la question sur l'empreinte du serveur. Si
 Sur le serveur :
 
 ```bash
-git clone -b claude/artifact-session-g0q340 https://github.com/Sidney123-SAY/Arcfield.git
+git clone -b main https://github.com/Sidney123-SAY/Arcfield.git
 bash Arcfield/deploy/installer.sh
 ```
 
