@@ -43,9 +43,16 @@ function reportText(site, artisan, data) {
   if (data.drift) lines.push(`Attention : cette étape a pris du retard.`);
   if (data.toValidate) lines.push(`${data.toValidate} étape(s) attendent votre validation.`);
   data.updates.forEach((u) => lines.push(`- ${u.date.slice(0, 10)} · ${u.text}`));
-  if (!data.updates.length) lines.push("Aucune mise à jour cette semaine. Votre artisan a été relancé.");
+  if (!data.updates.length) lines.push(data.reminded ? `Aucune mise à jour cette semaine. ${artisan.company} a reçu une relance par e-mail.` : "Aucune mise à jour cette semaine.");
   lines.push("", `Voir les photos et valider les étapes : ${BASE_URL}/c/${site.client_token}`);
   return lines.join("\n");
+}
+
+function remindManager(site, artisan) {
+  return sendMail({
+    to: artisan.email, subject: `${site.name} : votre client attend des nouvelles`,
+    text: `Bonjour ${artisan.contact_name},\n\nRien n'a été publié cette semaine sur le chantier « ${site.name} ». ${site.client_short} reçoit ce matin son rapport du lundi, qui l'indique.\n\nUne photo et une phrase suffisent pour le rassurer : ${BASE_URL}/app#chantier-${site.id}\n\nArchfield`
+  });
 }
 
 async function sendReport(site, force = false, now = Date.now()) {
@@ -58,8 +65,14 @@ async function sendReport(site, force = false, now = Date.now()) {
     site.id, start.toISOString(), end.toISOString(), JSON.stringify(data), new Date(now).toISOString());
   if (!r.changes) return null;
   const id = Number(r.lastInsertRowid);
+  const artisan = get("SELECT * FROM artisans WHERE id = ?", site.artisan_id);
+  // Une étape est en cours mais rien n'a été publié de la semaine : le gestionnaire est relancé (une fois par rapport,
+  // grâce à la ligne unique ci-dessus), sauf rapport demandé à la main ou chantier géré par son propriétaire.
+  if (!force && !data.updates.length && data.running && site.artisan_id !== site.owner_id) {
+    data.reminded = await remindManager(site, artisan);
+    if (data.reminded) run("UPDATE reports SET data = ? WHERE id = ?", JSON.stringify(data), id);
+  }
   if (site.client_email) {
-    const artisan = get("SELECT * FROM artisans WHERE id = ?", site.artisan_id);
     if (await sendMail({ to: site.client_email, subject: `${site.name} : votre semaine de chantier`, text: reportText(site, artisan, data) }))
       run("UPDATE reports SET emailed = 1 WHERE id = ?", id);
   }

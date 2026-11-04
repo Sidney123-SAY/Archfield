@@ -44,7 +44,7 @@
         return `<section class="card card-p report">
           <div class="mail"><span>${t("Rapport du {date}", { date: dLong(r.sent_at) })}</span><span>${t("Semaine du {a} au {b}", { a: dShort(r.period_start), b: dShort(r.period_end) })}</span></div>
           <div class="figs"><div><b>${d.progress} %</b><span>${t("des travaux réalisés")}</span></div><div><b>${d.updates.length}</b><span>${d.updates.length > 1 ? t("mises à jour") : t("mise à jour")}</span></div><div><b>${d.photos}</b><span>${t("photos datées")}</span></div></div>
-          <ul>${d.updates.map((u) => `<li><span class="muted">${dShort(u.date)}</span> · ${esc(u.text)}</li>`).join("") || `<li>${t("Aucune mise à jour cette semaine.")}</li>`}</ul>
+          <ul>${d.updates.map((u) => `<li><span class="muted">${dShort(u.date)}</span> · ${esc(u.text)}</li>`).join("") || `<li>${t("Aucune mise à jour cette semaine.")}${d.reminded ? " " + t("{who} a reçu une relance par e-mail.", { who: esc(s.artisan.company) }) : ""}</li>`}</ul>
           <p>${d.drift ? `<span class="chip warn">${t("Dérive")}</span> ${t("{step} : {n} de retard.", { step: esc(d.running.name), n: days(d.running.delay) })}` : `<span class="chip ok">${t("Dans les temps")}</span>`}${d.next ? " " + t("Étape suivante : {step}.", { step: `<b>${esc(d.next)}</b>` }) : ""}</p>
         </section>`;
       }).join("") : `<section class="card empty"><h3>${t("Pas encore de rapport")}</h3><p>${t("Un rapport de la semaine arrive ici chaque lundi matin.")}</p></section>`;

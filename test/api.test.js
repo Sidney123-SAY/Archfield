@@ -139,6 +139,36 @@ test("rapport hebdomadaire : un seul par chantier et par semaine", async () => {
   assert.equal(await runWeekly(), 0);
 });
 
+test("rapport du lundi : relance de l'artisan resté muet, une seule fois", async () => {
+  const { sendReport } = require("../server/reports");
+  const { outbox } = require("../server/mail");
+  const { get } = require("../server/db");
+  const relances = () => outbox.filter((m) => m.to === "test@example.com" && /attend des nouvelles/.test(m.subject));
+  const s = (await call("POST", "/api/sites", { name: "Salle de bain", client_name: "M. Faye", steps: [{ name: "Plomberie", planned_days: 3 }], start_now: true })).data;
+  const site = () => get("SELECT * FROM sites WHERE id = ?", s.id);
+  const before = relances().length;
+
+  // Rapport demandé à la main : pas de relance.
+  await sendReport(site(), true);
+  assert.equal(relances().length, before);
+
+  // Rapport du lundi, étape en cours, rien publié : une relance, pas deux.
+  const monday = Date.now() + 7 * 864e5;
+  assert.ok(await sendReport(site(), false, monday));
+  assert.equal(relances().length, before + 1);
+  assert.match(relances().pop().text, /#chantier-\d+/);
+  assert.equal(await sendReport(site(), false, monday), null);
+  assert.equal(relances().length, before + 1);
+
+  // Une publication dans la semaine : pas de relance.
+  const f = new FormData(); f.append("text", "Tuyaux posés.");
+  const up = (await call("POST", `/api/sites/${s.id}/updates`, undefined, { form: f })).data;
+  const nextMonday = monday + 7 * 864e5;
+  require("../server/db").run("UPDATE updates SET created_at = ? WHERE id = ?", new Date(nextMonday - 3 * 864e5).toISOString(), up.id);
+  assert.ok(await sendReport(site(), false, nextMonday));
+  assert.equal(relances().length, before + 1);
+});
+
 test("mot de passe oublié puis nouveau mot de passe", async () => {
   const { outbox } = require("../server/mail");
   cookie = "";
