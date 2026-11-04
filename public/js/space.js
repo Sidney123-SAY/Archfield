@@ -260,7 +260,7 @@
       if (d.go) { if (location.hash === "#" + d.go) route(); else location.hash = d.go; }
       else if (d.copy) copy(d.copy, t("Copié."));
       else if (d.invite) {
-        if (d.locked !== undefined) { toast(t("Confier un chantier à un proche demande l'offre Basic ou Premium.")); location.hash = "offre"; return; }
+        if (d.locked !== undefined) { toast(t("Confier un chantier à un proche demande l'offre Plus.")); location.hash = "offre"; return; }
         act(() => api(`/api/client/sites/${d.site}/invite`, { method: "POST", body: { kind: d.invite, name: $("#inv-name")?.value || "" } }), t("Invitation créée. Envoyez le lien."));
       }
       else if (d.cancelInvite) act(() => api(`/api/client/sites/${d.cancelInvite}/invite`, { method: "DELETE" }), t("Invitation annulée."));

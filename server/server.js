@@ -689,7 +689,7 @@ api.post("/sites/:id/updates", limit("upload", 60, 60 * 60e3, (req) => "a" + req
   const files = req.files || [];
   try {
     const s = ownSite(req, req.params.id);
-    if (req.artisan.account_type === "proche" && !space.prochePublishAllowed(s)) fail(402, "Le propriétaire du chantier doit activer l'offre Basic ou Premium pour que vous puissiez publier.");
+    if (req.artisan.account_type === "proche" && !space.prochePublishAllowed(s)) fail(402, "Le propriétaire du chantier doit activer l'offre Plus pour que vous puissiez publier.");
     const text = str(req.body.text, 500, "message");
     const st = req.body.step_id ? get("SELECT * FROM steps WHERE id = ? AND site_id = ?", Number(req.body.step_id), s.id) : null;
     if (req.body.step_id && !st) fail(400, "Étape inconnue pour ce chantier.");

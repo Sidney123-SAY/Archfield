@@ -604,7 +604,6 @@ window.AF_EN = {
   "J'ai plusieurs chantiers, avec plusieurs artisans. Je reçois plusieurs liens ?": "I have several projects with several builders. Do I get several links?",
   "Non. Créez votre espace client gratuit, puis ajoutez chaque chantier avec le numéro de suivi donné par l'artisan : tout est au même endroit.": "No. Create your free client space, then add each project with the tracking number your builder gives you: everything is in one place.",
   "Puis-je confier mon chantier à un membre de ma famille ?": "Can I entrust my project to a family member?",
-  "Oui. Créez le chantier dans votre espace et invitez votre proche : il publie l'avancement depuis son téléphone, sans rien payer. Il vous faut l'offre Basic (1 proche) ou Premium (jusqu'à 5).": "Yes. Create the project in your space and invite your relative: they post progress from their phone, without paying anything. You need the Basic plan (1 relative) or Premium (up to 5).",
 
   /* À propos */
   "À propos d'Archfield": "About Archfield",
@@ -778,7 +777,6 @@ window.AF_EN = {
   "Une entreprise du BTP": "A construction company",
   "Elle s'inscrit avec son numéro d'entreprise (SIRET en France). Gratuit pour vous.": "It signs up with its company number (SIRET in France). Free for you.",
   "Un proche sur place": "A relative on site",
-  "Avec l'offre Basic ou Premium. Votre proche ne paie rien.": "With the Basic or Premium plan. Your relative pays nothing.",
   "Votre proche ne paie rien. {n} place restante dans votre offre.": "Your relative pays nothing. {n} spot left in your plan.",
   "Votre proche ne paie rien. {n} places restantes dans votre offre.": "Your relative pays nothing. {n} spots left in your plan.",
   "Son nom (facultatif)": "Their name (optional)",
@@ -799,7 +797,6 @@ window.AF_EN = {
   "Tout le gratuit": "Everything in Free",
   "1 proche qui publie pour vous": "1 relative posting for you",
   "Votre proche ne paie rien": "Your relative pays nothing",
-  "Tout le Basic": "Everything in Basic",
   "Jusqu'à 5 proches": "Up to 5 relatives",
   "Idéal pour plusieurs chantiers au pays": "Ideal for several projects back home",
   "Proches": "Relatives",
@@ -807,22 +804,18 @@ window.AF_EN = {
   "Le paiement en ligne (carte, Orange Money, Wave) arrive bientôt. D'ici là, nous activons les offres sur demande.": "Online payment (card, Orange Money, Wave) is coming soon. Until then, we activate plans on request.",
   "Vos informations": "Your details",
   "Les chantiers que vous avez créés sont effacés. Ceux gérés par des entreprises restent chez elles.": "Projects you created are deleted. Those managed by companies stay with them.",
-  "Confier un chantier à un proche demande l'offre Basic ou Premium.": "Entrusting a project to a relative requires the Basic or Premium plan.",
   "Invitation créée. Envoyez le lien.": "Invitation created. Send the link.",
   "Invitation annulée.": "Invitation cancelled.",
   "Confirmer : il ne pourra plus publier": "Confirm: they will no longer be able to post",
   "Confirmer le retrait": "Confirm removal",
   "Vous gérez de nouveau ce chantier.": "You manage this project again.",
   "Chantier retiré de votre espace.": "Project removed from your space.",
-  "Essai Premium : encore {n} jour": "Premium trial: {n} day left",
-  "Essai Premium : encore {n} jours": "Premium trial: {n} days left",
   "{n} nouveauté": "{n} new update",
   "{n} nouveautés": "{n} new updates",
   "0 €": "€0",
   "Cette page est réservée à l'espace client.": "This page is for client accounts only.",
   "Aucun chantier ne correspond à ce numéro de suivi. Vérifiez-le auprès de votre artisan.": "No project matches this tracking number. Check it with your builder.",
   "Ce chantier est déjà rattaché à un autre compte client. Contactez votre artisan.": "This project is already linked to another client account. Contact your builder.",
-  "Votre offre permet {n} proche(s). Passez à Premium ou annulez une invitation en attente.": "Your plan allows {n} relative(s). Upgrade to Premium or cancel a pending invitation.",
   "Ce chantier est le vôtre : supprimez-le depuis sa page.": "This project is yours: delete it from its page.",
   "Cette invitation n'existe pas ou a été annulée. Demandez un nouveau lien.": "This invitation doesn't exist or was cancelled. Ask for a new link.",
   "Cette invitation a déjà été acceptée.": "This invitation has already been accepted.",
@@ -832,7 +825,6 @@ window.AF_EN = {
   "Seule une entreprise crée des chantiers ici. Les clients créent les leurs dans leur espace.": "Only companies create projects here. Clients create theirs in their space.",
   "Ce chantier appartient à votre client : vous pouvez arrêter de le gérer, mais pas le supprimer.": "This project belongs to your client: you can stop managing it, but not delete it.",
   "Ce chantier n'a pas de propriétaire à qui le rendre.": "This project has no owner to hand it back to.",
-  "Le propriétaire du chantier doit activer l'offre Basic ou Premium pour que vous puissiez publier.": "The project owner must activate the Basic or Premium plan for you to post.",
   "numéro de suivi": "tracking number",
 
   /* Messages du serveur (traduits à l'affichage) */
@@ -1235,6 +1227,7 @@ window.AF_EN = {
   "Seul le propriétaire du chantier valide, depuis son espace client.": "Only the project owner can approve, from their client space.",
   "Vous gérez ce chantier : c'est à votre client de valider l'étape.": "You manage this project: your client approves the stage.",
   "L'entreprise a créé ce chantier : elle seule peut vous le rendre.": "The company created this project: only it can hand it over to you.",
+  "Le propriétaire du chantier doit activer l'offre Plus pour que vous puissiez publier.": "The project owner must activate the Plus plan for you to post.",
   /* Rapport du lundi : relance */
   "{who} a reçu une relance par e-mail.": "{who} was sent a reminder by email."
 };

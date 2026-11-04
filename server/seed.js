@@ -266,7 +266,7 @@ async function main() {
     ], "FCFA");
 
     /* ---- Espace client d'Awa ---- */
-    // Maison familiale confiée à Ousmane, son frère sur place : il publie, Awa paie l'offre (ici, l'essai Premium).
+    // Maison familiale confiée à Ousmane, son frère sur place : il publie, Awa paie l'offre (ici, l'essai Plus).
     const famille = makeSite(proche, { name: "Maison familiale", location: "Thiès, Sénégal", kind: "ext", client: "Awa Ndiaye", short: "Awa", email: "demo-client@archfield.app", city: "Paris", budget: 12500000, ownerId: client, tracking: "ARC-THES-FAM2", currency: "XOF", lat: 14.7910, lng: -16.9359,
       steps: [["Terrassement", 5, 5, "v"], ["Fondations", 12, 14, "c"], ["Élévation des murs", 16, 0, "f"], ["Dalle et chaînage", 10, 0, "f"], ["Toiture", 8, 0, "f"]],
       latest: [{ hAgo: 3, text: "Le ferrailleur a fini côté cour. Coulage des semelles demain si le camion arrive.", photos: 2, seenAfterH: 0.4 }, { hAgo: 50, text: "Fouilles terminées, j'ai vérifié les niveaux avec le maçon.", photos: 2, seenAfterH: 2 }] });

@@ -101,7 +101,7 @@ function mount(app, api, h) {
     res.status(201).json({ id });
   });
 
-  // Confier le chantier : invitation pour une entreprise (gratuit) ou pour un proche (Basic ou Premium).
+  // Confier le chantier : invitation pour une entreprise (gratuit) ou pour un proche (offre Plus).
   api.post("/client/sites/:id/invite", (req, res) => {
     onlyClient(req);
     const s = ownedSite(req, req.params.id);
