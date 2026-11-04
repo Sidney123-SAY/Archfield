@@ -331,7 +331,7 @@
       const step = esc(u.step_name || t("Étape"));
       if (u.kind === "step_done") {
         const waiting = st && st.status === "a_valider";
-        return `<div class="card sys">${ic("check", 22, waiting ? "var(--orange)" : "var(--vert)")}<span>${waiting ? (forClient ? t("{step} terminé · en attente de votre validation", { step }) : t("{step} terminé · en attente de validation par {who}", { step, who: esc(who) })) : t("{step} terminé · le {date}", { step, date: dShort(u.created_at) })}</span>${forClient && waiting ? `<button type="button" class="btn ok" data-validate="${st.id}">${t("Valider")}</button>` : ""}</div>`;
+        return `<div class="card sys">${ic("check", 22, waiting ? "var(--orange)" : "var(--vert)")}<span>${waiting ? (forClient ? t("{step} terminé · en attente de votre validation", { step }) : t("{step} terminé · en attente de validation par {who}", { step, who: esc(who) })) : t("{step} terminé · le {date}", { step, date: dShort(u.created_at) })}</span>${forClient && waiting && !s.validate_block ? `<button type="button" class="btn ok" data-validate="${st.id}">${t("Valider")}</button>` : ""}</div>`;
       }
       if (u.kind === "step_validated") return `<div class="card sys">${ic("check", 22, "var(--vert)")}<span>${forClient ? t("{step} validé par vous · {date}", { step, date: rel(u.created_at) }) : t("{step} validé par {who} · {date}", { step, who: esc(who), date: rel(u.created_at) })}</span></div>`;
       const proof = verifyBadge(u);
