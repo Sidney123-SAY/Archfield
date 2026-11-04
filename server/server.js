@@ -177,9 +177,9 @@ app.post("/api/signup", limit("signup", 10, 60 * 60e3), wrap(async (req, res) =>
   const contact = str(b.contact_name, 120, "nom");
   const id = tx(() => {
     const r = run(
-      `INSERT INTO artisans (email, password_hash, account_type, company, contact_name, city, country, company_id, market, currency, google_sub, apple_sub, trial_ends_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO artisans (email, password_hash, account_type, company, contact_name, city, country, company_id, market, currency, google_sub, apple_sub, email_verified_at, trial_ends_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       mail, hash, type, type === "pro" ? str(b.company, 120, "entreprise") : contact, contact, str(b.city, 120, "ville", false), co.country, co.company_id,
-      co.market, co.currency, googleSub, appleSub, new Date(Date.now() + (type === "client" ? space.CLIENT_TRIAL_DAYS : TRIAL_DAYS) * DAY).toISOString(), nowIso());
+      co.market, co.currency, googleSub, appleSub, b.google_token ? nowIso() : null, new Date(Date.now() + (type === "client" ? space.CLIENT_TRIAL_DAYS : TRIAL_DAYS) * DAY).toISOString(), nowIso());
     if (b.google_token) run("DELETE FROM oauth_pending WHERE token_hash = ?", sha256(String(b.google_token)));
     return Number(r.lastInsertRowid);
   });
@@ -257,7 +257,8 @@ app.post("/api/password/reset", limit("reset", 20, 60 * 60e3), wrap(async (req, 
   if (!r) fail(400, "Ce lien a expiré ou a déjà servi. Demandez-en un nouveau.");
   const hash = await bcrypt.hash(password, 10);
   tx(() => {
-    run("UPDATE artisans SET password_hash = ? WHERE id = ?", hash, r.artisan_id);
+    // Le lien est arrivé dans la boîte mail : l'adresse est prouvée.
+    run("UPDATE artisans SET password_hash = ?, email_verified_at = COALESCE(email_verified_at, ?) WHERE id = ?", hash, nowIso(), r.artisan_id);
     run("UPDATE password_resets SET used_at = ? WHERE artisan_id = ? AND used_at IS NULL", nowIso(), r.artisan_id);
     run("DELETE FROM sessions WHERE artisan_id = ?", r.artisan_id);
   });
@@ -313,10 +314,13 @@ app.get("/auth/google/callback", limit("oauth", 30, 10 * 60e3), wrap(async (req,
 
 // Fin commune à Google et Apple : compte connu (par identifiant ou par e-mail) → connexion ;
 // sinon, l'identité est gardée 30 minutes, le temps de répondre aux questions de l'inscription.
+// Un compte trouvé par l'e-mail seulement n'est rattaché que si son adresse est prouvée : sinon, quelqu'un aurait pu
+// s'inscrire avec l'e-mail d'un autre et un mot de passe à lui, puis récupérer le compte une fois la victime arrivée par Google.
 function oauthDone(res, provider, sub, email, name) {
   const col = provider === "apple" ? "apple_sub" : "google_sub";
   const mail = String(email).toLowerCase();
   const a = get(`SELECT * FROM artisans WHERE ${col} = ?`, String(sub)) || get("SELECT * FROM artisans WHERE email = ?", mail);
+  if (a && !a[col] && !a.email_verified_at) return res.redirect(303, "/connexion?erreur=compte-existant");
   if (a) {
     if (!a[col]) run(`UPDATE artisans SET ${col} = ? WHERE id = ?`, String(sub), a.id);
     openSession(res, a.id);

@@ -14,7 +14,8 @@
     "google-indisponible": "La connexion avec Google n'est pas encore activée sur ce site.",
     apple: "La connexion avec Apple n'a pas abouti. Réessayez, ou utilisez votre e-mail.",
     "apple-email": "Votre adresse Apple n'est pas vérifiée. Inscrivez-vous avec votre e-mail.",
-    "apple-indisponible": "La connexion avec Apple n'est pas encore activée sur ce site."
+    "apple-indisponible": "La connexion avec Apple n'est pas encore activée sur ce site.",
+    "compte-existant": "Un compte existe déjà avec cette adresse. Connectez-vous avec votre mot de passe, ou cliquez sur « Mot de passe oublié » : vous pourrez ensuite utiliser Google ou Apple."
   };
   // Pays de résidence proposés aux clients (la diaspora vit souvent hors de la liste des pays d'entreprise).
   const HOME_EXTRA = [["CA", "Canada"], ["US", "États-Unis"], ["GB", "Royaume-Uni"], ["IT", "Italie"], ["ES", "Espagne"], ["DE", "Allemagne"], ["XX", "Autre pays"]];

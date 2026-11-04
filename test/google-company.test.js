@@ -104,6 +104,21 @@ test("connexion avec Google : nouveau compte, puis reconnexion", async () => {
   assert.equal((await googleRound()).headers.get("location"), "/connexion?erreur=google-email");
 });
 
+test("Google ne rattache pas un compte dont l'e-mail n'est pas prouvé", async () => {
+  const { outbox } = require("../server/mail");
+  const json = (url, body) => req(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  // Quelqu'un s'inscrit avec l'adresse d'une autre personne, et un mot de passe à lui.
+  assert.equal((await json("/api/signup", { country: "SN", company: "Fausse", contact_name: "X", email: "fatou@example.com", password: "chantier-2026" })).status, 201);
+  profile = { sub: "g-fatou", email: "fatou@example.com", email_verified: true, name: "Fatou" };
+  assert.equal((await googleRound()).headers.get("location"), "/connexion?erreur=compte-existant");
+
+  // La vraie Fatou reçoit le lien de réinitialisation : l'adresse est prouvée, l'intrus est déconnecté, Google se rattache.
+  await json("/api/password/forgot", { email: "fatou@example.com" });
+  const jeton = outbox.findLast((m) => m.to === "fatou@example.com").text.match(/jeton=([\w-]+)/)[1];
+  assert.equal((await json("/api/password/reset", { token: jeton, password: "nouveau-mot-2026" })).status, 200);
+  assert.equal((await googleRound()).headers.get("location"), "/app");
+});
+
 test("démo : connexion en un clic, message clair si les données ne sont pas chargées", async () => {
   const r = await req("/api/demo-login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ account: "af" }) });
   assert.equal(r.status, 404);

@@ -1229,5 +1229,7 @@ window.AF_EN = {
   "Semaine du 3 au 9": "Week of the 3rd to the 9th",
   "4 mises à jour, 11 photos vérifiées, 2 dépenses avec reçu.": "4 updates, 11 verified photos, 2 expenses with receipts.",
   "Étape suivante : enduits et finitions.": "Next step: rendering and finishing.",
-  "Plan de façade d'une villa en construction": "Elevation drawing of a villa under construction"
+  "Plan de façade d'une villa en construction": "Elevation drawing of a villa under construction",
+  /* Droits : comptes, validation, reprise d'un chantier */
+  "Un compte existe déjà avec cette adresse. Connectez-vous avec votre mot de passe, ou cliquez sur « Mot de passe oublié » : vous pourrez ensuite utiliser Google ou Apple.": "An account already exists with this address. Sign in with your password, or click “Forgot password”: you'll then be able to use Google or Apple."
 };

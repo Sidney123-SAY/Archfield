@@ -205,6 +205,11 @@ CREATE TABLE IF NOT EXISTS visit_requests (
   created_at TEXT NOT NULL
 );
 `);
+// Adresse prouvée (Google, Apple, ou lien de réinitialisation reçu). Sans elle, « Continuer avec Google » ne rattache pas
+// un compte existant, créé par quelqu'un qui aurait pris l'e-mail d'un autre.
+addColumn("artisans", "email_verified_at", "TEXT");
+db.exec("UPDATE artisans SET email_verified_at = created_at WHERE email_verified_at IS NULL AND (google_sub IS NOT NULL OR apple_sub IS NOT NULL)");
+
 // Monnaie propre au chantier : un client à Paris peut construire en FCFA à Thiès.
 db.exec("UPDATE sites SET currency = (SELECT currency FROM artisans WHERE artisans.id = sites.artisan_id) WHERE currency IS NULL");
 
