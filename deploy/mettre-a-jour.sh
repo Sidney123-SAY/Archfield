@@ -5,7 +5,9 @@ set -e
 cd "$(dirname "$0")/.."
 ./deploy/sauvegarde.sh
 git rev-parse HEAD > .version-precedente
-git pull
+# Suit la branche main (les installations faites avant son renommage suivaient une autre branche).
+git fetch origin main
+git checkout -q -B main origin/main
 docker compose up -d --build
 docker image prune -f >/dev/null
 echo "Archfield est à jour (version $(git rev-parse --short HEAD)). Pour revenir à la précédente : ./deploy/revenir-en-arriere.sh"

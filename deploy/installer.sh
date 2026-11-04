@@ -1,6 +1,6 @@
 #!/bin/bash
 # Installe Archfield sur un serveur Ubuntu neuf (Oracle Cloud, Hetzner, OVH…), en une commande :
-#   git clone -b claude/artifact-session-g0q340 https://github.com/Sidney123-SAY/Arcfield.git
+#   git clone -b main https://github.com/Sidney123-SAY/Arcfield.git
 #   bash Arcfield/deploy/installer.sh
 # Le script demande l'adresse du site et un e-mail, puis fait tout le reste. On peut le relancer sans risque.
 set -euo pipefail
