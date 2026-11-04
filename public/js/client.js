@@ -29,7 +29,10 @@
         const d = e.status === "validee" || e.status === "a_valider" ? t("{a} réalisés pour {p} prévus", { a: days(e.actual_days), p: days(e.planned_days) })
           : e.status === "en_cours" ? t("En cours depuis {a}, {p} prévus", { a: days(e.actual_days), p: days(e.planned_days) }) : t("{n} prévus", { n: days(e.planned_days) });
         return `<li class="${e.status}"><span class="dot">${e.status === "validee" ? "✓" : i + 1}</span><div class="sb"><div class="st"><h3>${esc(e.name)}</h3>${late ? `<span class="chip warn">${t("En retard")}</span>` : STATUS_CHIP[e.status]}</div><p class="sd">${d}${e.amount ? " · " + t("versement prévu à la validation : {n}", { n: money(e.amount, cur) }) : ""}</p>
-          ${e.status === "a_valider" ? `<div class="validate"><span>${t("{company} indique que cette étape est terminée. Regardez les photos du journal, puis validez.", { company: esc(s.artisan.company) })}</span><button type="button" class="btn ok" data-validate="${e.id}">${t("Valider l'étape")}</button></div>` : ""}</div></li>`;
+          ${e.status === "a_valider" ? `<div class="validate"><span>${t("{company} indique que cette étape est terminée. Regardez les photos du journal, puis validez.", { company: esc(s.artisan.company) })}</span>${
+            s.validate_block === "owner" ? `<span class="muted">${t("Seul le propriétaire du chantier valide, depuis son espace client.")} <a href="/connexion">${t("Se connecter")}</a></span>`
+            : s.validate_block === "manager" ? `<span class="muted">${t("Vous gérez ce chantier : c'est à votre client de valider l'étape.")}</span>`
+            : `<button type="button" class="btn ok" data-validate="${e.id}">${t("Valider l'étape")}</button>`}</div>` : ""}</div></li>`;
       }).join("")}</ol></section>`;
     } else if (tab === "argent") {
       body = `${moneyPanel(s.money, { forClient: true })}

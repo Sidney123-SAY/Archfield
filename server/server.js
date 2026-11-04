@@ -779,6 +779,18 @@ function bySiteToken(t) {
   if (!s) fail(404, "Ce lien n'est plus valide. Demandez un nouveau lien à votre artisan.");
   return s;
 }
+// Qui valide une étape depuis le lien : jamais le gestionnaire (il validerait son propre travail, et déclencherait
+// le versement prévu) ; si le propriétaire a un espace client, lui seul, connecté.
+function validator(req, s) {
+  const a = sessionArtisan(req);
+  if (s.owner_id && s.owner_id !== s.artisan_id) return a && a.id === s.owner_id ? { name: a.contact_name } : { block: "owner" };
+  if (a && a.id === s.artisan_id && a.id !== s.owner_id) return { block: "manager" };
+  return { name: a && a.id === s.owner_id ? a.contact_name : "lien du client" };
+}
+const VALIDATE_BLOCKED = {
+  owner: "Ce chantier est suivi dans un espace client : connectez-vous à cet espace pour valider l'étape.",
+  manager: "Vous gérez ce chantier : c'est à votre client de valider l'étape."
+};
 app.get("/api/c/:token", limit("client", 120, 60e3), (req, res) => {
   const s = bySiteToken(req.params.token);
   const a = get("SELECT * FROM artisans WHERE id = ?", s.artisan_id);
@@ -788,6 +800,7 @@ app.get("/api/c/:token", limit("client", 120, 60e3), (req, res) => {
     ...sum,
     client_token: undefined, client_email: undefined, client_phone: undefined, last_notified_at: undefined, lat: undefined, lng: undefined,
     artisan: { company: a.company, contact_name: a.contact_name, city: a.city, currency: s.currency },
+    validate_block: validator(req, s).block || null,
     position: positionInfo(s),
     money: money.publicMoney(money.moneyOf(s, `/c/${s.client_token}/media/`, sum.progress)),
     updates: updatesOf(s.id, `/c/${s.client_token}/media/`).map((u) => ({ ...u, seen_at: undefined })),
@@ -805,8 +818,10 @@ app.post("/api/c/:token/steps/:id/validate", limit("client-write", 30, 60e3), (r
   const st = get("SELECT * FROM steps WHERE id = ? AND site_id = ?", Number(req.params.id), s.id);
   if (!st) fail(404, "Étape introuvable.");
   if (stepStatus(st) !== "a_valider") fail(409, "Cette étape n'attend pas de validation.");
+  const who = validator(req, s);
+  if (who.block) fail(403, VALIDATE_BLOCKED[who.block]);
   tx(() => {
-    run("UPDATE steps SET validated_at = ? WHERE id = ?", nowIso(), st.id);
+    run("UPDATE steps SET validated_at = ?, validated_by = ? WHERE id = ?", nowIso(), who.name, st.id);
     run("INSERT INTO updates (site_id, step_id, kind, created_at, seen_at) VALUES (?, ?, 'step_validated', ?, ?)", s.id, st.id, nowIso(), nowIso());
     startNextIfIdle(s.id, st.position);
   });

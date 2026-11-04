@@ -1231,5 +1231,7 @@ window.AF_EN = {
   "Étape suivante : enduits et finitions.": "Next step: rendering and finishing.",
   "Plan de façade d'une villa en construction": "Elevation drawing of a villa under construction",
   /* Droits : comptes, validation, reprise d'un chantier */
-  "Un compte existe déjà avec cette adresse. Connectez-vous avec votre mot de passe, ou cliquez sur « Mot de passe oublié » : vous pourrez ensuite utiliser Google ou Apple.": "An account already exists with this address. Sign in with your password, or click “Forgot password”: you'll then be able to use Google or Apple."
+  "Un compte existe déjà avec cette adresse. Connectez-vous avec votre mot de passe, ou cliquez sur « Mot de passe oublié » : vous pourrez ensuite utiliser Google ou Apple.": "An account already exists with this address. Sign in with your password, or click “Forgot password”: you'll then be able to use Google or Apple.",
+  "Seul le propriétaire du chantier valide, depuis son espace client.": "Only the project owner can approve, from their client space.",
+  "Vous gérez ce chantier : c'est à votre client de valider l'étape.": "You manage this project: your client approves the stage."
 };

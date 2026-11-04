@@ -103,3 +103,30 @@ test("le client suit, crée, confie à un proche puis à une entreprise", async 
   assert.equal((await awa.call("POST", `/api/client/sites/${maison.id}/take-back`)).status, 200);
   assert.equal((await ousmane.call("GET", `/api/sites/${maison.id}`)).status, 404);
 });
+
+test("droits : le gestionnaire ne valide pas ses étapes, le propriétaire connecté si", async () => {
+  const pro = user(), anon = user(), lea = user();
+  await pro.call("POST", "/api/signup", { country: "SN", company: "Diallo BTP", contact_name: "Ibrahima", email: "diallo@example.com", password: "chantier-2026" });
+  const site = (await pro.call("POST", "/api/sites", { name: "Duplex", client_name: "Léa", steps: [{ name: "Murs", planned_days: 5 }, { name: "Toit", planned_days: 5 }], start_now: true })).data;
+  const full = (await pro.call("GET", `/api/sites/${site.id}`)).data;
+  const [murs, toit] = full.steps;
+  const validate = (u, st) => u.call("POST", `/api/c/${full.client_token}/steps/${st.id}/validate`);
+
+  // Sans espace client : le lien valide, mais pas l'entreprise connectée qui ouvre la page de son client.
+  await pro.call("PATCH", `/api/steps/${murs.id}`, { action: "finish" });
+  assert.equal((await pro.call("GET", `/api/c/${full.client_token}`)).data.validate_block, "manager");
+  assert.equal((await validate(pro, murs)).status, 403);
+  assert.equal((await anon.call("GET", `/api/c/${full.client_token}`)).data.validate_block, null);
+  assert.equal((await validate(anon, murs)).status, 200);
+  assert.equal(get("SELECT validated_by FROM steps WHERE id = ?", murs.id).validated_by, "lien du client");
+
+  // Rattaché à l'espace de Léa : elle seule valide, connectée.
+  await lea.call("POST", "/api/signup", { account_type: "client", country: "FR", contact_name: "Léa Diop", email: "lea@example.com", password: "chantier-2026" });
+  assert.equal((await lea.call("POST", "/api/client/claim", { code: full.tracking_code })).status, 200);
+  await pro.call("PATCH", `/api/steps/${toit.id}`, { action: "finish" });
+  assert.equal((await anon.call("GET", `/api/c/${full.client_token}`)).data.validate_block, "owner");
+  assert.equal((await validate(anon, toit)).status, 403);
+  assert.equal((await validate(pro, toit)).status, 403);
+  assert.equal((await validate(lea, toit)).status, 200);
+  assert.equal(get("SELECT validated_by FROM steps WHERE id = ?", toit.id).validated_by, "Léa Diop");
+});
