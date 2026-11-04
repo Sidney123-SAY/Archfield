@@ -132,6 +132,31 @@ test("argent, preuves et visites : du chantier confié à un proche jusqu'au lie
   assert.equal((await awa.call("POST", `/api/client/sites/${site.id}/visits`, { wished_date: "2026-11-20", phone: "+33612345678", note: "Les murs sont-ils montés ?" })).status, 201);
   assert.ok(outbox.some((mail) => mail.to === "equipe@example.com" && /Visite de contrôle/.test(mail.subject)));
   assert.equal((await awa.call("GET", "/api/client/sites")).data.sites.find((s) => s.id === site.id).visits.length, 1);
+
+  // RGPD : chacun exporte le chantier qu'il possède ou qu'il gère, argent, visites et invitations compris.
+  const exAwa = (await awa.call("GET", "/api/me/export")).data;
+  const mine = exAwa.sites.find((s) => s.id === site.id);
+  assert.equal(mine.role, "proprietaire", "un chantier géré par un proche est dans l'export du propriétaire");
+  assert.ok(mine.ledger.some((l) => l.kind === "versement") && mine.ledger.some((l) => l.receipt_url));
+  assert.equal(mine.visit_requests.length, 1);
+  assert.ok(mine.invitations.some((i) => i.kind === "proche"));
+  assert.equal((await paul.call("GET", "/api/me/export")).data.sites.find((s) => s.id === site.id).role, "gestionnaire");
+
+  // Le proche supprime son compte : le chantier revient à Awa, avec le reçu du proche.
+  const file = (f) => fs.existsSync(path.join(process.env.DATA_DIR, "uploads", f));
+  assert.equal((await paul.call("DELETE", "/api/me", { password: "trois-mots-ici" })).status, 200);
+  assert.equal(get("SELECT artisan_id FROM sites WHERE id = ?", site.id).artisan_id, get("SELECT id FROM artisans WHERE email = 'awa@ex.com'").id);
+  assert.ok(file(receipt));
+  assert.ok(get("SELECT created_by_name FROM ledger WHERE id = ?", dep.id).created_by_name, "la dépense reste dans la trace d'Awa");
+
+  // Awa supprime le sien : chantier, photos, reçus et demande de visite effacés.
+  const photos = get("SELECT COUNT(*) AS n FROM photos p JOIN updates u ON u.id = p.update_id WHERE u.site_id = ?", site.id).n;
+  assert.ok(photos > 0);
+  assert.equal((await awa.call("DELETE", "/api/me", { password: "trois-mots-ici" })).status, 200);
+  for (let i = 0; i < 20 && file(receipt); i++) await new Promise((ok) => setTimeout(ok, 50)); // effacement en arrière-plan
+  assert.equal(file(receipt), false, "le reçu est effacé du disque");
+  assert.equal(get("SELECT COUNT(*) AS n FROM sites WHERE id = ?", site.id).n, 0);
+  assert.equal(get("SELECT COUNT(*) AS n FROM visit_requests").n, 0);
 });
 
 test("sécurité des comptes : se déconnecter de ses autres appareils", async () => {

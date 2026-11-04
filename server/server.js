@@ -462,25 +462,42 @@ api.post("/me/logout-others", (req, res) => {
 });
 
 // RGPD : export de toutes les données du compte, puis suppression définitive.
+// L'export couvre les chantiers gérés et ceux dont le compte est propriétaire, avec leur argent, leurs visites et
+// leurs invitations, plus les lignes d'argent que le compte a notées sur un chantier qu'il ne suit plus.
 api.get("/me/export", (req, res) => {
   const a = req.artisan;
-  const sites = all("SELECT * FROM sites WHERE artisan_id = ? ORDER BY created_at", a.id).map((s) => ({
+  const sites = all("SELECT * FROM sites WHERE artisan_id = ? OR owner_id = ? ORDER BY created_at", a.id, a.id).map((s) => ({
     ...s,
+    role: s.artisan_id === a.id ? (s.owner_id === a.id ? "proprietaire_gestionnaire" : "gestionnaire") : "proprietaire",
     client_link: `${BASE_URL}/c/${s.client_token}`,
     steps: all("SELECT * FROM steps WHERE site_id = ? ORDER BY position", s.id),
     updates: updatesOf(s.id, BASE_URL + "/media/", 100000),
     documents: all("SELECT * FROM documents WHERE site_id = ? ORDER BY doc_date", s.id),
+    ledger: all("SELECT * FROM ledger WHERE site_id = ? ORDER BY entry_date, id", s.id).map((l) => ({ ...l, receipt_url: l.receipt_file ? BASE_URL + "/media/" + l.receipt_file : null })),
+    visit_requests: all("SELECT * FROM visit_requests WHERE site_id = ? ORDER BY created_at", s.id),
+    invitations: all("SELECT code, kind, invitee_name, created_at, accepted_at, revoked_at FROM invitations WHERE site_id = ? ORDER BY created_at", s.id),
     reports: all("SELECT * FROM reports WHERE site_id = ? ORDER BY period_end", s.id).map((r) => ({ ...r, data: JSON.parse(r.data) }))
   }));
+  const ledgerElsewhere = all(`SELECT l.*, s.name AS site_name FROM ledger l JOIN sites s ON s.id = l.site_id
+    WHERE l.created_by = ? AND s.artisan_id <> ? AND (s.owner_id IS NULL OR s.owner_id <> ?) ORDER BY l.entry_date, l.id`, a.id, a.id, a.id)
+    .map((l) => ({ ...l, receipt_file: undefined }));
   res.setHeader("Content-Disposition", `attachment; filename="archfield-export-${nowIso().slice(0, 10)}.json"`);
-  res.json({ exported_at: nowIso(), account: publicArtisan(a), sites });
+  res.json({ exported_at: nowIso(), account: publicArtisan(a), sites, ledger_on_other_sites: ledgerElsewhere });
 });
 api.delete("/me", wrap(async (req, res) => {
   const ok = hasPassword(req.artisan) ? await bcrypt.compare(String(req.body?.password || ""), req.artisan.password_hash) : String(req.body?.password || "").trim().toLowerCase() === req.artisan.email;
   if (!ok) fail(400, hasPassword(req.artisan) ? "Mot de passe incorrect : le compte n'a pas été supprimé." : "Tapez l'adresse e-mail du compte pour confirmer la suppression.");
-  run("UPDATE sites SET artisan_id = owner_id WHERE artisan_id = ? AND owner_id IS NOT NULL AND owner_id <> ?", req.artisan.id, req.artisan.id);
-  const files = all("SELECT p.file FROM photos p JOIN updates u ON u.id = p.update_id JOIN sites si ON si.id = u.site_id WHERE si.artisan_id = ?", req.artisan.id).map((p) => p.file);
-  run("DELETE FROM artisans WHERE id = ?", req.artisan.id);
+  // Les chantiers gérés pour un propriétaire lui reviennent ; les autres sont effacés avec leurs photos et leurs reçus.
+  // Les demandes de visite (téléphone, précisions) partent avec le compte. Les lignes d'argent notées sur le chantier
+  // d'un autre restent chez lui, avec le nom de leur auteur : c'est sa trace des versements et des dépenses.
+  const id = req.artisan.id;
+  const files = tx(() => {
+    run("UPDATE sites SET artisan_id = owner_id WHERE artisan_id = ? AND owner_id IS NOT NULL AND owner_id <> ?", id, id);
+    const f = all("SELECT id FROM sites WHERE artisan_id = ?", id).flatMap((s) => siteFiles(s.id));
+    run("DELETE FROM visit_requests WHERE requested_by = ?", id);
+    run("DELETE FROM artisans WHERE id = ?", id);
+    return f;
+  });
   removeFiles(files);
   setSession(res, "", 0);
   res.json({ ok: true });
