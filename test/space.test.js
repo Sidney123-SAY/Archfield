@@ -104,7 +104,7 @@ test("le client suit, crée, confie à un proche puis à une entreprise", async 
   assert.equal((await ousmane.call("GET", `/api/sites/${maison.id}`)).status, 404);
 });
 
-test("droits : le gestionnaire ne valide pas ses étapes, le propriétaire connecté si", async () => {
+test("droits : le gestionnaire ne valide pas ses étapes, le client ne prend pas un chantier d'entreprise", async () => {
   const pro = user(), anon = user(), lea = user();
   await pro.call("POST", "/api/signup", { country: "SN", company: "Diallo BTP", contact_name: "Ibrahima", email: "diallo@example.com", password: "chantier-2026" });
   const site = (await pro.call("POST", "/api/sites", { name: "Duplex", client_name: "Léa", steps: [{ name: "Murs", planned_days: 5 }, { name: "Toit", planned_days: 5 }], start_now: true })).data;
@@ -129,4 +129,11 @@ test("droits : le gestionnaire ne valide pas ses étapes, le propriétaire conne
   assert.equal((await validate(pro, toit)).status, 403);
   assert.equal((await validate(lea, toit)).status, 200);
   assert.equal(get("SELECT validated_by FROM steps WHERE id = ?", toit.id).validated_by, "Léa Diop");
+
+  // Le chantier vient de l'entreprise : Léa ne le lui retire pas ; l'entreprise peut le lui rendre.
+  assert.equal((await lea.call("GET", "/api/client/sites")).data.sites.find((s) => s.id === site.id).can_take_back, false);
+  assert.equal((await lea.call("POST", `/api/client/sites/${site.id}/take-back`)).status, 403);
+  assert.equal((await pro.call("GET", `/api/sites/${site.id}`)).status, 200);
+  assert.equal((await pro.call("POST", `/api/sites/${site.id}/release`)).status, 200);
+  assert.ok((await lea.call("GET", "/api/client/sites")).data.sites.find((s) => s.id === site.id).self_managed);
 });

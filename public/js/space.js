@@ -155,7 +155,8 @@
       manage = `<section class="card card-p"><h2>${t("Gestion du chantier")}</h2>
         <p>${managerLine(s)}</p>
         <p class="muted">${s.manager.type === "pro" ? t("L'entreprise publie l'avancement. Vous le suivez ici, gratuitement.") : t("Votre proche publie l'avancement. Son accès est inclus dans votre offre.")}</p>
-        <div class="row-acts"><button type="button" class="btn ghost" data-take-back="${s.id}">${t("Reprendre la main")}</button>${s.manager.type === "pro" ? `<button type="button" class="btn ghost" data-remove="${s.id}">${t("Retirer de mon espace")}</button>` : ""}</div>
+        ${s.can_take_back ? "" : `<p class="muted">${t("L'entreprise a créé ce chantier : elle seule peut vous le rendre.")}</p>`}
+        <div class="row-acts">${s.can_take_back ? `<button type="button" class="btn ghost" data-take-back="${s.id}">${t("Reprendre la main")}</button>` : ""}${s.manager.type === "pro" ? `<button type="button" class="btn ghost" data-remove="${s.id}">${t("Retirer de mon espace")}</button>` : ""}</div>
       </section>`;
     }
     shell("chantier", `<div class="sp-narrow">

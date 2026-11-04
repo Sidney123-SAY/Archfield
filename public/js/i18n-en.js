@@ -1233,5 +1233,6 @@ window.AF_EN = {
   /* Droits : comptes, validation, reprise d'un chantier */
   "Un compte existe déjà avec cette adresse. Connectez-vous avec votre mot de passe, ou cliquez sur « Mot de passe oublié » : vous pourrez ensuite utiliser Google ou Apple.": "An account already exists with this address. Sign in with your password, or click “Forgot password”: you'll then be able to use Google or Apple.",
   "Seul le propriétaire du chantier valide, depuis son espace client.": "Only the project owner can approve, from their client space.",
-  "Vous gérez ce chantier : c'est à votre client de valider l'étape.": "You manage this project: your client approves the stage."
+  "Vous gérez ce chantier : c'est à votre client de valider l'étape.": "You manage this project: your client approves the stage.",
+  "L'entreprise a créé ce chantier : elle seule peut vous le rendre.": "The company created this project: only it can hand it over to you."
 };

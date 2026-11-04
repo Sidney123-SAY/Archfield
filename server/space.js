@@ -39,6 +39,10 @@ const managerOf = (site) => {
   if (!m || m.id === site.owner_id) return null;
   return { name: m.account_type === "pro" ? m.company : m.contact_name, type: m.account_type, company_id: m.account_type === "pro" ? m.company_id : "" };
 };
+// Le client ne reprend la main que sur un chantier qu'il a lui-même confié (par invitation) à son gestionnaire actuel.
+// Un chantier créé par une entreprise et rattaché par numéro de suivi reste à l'entreprise, qui peut le rendre.
+const entrustedByOwner = (site) => site.artisan_id !== site.owner_id
+  && !!get("SELECT 1 FROM invitations WHERE site_id = ? AND created_by = ? AND accepted_by = ?", site.id, site.owner_id, site.artisan_id);
 const openInvitations = (siteId) => all("SELECT code, kind, invitee_name, created_at FROM invitations WHERE site_id = ? AND accepted_at IS NULL AND revoked_at IS NULL ORDER BY created_at DESC", siteId);
 
 function mount(app, api, h) {
@@ -59,7 +63,7 @@ function mount(app, api, h) {
       const last = get("SELECT MAX(created_at) AS d FROM updates WHERE site_id = ? AND kind = 'post'", s.id).d;
       const unseen = get("SELECT COUNT(*) AS n FROM updates WHERE site_id = ? AND kind = 'post' AND seen_at IS NULL", s.id).n;
       return {
-        ...x, lat: undefined, lng: undefined, last_update_at: last, unseen, manager: managerOf(s), self_managed: s.artisan_id === s.owner_id, invitations: openInvitations(s.id),
+        ...x, lat: undefined, lng: undefined, last_update_at: last, unseen, manager: managerOf(s), self_managed: s.artisan_id === s.owner_id, can_take_back: entrustedByOwner(s), invitations: openInvitations(s.id),
         money: moneyOf(s, `/c/${s.client_token}/media/`, x.progress), visits: visitsOf(s.id),
         position: s.lat != null ? { set_at: s.position_set_at, set_by: s.position_set_by } : null
       };
@@ -123,6 +127,7 @@ function mount(app, api, h) {
   api.post("/client/sites/:id/take-back", (req, res) => {
     onlyClient(req);
     const s = ownedSite(req, req.params.id);
+    if (!entrustedByOwner(s)) fail(403, "Ce chantier a été créé par l'entreprise : demandez-lui de vous le rendre depuis son application.");
     run("UPDATE sites SET artisan_id = ? WHERE id = ?", req.artisan.id, s.id);
     res.json({ ok: true });
   });
