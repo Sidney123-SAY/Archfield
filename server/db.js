@@ -107,8 +107,11 @@ CREATE TABLE IF NOT EXISTS password_resets (
 `);
 
 // Colonnes ajoutées après la première version : ajoutées à la volée sur une base existante.
+// Renvoie true si la colonne vient d'être créée (pour une reprise de données à faire une seule fois).
 function addColumn(table, column, def) {
-  if (!db.prepare(`PRAGMA table_info(${table})`).all().some((c) => c.name === column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${def}`);
+  if (db.prepare(`PRAGMA table_info(${table})`).all().some((c) => c.name === column)) return false;
+  db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${def}`);
+  return true;
 }
 addColumn("artisans", "paid_until", "TEXT");
 addColumn("sites", "client_phone", "TEXT NOT NULL DEFAULT ''");
@@ -160,7 +163,7 @@ CREATE TABLE IF NOT EXISTS invitations (
 //   une annulation reste visible avec son auteur et sa date, pour que personne ne fasse disparaître une dépense.
 // - steps.amount : versement prévu quand l'étape est validée (échéancier).
 // - sites.lat/lng : position du chantier, enregistrée à la première publication géolocalisée.
-// - updates.verify : photo vérifiée (date de prise de vue et position), partielle ou suspecte.
+// - updates.verify : photo vérifiée (date de prise de vue et position), cohérente, partielle ou suspecte.
 addColumn("steps", "amount", "INTEGER NOT NULL DEFAULT 0");
 addColumn("sites", "currency", "TEXT");
 addColumn("sites", "lat", "REAL");
@@ -212,6 +215,11 @@ CREATE TABLE IF NOT EXISTS visit_requests (
 addColumn("artisans", "email_verified_at", "TEXT");
 db.exec("UPDATE artisans SET email_verified_at = created_at WHERE email_verified_at IS NULL AND (google_sub IS NOT NULL OR apple_sub IS NOT NULL)");
 addColumn("steps", "validated_by", "TEXT");
+// - sites.position_confirmed_at/_by : le client a confirmé la position du chantier, enregistrée par le gestionnaire à sa
+//   première publication. Sans cette confirmation, une publication n'est que « cohérente », jamais « vérifiée ».
+//   Avant cette colonne, aucune position n'était confirmée : les anciennes publications « vérifiées » deviennent « cohérentes ».
+if (addColumn("sites", "position_confirmed_at", "TEXT")) db.exec("UPDATE updates SET verify = 'coherent' WHERE verify = 'verified'");
+addColumn("sites", "position_confirmed_by", "TEXT");
 
 // Monnaie propre au chantier : un client à Paris peut construire en FCFA à Thiès.
 db.exec("UPDATE sites SET currency = (SELECT currency FROM artisans WHERE artisans.id = sites.artisan_id) WHERE currency IS NULL");

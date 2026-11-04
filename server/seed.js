@@ -108,6 +108,8 @@ function makeSite(artisanId, d) {
     artisanId, d.ownerId || null, d.currency || "EUR", d.lat ?? null, d.lng ?? null, d.lat != null ? iso(NOW - 40 * DAY) : null, d.lat != null ? all("SELECT contact_name FROM artisans WHERE id = ?", artisanId)[0].contact_name : null, d.name, d.location, d.kind, d.client, d.short, d.email || "", d.city, d.token || tok(16), d.tracking || newTrackingCode(), d.budget,
     d.deliveredDaysAgo != null ? "delivered" : "active", iso(createdAt), d.deliveredDaysAgo != null ? iso(anchor + DAY) : null, iso(NOW - (d.lastVisitH || 2) * H));
   const siteId = Number(r.lastInsertRowid);
+  // Position confirmée par le client le lendemain : les publications faites sur place sont « vérifiées ».
+  if (d.lat != null) run("UPDATE sites SET position_confirmed_at = ?, position_confirmed_by = ? WHERE id = ?", iso(NOW - 39 * DAY), d.client, siteId);
 
   steps.forEach((s, i) => {
     const validated = s.state === "v" ? s.end + (0.2 + rand()) * DAY : null;

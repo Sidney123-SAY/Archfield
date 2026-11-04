@@ -201,7 +201,7 @@
           <div class="sp-code"><b>${esc(s.tracking_code)}</b><button type="button" class="btn ghost" data-copy-text="${esc(s.tracking_code)}">${t("Copier")}</button></div>
           <p class="muted" style="font-size:.86rem">${s.owner ? t("Ce chantier est dans l'espace client de {who}.", { who: esc(s.owner) }) : t("Votre client peut créer son espace gratuit sur Archfield et y ajouter ce chantier avec ce numéro : il retrouve tous ses chantiers au même endroit.")}</p></section>
         <section class="card card-p share"><h2>${t("Position du chantier")}</h2>
-          <p class="muted" style="font-size:.86rem">${s.position ? t("Enregistrée le {date} par {who}, lors d'une publication sur place. Chaque photo est comparée à cette position.", { date: dShort(s.position.set_at), who: esc(s.position.set_by) }) : t("Pas encore enregistrée : elle le sera à la prochaine publication faite sur le chantier, avec la localisation du téléphone activée.")}</p>
+          <p class="muted" style="font-size:.86rem">${s.position ? t("Enregistrée le {date} par {who}, lors d'une publication sur place. Chaque photo est comparée à cette position.", { date: dShort(s.position.set_at), who: esc(s.position.set_by) }) + " " + (s.position.confirmed_at ? t("Confirmée par le client : vos publications faites sur place sont « vérifiées ».") : t("Pas encore confirmée par le client : vos publications restent « cohérentes » jusque-là.")) : t("Pas encore enregistrée : elle le sera à la prochaine publication faite sur le chantier, avec la localisation du téléphone activée.")}</p>
           ${s.position && s.can_reset_position ? `<div><button type="button" class="btn ghost" data-reset-position="${s.id}">${t("Effacer la position")}</button></div>` : ""}</section>
         <section class="card card-p share"><h2>${t("Lien privé du client")}</h2>
           <p class="muted" style="font-size:.86rem">${t("{who} ouvre ce lien sans créer de compte. Envoyez-le par WhatsApp, SMS ou e-mail.", { who: esc(s.client_name) })}</p>
@@ -445,6 +445,7 @@
         try {
           const r = await upload(`/api/sites/${site.id}/updates`, updateForm(item), (p) => { st.textContent = t("Envoi… {pct} %", { pct: Math.round(p * 100) }); });
           const proof = r.verify === "verified" ? `<p class="proof ok">${ic("check", 16)} ${t("Publication vérifiée : photos récentes, prises sur le chantier.")}</p>`
+            : r.verify === "coherent" ? `<p class="proof part">${ic("check", 16)} ${t("Publication cohérente : elle deviendra « vérifiée » quand le client aura confirmé la position du chantier.")}</p>`
             : r.verify === "warning" ? `<p class="proof warn">${ic("warn", 16)} ${t("Le client verra « À vérifier » : photo ancienne ou prise loin du chantier.")}</p>`
             : `<p class="proof part">${ic("eye", 16)} ${t("Vérification partielle : activez la localisation et prenez les photos sur place.")}</p>`;
           finish(t("Publié en {n} s", { n: Math.max(1, Math.round((Date.now() - t0) / 1000)) }), `${proof}<p class="muted">${r.notified ? t("{who} a reçu un e-mail avec le lien.", { who: esc(site.client_short) }) : t("{who} le voit sur son lien privé.", { who: esc(site.client_name) })} ${t("Vous pouvez aussi envoyer le lien sur WhatsApp.")}</p>`);

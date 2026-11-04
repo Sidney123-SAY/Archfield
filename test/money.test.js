@@ -38,8 +38,11 @@ const form = (fields, files = []) => {
 const hoursAgo = (h) => new Date(Date.now() - h * 36e5).toISOString();
 
 test("vérification : photo récente sur place, photo ancienne, photo prise loin", () => {
-  const site = { lat: 14.4472, lng: -17.0089 };
+  const site = { lat: 14.4472, lng: -17.0089, position_confirmed_at: hoursAgo(48) };
   assert.equal(verify({ site, pos: { lat: 14.4475, lng: -17.0091, accuracy: 15 }, photos: [{ shot_at: hoursAgo(1) }] }).status, "verified");
+  const unconfirmed = { lat: 14.4472, lng: -17.0089 };
+  assert.equal(verify({ site: unconfirmed, pos: { lat: 14.4475, lng: -17.0091, accuracy: 15 }, photos: [{ shot_at: hoursAgo(1) }] }).status, "coherent", "position pas confirmée par le client");
+  assert.equal(verify({ site: {}, pos: { lat: 14.4, lng: -17, accuracy: 10 }, photos: [{ shot_at: hoursAgo(1) }] }).status, "coherent", "la publication qui fixe la position n'est pas vérifiée");
   assert.equal(verify({ site, pos: { lat: 14.4475, lng: -17.0091, accuracy: 15 }, photos: [{ shot_at: hoursAgo(24 * 10) }] }).status, "warning");
   assert.equal(verify({ site, pos: { lat: 14.7167, lng: -17.4677, accuracy: 15 }, photos: [] }).note.position, "far");
   assert.equal(verify({ site, pos: null, photos: [{ shot_at: hoursAgo(1) }] }).status, "partial");
@@ -55,18 +58,28 @@ test("argent, preuves et visites : du chantier confié à un proche jusqu'au lie
   const inv = (await awa.call("POST", `/api/client/sites/${site.id}/invite`, { kind: "proche", name: "Paul" })).data;
   assert.equal((await paul.call("POST", "/api/signup", { contact_name: "Paul", email: "paul@ex.com", password: "trois-mots-ici", invite_code: inv.code })).status, 201);
 
-  // Publication vérifiée : la première fixe la position du chantier, la suivante prise loin est signalée.
+  // La première publication fixe la position : « cohérente » seulement ; une photo prise loin est signalée.
   const steps = (await paul.call("GET", `/api/sites/${site.id}`)).data.steps;
   let r = await paul.call("POST", `/api/sites/${site.id}/updates`, undefined, form({ text: "Fouilles faites.", step_id: steps[0].id, lat: "14.7910", lng: "-16.9359", accuracy: "12", meta: JSON.stringify([{ shot_at: hoursAgo(0.2) }]) }, [["a.jpg", JPEG, "image/jpeg"]]));
-  assert.equal(r.status, 201); assert.equal(r.data.verify, "verified"); assert.equal(r.data.note.position, "origin");
+  assert.equal(r.status, 201); assert.equal(r.data.verify, "coherent"); assert.equal(r.data.note.position, "origin");
   r = await paul.call("POST", `/api/sites/${site.id}/updates`, undefined, form({ text: "Photo d'ailleurs.", lat: "14.7167", lng: "-17.4677", accuracy: "12", meta: JSON.stringify([{ shot_at: hoursAgo(300) }]) }, [["b.jpg", JPEG, "image/jpeg"]]));
   assert.equal(r.data.verify, "warning");
+  // Awa confirme la position (le proche ne le peut pas) : la publication suivante faite sur place est « vérifiée ».
+  assert.equal((await paul.call("POST", `/api/client/sites/${site.id}/position/confirm`)).status, 403);
+  const awaPos = (await awa.call("GET", "/api/client/sites")).data.sites.find((x) => x.id === site.id).position;
+  assert.equal(awaPos.lat, 14.791, "le propriétaire voit la position pour la reconnaître sur la carte");
+  assert.equal(awaPos.confirmed_at, null);
+  assert.equal((await awa.call("POST", `/api/client/sites/${site.id}/position/confirm`)).status, 200);
+  assert.equal(get("SELECT verify FROM updates WHERE text = 'Fouilles faites.'").verify, "verified", "la publication qui a fixé la position devient vérifiée");
+  assert.equal(get("SELECT verify FROM updates WHERE text = 'Photo d''ailleurs.'").verify, "warning", "une photo suspecte le reste");
+  r = await paul.call("POST", `/api/sites/${site.id}/updates`, undefined, form({ text: "Semelles coulées.", lat: "14.7911", lng: "-16.9360", accuracy: "10", meta: JSON.stringify([{ shot_at: hoursAgo(0.1) }]) }, [["c.jpg", JPEG, "image/jpeg"]]));
+  assert.equal(r.data.verify, "verified");
   // Un fichier qui n'est pas une image, même annoncé comme JPEG, est refusé.
   r = await paul.call("POST", `/api/sites/${site.id}/updates`, undefined, form({ text: "Piège." }, [["piege.jpg", Buffer.from("<script>alert(1)</script>"), "image/jpeg"]]));
   assert.equal(r.status, 400);
   const count = () => fs.readdirSync(path.join(process.env.DATA_DIR, "uploads")).length;
-  for (let i = 0; i < 20 && count() > 2; i++) await new Promise((ok) => setTimeout(ok, 50)); // effacement en arrière-plan
-  assert.equal(count(), 2, "le fichier refusé est effacé");
+  for (let i = 0; i < 20 && count() > 3; i++) await new Promise((ok) => setTimeout(ok, 50)); // effacement en arrière-plan
+  assert.equal(count(), 3, "le fichier refusé est effacé");
 
   // Échéancier, dépenses avec reçu (gestionnaire), versements (propriétaire).
   assert.equal((await paul.call("PATCH", `/api/steps/${steps[0].id}/amount`, { amount: 2500000 })).status, 200);
@@ -97,6 +110,9 @@ test("argent, preuves et visites : du chantier confié à un proche jusqu'au lie
   assert.equal(link.money.entries[0].created_by, undefined, "pas d'identifiant interne sur le lien privé");
   assert.equal(link.lat, undefined, "pas de coordonnées exactes sur le lien privé");
   assert.ok(link.position.set_by);
+  assert.ok(link.position.confirmed_at);
+  assert.equal(link.position.lat, undefined, "le lien seul ne montre pas la position d'un chantier qui a un propriétaire");
+  assert.equal((await fetch(`${base}/api/c/${token}/position/confirm`, { method: "POST" })).status, 403);
   assert.equal(link.updates.find((u) => u.text === "Photo d'ailleurs.").verify, "warning");
 
   // Alerte : versé bien plus que l'avancement.

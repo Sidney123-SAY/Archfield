@@ -422,8 +422,11 @@ function updatesOf(siteId, mediaBase, limitN = 300) {
   }));
 }
 const siteFiles = (siteId) => all("SELECT p.file FROM photos p JOIN updates u ON u.id = p.update_id WHERE u.site_id = ? UNION SELECT receipt_file FROM ledger WHERE site_id = ? AND receipt_file IS NOT NULL", siteId, siteId).map((p) => p.file);
-// Position de référence du chantier, montrée au client (sans les coordonnées exactes).
-const positionInfo = (s) => (s.lat != null ? { set_at: s.position_set_at, set_by: s.position_set_by } : null);
+// Position de référence du chantier. Les coordonnées ne sont montrées qu'à qui peut la confirmer (le client).
+const positionInfo = (s, withPoint = false) => (s.lat != null ? {
+  set_at: s.position_set_at, set_by: s.position_set_by, confirmed_at: s.position_confirmed_at, confirmed_by: s.position_confirmed_by,
+  ...(withPoint ? { lat: s.lat, lng: s.lng } : {})
+} : null);
 function startNextIfIdle(siteId, afterPosition) {
   const steps = all("SELECT * FROM steps WHERE site_id = ? ORDER BY position", siteId);
   if (steps.some((s) => stepStatus(s) === "en_cours")) return;
@@ -576,7 +579,7 @@ api.post("/sites/:id/release", (req, res) => {
 api.post("/sites/:id/position/reset", (req, res) => {
   const s = ownSite(req, req.params.id);
   if (s.owner_id && s.owner_id !== req.artisan.id) fail(403, "Seul le propriétaire du chantier peut changer sa position.");
-  run("UPDATE sites SET lat = NULL, lng = NULL, position_set_at = NULL, position_set_by = NULL WHERE id = ?", s.id);
+  run("UPDATE sites SET lat = NULL, lng = NULL, position_set_at = NULL, position_set_by = NULL, position_confirmed_at = NULL, position_confirmed_by = NULL WHERE id = ?", s.id);
   res.json({ ok: true });
 });
 
@@ -704,7 +707,7 @@ api.post("/sites/:id/updates", limit("upload", 60, 60 * 60e3, (req) => "a" + req
     const v = verify({ site: s, pos, photos: meta });
     const id = tx(() => {
       if (st && !st.started_at) run("UPDATE steps SET started_at = ? WHERE id = ?", now, st.id);
-      if (v.setOrigin) run("UPDATE sites SET lat = ?, lng = ?, position_set_at = ?, position_set_by = ? WHERE id = ?", lat, lng, now, req.artisan.contact_name, s.id);
+      if (v.setOrigin) run("UPDATE sites SET lat = ?, lng = ?, position_set_at = ?, position_set_by = ?, position_confirmed_at = NULL, position_confirmed_by = NULL WHERE id = ?", lat, lng, now, req.artisan.contact_name, s.id);
       const r = run("INSERT INTO updates (site_id, step_id, kind, text, created_at, lat, lng, accuracy, verify, verify_note) VALUES (?, ?, 'post', ?, ?, ?, ?, ?, ?, ?)",
         s.id, st ? st.id : null, text, now, pos && v.note.position !== "unknown" ? lat : null, pos && v.note.position !== "unknown" ? lng : null, v.note.accuracy ?? null, v.status, JSON.stringify(v.note));
       const uid = Number(r.lastInsertRowid);
@@ -796,12 +799,14 @@ app.get("/api/c/:token", limit("client", 120, 60e3), (req, res) => {
   const a = get("SELECT * FROM artisans WHERE id = ?", s.artisan_id);
   const now = nowIso();
   const sum = siteWithSummary(s);
+  const who = validator(req, s);
   const out = {
     ...sum,
     client_token: undefined, client_email: undefined, client_phone: undefined, last_notified_at: undefined, lat: undefined, lng: undefined,
     artisan: { company: a.company, contact_name: a.contact_name, city: a.city, currency: s.currency },
-    validate_block: validator(req, s).block || null,
-    position: positionInfo(s),
+    // validate_block : ce visiteur ne peut pas agir au nom du client (valider une étape, confirmer la position).
+    validate_block: who.block || null,
+    position: positionInfo(s, !who.block),
     money: money.publicMoney(money.moneyOf(s, `/c/${s.client_token}/media/`, sum.progress)),
     updates: updatesOf(s.id, `/c/${s.client_token}/media/`).map((u) => ({ ...u, seen_at: undefined })),
     documents: all("SELECT kind, ref, label, amount, status, doc_date FROM documents WHERE site_id = ? ORDER BY doc_date, id", s.id),
@@ -825,6 +830,15 @@ app.post("/api/c/:token/steps/:id/validate", limit("client-write", 30, 60e3), (r
     run("INSERT INTO updates (site_id, step_id, kind, created_at, seen_at) VALUES (?, ?, 'step_validated', ?, ?)", s.id, st.id, nowIso(), nowIso());
     startNextIfIdle(s.id, st.position);
   });
+  res.json({ ok: true });
+});
+
+// Le client confirme que la position enregistrée est bien celle de son chantier (voir space.confirmPosition).
+app.post("/api/c/:token/position/confirm", limit("client-write", 30, 60e3), (req, res) => {
+  const s = bySiteToken(req.params.token);
+  const who = validator(req, s);
+  if (who.block) fail(403, VALIDATE_BLOCKED[who.block]);
+  if (!space.confirmPosition(s, who.name, nowIso())) fail(409, "La position du chantier n'est pas encore enregistrée.");
   res.json({ ok: true });
 });
 

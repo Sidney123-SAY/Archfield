@@ -906,7 +906,6 @@ window.AF_EN = {
   "photo prise le {date}": "photo taken on {date}",
   "photo prise à {d} du chantier": "photo taken {d} from the site",
   "À vérifier : {why}": "To check: {why}",
-  "Photos récentes · position du chantier enregistrée ici": "Recent photos · site location recorded here",
   "Publié depuis le chantier": "Posted from the site",
   "Vérifiée : photos récentes, prises sur le chantier": "Verified: recent photos, taken on site",
   "position du téléphone inconnue": "phone location unknown",
@@ -1000,7 +999,6 @@ window.AF_EN = {
   "Argent": "Money",
   "versement prévu à la validation : {n}": "payment due on approval: {n}",
   "Pour noter vos propres versements et être alerté si vous payez plus vite que les travaux avancent, créez votre espace (2 mois offerts).": "To record your own payments and be warned if you pay faster than the work progresses, create your space (2 months free).",
-  "Position du chantier enregistrée le {date} par {who} : chaque photo y est comparée.": "Site location recorded on {date} by {who}: every photo is compared with it.",
   "Position du chantier pas encore enregistrée : elle le sera à la première publication faite sur place.": "Site location not recorded yet: it will be at the first update posted on site.",
   "Archfield est gratuit pour les entreprises.": "Archfield is free for companies.",
   "Votre entreprise publie l'avancement, {owner} le suit à distance. Connectez-vous avec votre compte entreprise, ou créez-le gratuitement.": "Your company posts the progress, {owner} follows it remotely. Sign in with your company account, or create one for free.",
@@ -1027,7 +1025,6 @@ window.AF_EN = {
   "Ce qu'il faut vérifier (facultatif)": "What should be checked (optional)",
   "Ex. : les murs sont-ils vraiment montés ? Combien de sacs de ciment sur place ?": "E.g. are the walls really up? How many bags of cement are on site?",
   "Demander une visite": "Request a visit",
-  "Enregistrée le {date} par {who}. Chaque photo publiée est comparée à cette position : si elle est prise ailleurs, vous le voyez dans le journal.": "Recorded on {date} by {who}. Every photo posted is compared with this location: if it was taken elsewhere, you see it in the log.",
   "Pas encore enregistrée : elle le sera à la première publication faite sur place, téléphone localisé.": "Not recorded yet: it will be at the first update posted on site with location turned on.",
   "Demande envoyée. Nous vous recontactons sous 48 h avec un prix.": "Request sent. We will get back to you within 48 hours with a price.",
   "Chantiers illimités": "Unlimited sites",
@@ -1229,5 +1226,18 @@ window.AF_EN = {
   "L'entreprise a créé ce chantier : elle seule peut vous le rendre.": "The company created this project: only it can hand it over to you.",
   "Le propriétaire du chantier doit activer l'offre Plus pour que vous puissiez publier.": "The project owner must activate the Plus plan for you to post.",
   /* Rapport du lundi : relance */
-  "{who} a reçu une relance par e-mail.": "{who} was sent a reminder by email."
+  "{who} a reçu une relance par e-mail.": "{who} was sent a reminder by email.",
+  /* Position du chantier confirmée par le client */
+  "Position du chantier enregistrée lors de cette publication, à confirmer par le client": "Project location recorded with this post, to be confirmed by the client",
+  "Cohérente : prise à la position enregistrée, que le client n'a pas encore confirmée": "Consistent: taken at the recorded location, not yet confirmed by the client",
+  "Position du chantier confirmée le {date} : chaque photo y est comparée.": "Project location confirmed on {date}: every photo is compared with it.",
+  "Position du chantier enregistrée le {date} par {who}, pas encore confirmée : les photos n'y sont comparées qu'une fois confirmée.": "Project location recorded on {date} by {who}, not yet confirmed: photos are only checked against it once confirmed.",
+  "Voir sur la carte": "View on the map",
+  "C'est bien mon chantier": "Yes, this is my project",
+  "Position confirmée. Les photos prises sur place sont maintenant vérifiées.": "Location confirmed. Photos taken on site are now verified.",
+  "Enregistrée le {date} par {who} et confirmée par vous. Chaque photo publiée est comparée à cette position : si elle est prise ailleurs, vous le voyez dans le journal.": "Recorded on {date} by {who} and confirmed by you. Every photo posted is compared with this location: if it was taken elsewhere, you'll see it in the log.",
+  "Enregistrée le {date} par {who}. Vérifiez sur la carte que c'est bien votre chantier, puis confirmez : les publications faites sur place seront alors « vérifiées ».": "Recorded on {date} by {who}. Check on the map that this is your project, then confirm: posts made on site will then be “verified”.",
+  "Publication cohérente : elle deviendra « vérifiée » quand le client aura confirmé la position du chantier.": "Consistent post: it will become “verified” once the client has confirmed the project location.",
+  "Confirmée par le client : vos publications faites sur place sont « vérifiées ».": "Confirmed by the client: your posts made on site are “verified”.",
+  "Pas encore confirmée par le client : vos publications restent « cohérentes » jusque-là.": "Not yet confirmed by the client: your posts stay “consistent” until then."
 };

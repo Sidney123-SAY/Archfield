@@ -1,7 +1,7 @@
 // Page du client : lien privé, sans compte. Journal, étapes à valider, devis et factures, rapports du lundi.
 (function () {
   "use strict";
-  const { t, LOGO, ic, esc, prefs, footerLinks, dShort, dLong, nf, plural, api, toast, money, STATUS_CHIP, siteCard, journal, docsTable, moneyPanel } = window.AF;
+  const { t, LOGO, ic, esc, prefs, footerLinks, dShort, dLong, nf, plural, api, toast, money, STATUS_CHIP, siteCard, journal, docsTable, moneyPanel, mapLink } = window.AF;
   const app = document.getElementById("app");
   const token = location.pathname.split("/").pop();
   const days = (n) => t("{n} j", { n: nf(n) });
@@ -53,7 +53,10 @@
       ${isClient ? `<a class="back" href="/app#mes-chantiers">${ic("left", 16)} ${t("Mes chantiers")}</a>` : ""}
       ${head(`<span class="priv">${ic("lock", 14)} ${t("Lien privé")}</span>`)}
       ${siteCard(s, t("Réalisé par {company}", { company: s.artisan.company }))}
-      <p class="pos-info">${s.position ? `${ic("check", 14, "var(--vert)")} ${t("Position du chantier enregistrée le {date} par {who} : chaque photo y est comparée.", { date: dShort(s.position.set_at), who: esc(s.position.set_by) })}` : t("Position du chantier pas encore enregistrée : elle le sera à la première publication faite sur place.")}</p>
+      <p class="pos-info">${!s.position ? t("Position du chantier pas encore enregistrée : elle le sera à la première publication faite sur place.")
+        : s.position.confirmed_at ? `${ic("check", 14, "var(--vert)")} ${t("Position du chantier confirmée le {date} : chaque photo y est comparée.", { date: dShort(s.position.confirmed_at) })}`
+        : `${ic("eye", 14)} ${t("Position du chantier enregistrée le {date} par {who}, pas encore confirmée : les photos n'y sont comparées qu'une fois confirmée.", { date: dShort(s.position.set_at), who: esc(s.position.set_by) })}${
+          s.position.lat != null ? ` <a href="${mapLink(s.position)}" target="_blank" rel="noopener">${t("Voir sur la carte")}</a> <button type="button" class="btn ghost" data-confirm-position>${t("C'est bien mon chantier")}</button>` : ""}`}</p>
       <div class="tabs" role="tablist">${tabs.map(([k, l, n]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${tab === k}">${t(l)}${n ? `<span class="n">${n}</span>` : ""}</button>`).join("")}</div>
       ${body}
       ${s.tracking_code && !isClient ? `<section class="card card-p cl-space"><div><p class="label">${t("Numéro de suivi")}</p><b class="cl-code">${esc(s.tracking_code)}</b></div>
@@ -67,6 +70,11 @@
     const b = e.target.closest("button");
     if (!b) return;
     if (b.dataset.tab) { tab = b.dataset.tab; render(); }
+    else if (b.dataset.confirmPosition !== undefined) {
+      b.disabled = true;
+      try { await api(`/api/c/${encodeURIComponent(token)}/position/confirm`, { method: "POST", authRedirect: false }); toast(t("Position confirmée. Les photos prises sur place sont maintenant vérifiées.")); await load(); }
+      catch (err) { toast(err.message); b.disabled = false; }
+    }
     else if (b.dataset.validate) {
       b.disabled = true;
       try { await api(`/api/c/${encodeURIComponent(token)}/steps/${b.dataset.validate}/validate`, { method: "POST", authRedirect: false }); toast(t("Étape validée. Votre artisan est prévenu.")); await load(); }

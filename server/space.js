@@ -43,6 +43,16 @@ const managerOf = (site) => {
 // Un chantier créé par une entreprise et rattaché par numéro de suivi reste à l'entreprise, qui peut le rendre.
 const entrustedByOwner = (site) => site.artisan_id !== site.owner_id
   && !!get("SELECT 1 FROM invitations WHERE site_id = ? AND created_by = ? AND accepted_by = ?", site.id, site.owner_id, site.artisan_id);
+// Le client confirme la position enregistrée par son gestionnaire. Les publications « cohérentes » (photos récentes,
+// prises à cette position) deviennent « vérifiées », comme celles qui suivront.
+function confirmPosition(site, by, now) {
+  if (site.lat == null) return false;
+  tx(() => {
+    run("UPDATE sites SET position_confirmed_at = ?, position_confirmed_by = ? WHERE id = ?", now, by, site.id);
+    run("UPDATE updates SET verify = 'verified' WHERE site_id = ? AND verify = 'coherent'", site.id);
+  });
+  return true;
+}
 const openInvitations = (siteId) => all("SELECT code, kind, invitee_name, created_at FROM invitations WHERE site_id = ? AND accepted_at IS NULL AND revoked_at IS NULL ORDER BY created_at DESC", siteId);
 
 function mount(app, api, h) {
@@ -65,7 +75,7 @@ function mount(app, api, h) {
       return {
         ...x, lat: undefined, lng: undefined, last_update_at: last, unseen, manager: managerOf(s), self_managed: s.artisan_id === s.owner_id, can_take_back: entrustedByOwner(s), invitations: openInvitations(s.id),
         money: moneyOf(s, `/c/${s.client_token}/media/`, x.progress), visits: visitsOf(s.id),
-        position: s.lat != null ? { set_at: s.position_set_at, set_by: s.position_set_by } : null
+        position: s.lat != null ? { set_at: s.position_set_at, set_by: s.position_set_by, confirmed_at: s.position_confirmed_at, confirmed_by: s.position_confirmed_by, lat: s.lat, lng: s.lng } : null
       };
     });
     res.json({ sites, plan: clientInfo(req.artisan) });
@@ -157,7 +167,13 @@ function mount(app, api, h) {
   // Le propriétaire efface la position du chantier (enregistrée par erreur) : la prochaine publication la refixe.
   api.post("/client/sites/:id/position/reset", (req, res) => {
     onlyClient(req);
-    run("UPDATE sites SET lat = NULL, lng = NULL, position_set_at = NULL, position_set_by = NULL WHERE id = ?", ownedSite(req, req.params.id).id);
+    run("UPDATE sites SET lat = NULL, lng = NULL, position_set_at = NULL, position_set_by = NULL, position_confirmed_at = NULL, position_confirmed_by = NULL WHERE id = ?", ownedSite(req, req.params.id).id);
+    res.json({ ok: true });
+  });
+  // Le propriétaire confirme la position enregistrée par son gestionnaire : les publications faites sur place deviennent « vérifiées ».
+  api.post("/client/sites/:id/position/confirm", (req, res) => {
+    onlyClient(req);
+    if (!confirmPosition(ownedSite(req, req.params.id), req.artisan.contact_name, nowIso())) fail(409, "La position du chantier n'est pas encore enregistrée.");
     res.json({ ok: true });
   });
   api.get("/client/sites/:id/link", (req, res) => { onlyClient(req); res.json({ client_token: ownedSite(req, req.params.id).client_token }); });
@@ -190,4 +206,4 @@ function mount(app, api, h) {
   return { acceptInvitation, findInvitation };
 }
 
-module.exports = { mount, clientPlan, clientInfo, prochePublishAllowed, CLIENT_PLANS, CLIENT_TRIAL_DAYS };
+module.exports = { mount, clientPlan, clientInfo, prochePublishAllowed, confirmPosition, CLIENT_PLANS, CLIENT_TRIAL_DAYS };

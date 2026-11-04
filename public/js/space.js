@@ -1,7 +1,7 @@
 // Espace client : tous ses chantiers au même endroit, ajout par numéro de suivi, chantier confié à une entreprise ou à un proche.
 (function () {
   "use strict";
-  const { t, LOGO, ic, esc, prefs, themeToggle, installCard, installNudge, moneyPanel, versementForm, curLabel, upload, money, dShort, nf, plural, rel, api, toast, copy, healthChip } = window.AF;
+  const { t, LOGO, ic, esc, prefs, themeToggle, installCard, installNudge, moneyPanel, versementForm, curLabel, upload, money, dShort, nf, plural, rel, api, toast, copy, healthChip, mapLink } = window.AF;
   const $ = (s) => document.querySelector(s);
   const app = $("#app");
   let me = null;
@@ -180,8 +180,10 @@
           <div class="field"><label for="vi-note">${t("Ce qu'il faut vérifier (facultatif)")}</label><textarea id="vi-note" name="note" maxlength="1000" placeholder="${t("Ex. : les murs sont-ils vraiment montés ? Combien de sacs de ciment sur place ?")}"></textarea></div>
           <div><button class="btn" type="submit">${t("Demander une visite")}</button></div></form></section>
       <section class="card card-p sp-stack"><h2>${t("Position du chantier")}</h2>
-        <p class="muted">${s.position ? t("Enregistrée le {date} par {who}. Chaque photo publiée est comparée à cette position : si elle est prise ailleurs, vous le voyez dans le journal.", { date: dShort(s.position.set_at), who: esc(s.position.set_by) }) : t("Pas encore enregistrée : elle le sera à la première publication faite sur place, téléphone localisé.")}</p>
-        ${s.position ? `<div><button type="button" class="btn ghost" data-reset-position="${s.id}">${t("Effacer la position")}</button></div>` : ""}</section>
+        <p class="muted">${!s.position ? t("Pas encore enregistrée : elle le sera à la première publication faite sur place, téléphone localisé.")
+          : s.position.confirmed_at ? t("Enregistrée le {date} par {who} et confirmée par vous. Chaque photo publiée est comparée à cette position : si elle est prise ailleurs, vous le voyez dans le journal.", { date: dShort(s.position.set_at), who: esc(s.position.set_by) })
+          : t("Enregistrée le {date} par {who}. Vérifiez sur la carte que c'est bien votre chantier, puis confirmez : les publications faites sur place seront alors « vérifiées ».", { date: dShort(s.position.set_at), who: esc(s.position.set_by) })}</p>
+        ${s.position ? `<div class="row-acts">${s.position.confirmed_at ? "" : `<a class="btn ghost" href="${mapLink(s.position)}" target="_blank" rel="noopener">${t("Voir sur la carte")}</a><button type="button" class="btn primary" data-confirm-position="${s.id}">${t("C'est bien mon chantier")}</button>`}<button type="button" class="btn ghost" data-reset-position="${s.id}">${t("Effacer la position")}</button></div>` : ""}</section>
     </div>`);
     const vf = $("#add-versement");
     if (vf) vf.addEventListener("submit", async (e) => {
@@ -273,6 +275,7 @@
         if (!b.dataset.armed) { b.dataset.armed = "1"; b.textContent = t("Confirmer l'annulation"); setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = t("Annuler"); } }, 5000); return; }
         act(() => api(`/api/ledger/${d.ledgerCancel}/cancel`, { method: "POST", body: {} }), t("Ligne annulée. Elle reste visible, barrée."));
       }
+      else if (d.confirmPosition) act(() => api(`/api/client/sites/${d.confirmPosition}/position/confirm`, { method: "POST" }), t("Position confirmée. Les photos prises sur place sont maintenant vérifiées."));
       else if (d.resetPosition) {
         if (!b.dataset.armed) { b.dataset.armed = "1"; b.textContent = t("Confirmer : effacer la position"); setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = t("Effacer la position"); } }, 5000); return; }
         act(() => api(`/api/client/sites/${d.resetPosition}/position/reset`, { method: "POST" }), t("Position effacée. La prochaine publication sur place l'enregistrera."));

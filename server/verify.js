@@ -2,6 +2,8 @@
 // Date de prise de vue et position GPS des photos (lues dans le téléphone avant l'envoi), position du téléphone
 // au moment de publier, et position de référence du chantier (enregistrée à la première publication géolocalisée).
 // Ce n'est pas infalsifiable, mais une vieille photo ou une photo prise ailleurs saute aux yeux du client.
+// La position de référence est enregistrée par le gestionnaire lui-même : tant que le client ne l'a pas confirmée,
+// une publication faite à cette position est seulement « cohérente ». Elle n'est « vérifiée » qu'une fois confirmée.
 
 const FRESH_H = 72;          // une photo prise dans les 3 derniers jours compte comme récente (envoi différé sans réseau)
 const NEAR_M = 500;          // tolérance autour du chantier, à laquelle s'ajoute la précision annoncée par le téléphone
@@ -15,8 +17,8 @@ function distanceM(a, b) {
 }
 const validPoint = (lat, lng) => Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 && !(lat === 0 && lng === 0);
 
-// pos : { lat, lng, accuracy } du téléphone (ou null) ; photos : [{ shot_at, lat, lng }] ; site : { lat, lng }.
-// Renvoie { status: "verified" | "partial" | "warning", note: {...}, setOrigin: bool }.
+// pos : { lat, lng, accuracy } du téléphone (ou null) ; photos : [{ shot_at, lat, lng }] ; site : { lat, lng, position_confirmed_at }.
+// Renvoie { status: "verified" | "coherent" | "partial" | "warning", note: {...}, setOrigin: bool }.
 function verify({ site, pos, photos, now = Date.now() }) {
   const note = {};
   let posState = "unknown", setOrigin = false;
@@ -43,8 +45,9 @@ function verify({ site, pos, photos, now = Date.now() }) {
   }
   note.position = posState; note.photos = photoState;
   const posOk = posState === "near" || posState === "origin";
+  const confirmed = posState === "near" && !!site.position_confirmed_at;
   const status = photoState === "old" || photoState === "far" || posState === "far" ? "warning"
-    : posOk && (photoState === "fresh" || photoState === "none") ? "verified" : "partial";
+    : posOk && (photoState === "fresh" || photoState === "none") ? (confirmed ? "verified" : "coherent") : "partial";
   return { status, note, setOrigin };
 }
 

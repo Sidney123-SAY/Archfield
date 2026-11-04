@@ -346,6 +346,9 @@
     }).join("");
   }
 
+  // Position du chantier sur OpenStreetMap, pour que le client la reconnaisse avant de la confirmer.
+  const mapLink = (p) => `https://www.openstreetmap.org/?mlat=${p.lat}&mlon=${p.lng}#map=18/${p.lat}/${p.lng}`;
+
   // Preuve d'une publication : prise sur le chantier, récente ? (voir server/verify.js)
   function verifyBadge(u) {
     if (!u.verify) return "";
@@ -356,7 +359,9 @@
     if (n.photos === "old") why.push(t("photo prise le {date}", { date: dShort(n.old_shot_at) }));
     if (n.photos === "far") why.push(t("photo prise à {d} du chantier", { d: km(n.photo_distance) }));
     if (u.verify === "warning") return `<p class="proof warn">${ic("warn", 16)} ${t("À vérifier : {why}", { why: why.join(", ") })}</p>`;
-    if (u.verify === "verified") return `<p class="proof ok">${ic("check", 16)} ${n.position === "origin" ? t("Photos récentes · position du chantier enregistrée ici") : n.photos === "none" ? t("Publié depuis le chantier") : t("Vérifiée : photos récentes, prises sur le chantier")}</p>`;
+    if (u.verify === "verified") return `<p class="proof ok">${ic("check", 16)} ${n.photos === "none" ? t("Publié depuis le chantier") : t("Vérifiée : photos récentes, prises sur le chantier")}</p>`;
+    // Position enregistrée par le gestionnaire, pas encore confirmée par le client.
+    if (u.verify === "coherent") return `<p class="proof part">${ic("check", 16)} ${n.position === "origin" ? t("Position du chantier enregistrée lors de cette publication, à confirmer par le client") : t("Cohérente : prise à la position enregistrée, que le client n'a pas encore confirmée")}</p>`;
     const miss = [];
     if (n.position === "unknown") miss.push(t("position du téléphone inconnue"));
     if (n.photos === "unknown") miss.push(t("date des photos inconnue"));
@@ -426,5 +431,5 @@
     </table></div>`;
   }
 
-  window.AF = { t, tr, lang, LANGS, translatePage, setLang, langSelect, themeToggle, prefs, setTheme, consent, cookieBanner, footerLinks, installCard, installNudge, exifOf, position, verifyBadge, moneyPanel, depenseForm, versementForm, curLabel, LOGO, ic, esc, fmt, time, dShort, dLong, nf, money, cap, plural, rel, api, upload, shrink, toast, copy, STATUS_CHIP, healthChip, siteCard, journal, docsTable };
+  window.AF = { t, tr, lang, LANGS, translatePage, setLang, langSelect, themeToggle, prefs, setTheme, consent, cookieBanner, footerLinks, installCard, installNudge, exifOf, position, mapLink, verifyBadge, moneyPanel, depenseForm, versementForm, curLabel, LOGO, ic, esc, fmt, time, dShort, dLong, nf, money, cap, plural, rel, api, upload, shrink, toast, copy, STATUS_CHIP, healthChip, siteCard, journal, docsTable };
 })();
