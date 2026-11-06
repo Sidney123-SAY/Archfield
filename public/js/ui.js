@@ -144,7 +144,7 @@
     else if (b.matches("[data-cookies-custom]")) cookieBanner(true);
     else saveConsent(document.getElementById("cb-analytics")?.checked);
   });
-  const footerLinks = () => `<nav class="foot-links" aria-label="${t("Informations")}"><a href="/a-propos">${t("À propos")}</a><a href="/confidentialite">${t("Confidentialité")}</a><a href="/mentions-legales">${t("Mentions légales")}</a><a href="#" data-cookies>${t("Gérer les cookies")}</a></nav>`;
+  const footerLinks = () => `<nav class="foot-links" aria-label="${t("Informations")}"><a href="/a-propos">${t("À propos")}</a><a href="/guide">${t("Guide gratuit")}</a><a href="/confidentialite">${t("Confidentialité")}</a><a href="/mentions-legales">${t("Mentions légales")}</a><a href="#" data-cookies>${t("Gérer les cookies")}</a></nav>`;
   document.addEventListener("DOMContentLoaded", () => {
     translatePage();
     document.querySelectorAll("[data-prefs]").forEach((el) => { el.innerHTML = prefs(); });

@@ -1038,6 +1038,7 @@ app.get("/paiement-test", page("paiement-test.html"));
 app.get("/admin", page("admin.html"));
 app.get("/confidentialite", page("confidentialite.html"));
 app.get("/a-propos", page("a-propos.html"));
+app.get("/guide", page("guide.html"));
 app.get("/mentions-legales", page("mentions-legales.html"));
 app.get("/app", page("app.html"));
 app.get("/c/:token", page("client.html"));

@@ -110,7 +110,7 @@ HOOK_TXT = {"a": "Encore quinze mille euros pour le ciment et le fer…\nMais ce
             "b": "« Les murs avancent bien. »…\nVraiment ?",
             "c": "Votre maison au pays…\nvous la voyez comment ?"}
 LINES = [(f"hook-{HOOK}.wav", 0, None, HOOK_TXT[HOOK]),
-         ("v2.wav", 0, None, "Quand on construit au pays depuis l'Europe,\non paie… et on croit sur parole."),
+         ("v2.wav", 0, None, "Quand on construit au pays depuis l'étranger,\non paie… et on croit sur parole."),
          ("v3.wav", 0, None, "Avec Archfield, chaque photo de votre chantier\nest datée et localisée."),
          ("v4.wav", 0, None, "Votre chef de chantier envoie son rapport\nchaque jour, même sans réseau."),
          ("v5.wav", 0, None, "Vous validez l'étape…\npuis vous payez. Pas avant."),

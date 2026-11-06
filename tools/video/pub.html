@@ -28,7 +28,7 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
 .dark .kick { color: var(--peche); }
 svg { display: block; overflow: visible; }
 
-/* 1. L'accroche : une femme à Paris reçoit la demande d'argent */
+/* 1. L'accroche : une femme, quelque part à l'étranger, reçoit la demande d'argent */
 #a1 .card { left: 70px; top: 610px; width: 940px; padding: 30px 34px 34px; }
 #a1 .hl .big { font-size: 120px; line-height: 1; }
 #a1 .glow { position: absolute; left: 290px; top: 900px; width: 500px; height: 420px; background: radial-gradient(closest-side, rgba(221,230,245,.16), transparent); }
@@ -42,8 +42,9 @@ svg { display: block; overflow: visible; }
 .msg b { color: var(--orange); font-weight: 800; }
 .thumb { height: 250px; border-radius: 22px; overflow: hidden; position: relative; background: #CFC8BB; }
 .thumb .ph { position: absolute; inset: -30px; filter: blur(16px) brightness(.82) saturate(.45); }
+.city { font: 700 30px var(--sans); fill: #fff; }
 .route { position: absolute; left: 110px; top: 640px; width: 200px; height: 640px; }
-.polar { position: absolute; left: 380px; top: 700px; width: 620px; padding: 22px 22px 70px; background: #fff; border-radius: 10px; box-shadow: 0 30px 60px rgba(0,0,0,.4); transform-origin: center; }
+.polar { position: absolute; left: 230px; top: 640px; width: 620px; padding: 22px 22px 70px; background: #fff; border-radius: 10px; box-shadow: 0 30px 60px rgba(0,0,0,.4); transform-origin: center; }
 .polar .thumb { height: 420px; border-radius: 4px; }
 .polar p { position: absolute; left: 0; right: 0; bottom: 18px; text-align: center; font: 600 30px var(--sans); color: var(--muted); }
 .route .lab { position: absolute; font: 700 34px var(--sans); color: #fff; white-space: nowrap; }
@@ -161,12 +162,12 @@ svg { display: block; overflow: visible; }
 <section class="scene dark" id="a1" data-start="0" data-end="4.6">
   <svg class="abs" style="left:0;top:0" width="1080" height="1920" viewBox="0 0 1080 1920">
     <rect width="1080" height="1920" fill="#14263D"/>
-    <!-- fenêtre de Paris, la nuit -->
+    <!-- fenêtre d'une ville, la nuit (n'importe où à l'étranger) -->
     <g transform="translate(800 980)">
       <path d="M0 330V110A100 100 0 0 1 200 110V330Z" fill="#0B1624"/>
       <circle cx="146" cy="80" r="22" fill="#F0A27A" opacity=".7"/>
       <g fill="#F4F2EE" opacity=".6"><circle cx="40" cy="70" r="2.5"/><circle cx="90" cy="40" r="2"/><circle cx="170" cy="150" r="2"/><circle cx="60" cy="140" r="1.8"/></g>
-      <path d="M86 330 L95 230 L99 180 L101 120 L103 120 L105 180 L109 230 L118 330 L109 330 L103 280 L101 280 L95 330Z" fill="#2A4566"/>
+      <path d="M20 330V220h34v110M64 330V170h40v160M114 330V240h30v90M152 330V200h36v130" fill="#2A4566"/><g fill="#D99A2B" opacity=".5"><rect x="72" y="190" width="8" height="10"/><rect x="88" y="220" width="8" height="10"/><rect x="160" y="230" width="8" height="10"/><rect x="28" y="250" width="8" height="10"/></g>
       <path d="M0 300 h40 v-26 h30 v26 h40 v-18 h40 v18 h50 V330H0Z" fill="#1C3150"/>
       <path d="M100 10V330M0 200H200" stroke="#2A3F5C" stroke-width="10"/>
       <path d="M0 330V110A100 100 0 0 1 200 110V330Z" fill="none" stroke="#2A3F5C" stroke-width="14"/>
@@ -186,21 +187,28 @@ svg { display: block; overflow: visible; }
   </div>
 </section>
 
-<!-- 2. 4 700 km, aucune preuve : 4,6 → 9,2 s -->
+<!-- 2. Des milliers de km, aucune preuve : 4,6 → 9,2 s -->
 <section class="scene dark" id="a2" data-start="4.6" data-end="9.2">
   <svg class="abs" style="left:0;top:0" width="1080" height="1920"><defs><pattern id="dots" width="36" height="36" patternUnits="userSpaceOnUse"><circle cx="18" cy="18" r="2.2" fill="#2A3F5C"/></pattern></defs><rect width="1080" height="1920" fill="url(#dots)"/></svg>
-  <h1 class="hl"><span class="l acc" data-in=".3" data-count="4700" data-suffix=" km." data-dur="1.6" data-fx="up"></span><span class="l" data-in="3.2" data-fx="words">Zéro preuve.</span></h1>
-  <div class="route">
-    <svg class="abs" style="left:0;top:0" width="200" height="640" viewBox="0 0 200 640">
-      <mask id="rm" maskUnits="userSpaceOnUse" x="-100" y="-100" width="400" height="840"><path id="rmask" d="M60 30 C140 170 -10 420 60 600" fill="none" stroke="#fff" stroke-width="24"/></mask>
-      <path id="rt" d="M60 30 C140 170 -10 420 60 600" fill="none" stroke="#F0A27A" stroke-width="6" stroke-dasharray="2 16" stroke-linecap="round" mask="url(#rm)"/>
-      <circle id="rtdot" r="12" fill="#fff"/>
-      <g data-in=".3" data-fx="pop" style="transform-origin:60px 30px"><circle cx="60" cy="30" r="20" fill="#fff"/><circle cx="60" cy="30" r="8" fill="#14263D"/></g>
-      <g data-in="1.9" data-fx="pop" style="transform-origin:60px 600px"><circle cx="60" cy="600" r="20" fill="#F0A27A"/><circle cx="60" cy="600" r="8" fill="#14263D"/></g>
-    </svg>
-    <span class="lab" style="left:100px;top:6px" data-in=".35" data-fx="fade">Paris</span>
-    <span class="lab" style="left:100px;top:576px" data-in="1.95" data-fx="fade">Cotonou</span>
-  </div>
+  <h1 class="hl"><span class="l acc" data-in=".3" data-fx="words">Des milliers de km.</span><span class="l" data-in="3.3" data-fx="words">Zéro preuve.</span></h1>
+  <!-- map-route : la diaspora, d'où qu'elle soit, vers les chantiers de tout le continent -->
+  <svg class="abs" id="net2" style="left:0;top:0" width="1080" height="1920" viewBox="0 0 1080 1920">
+    <mask id="am0" maskUnits="userSpaceOnUse" x="0" y="0" width="1080" height="1920"><path class="amask" d="M140 700 C140 915.0 350 915.0 350 1130" fill="none" stroke="#fff" stroke-width="26"/></mask><path class="arc" d="M140 700 C140 915.0 350 915.0 350 1130" fill="none" stroke="#F0A27A" stroke-width="5" stroke-dasharray="2 15" stroke-linecap="round" mask="url(#am0)"/><circle class="adot" r="10" fill="#fff"/>
+    <mask id="am1" maskUnits="userSpaceOnUse" x="0" y="0" width="1080" height="1920"><path class="amask" d="M350 650 C350 865.0 945 865.0 945 1080" fill="none" stroke="#fff" stroke-width="26"/></mask><path class="arc" d="M350 650 C350 865.0 945 865.0 945 1080" fill="none" stroke="#F0A27A" stroke-width="5" stroke-dasharray="2 15" stroke-linecap="round" mask="url(#am1)"/><circle class="adot" r="10" fill="#fff"/>
+    <mask id="am2" maskUnits="userSpaceOnUse" x="0" y="0" width="1080" height="1920"><path class="amask" d="M560 700 C560 890.0 140 890.0 140 1080" fill="none" stroke="#fff" stroke-width="26"/></mask><path class="arc" d="M560 700 C560 890.0 140 890.0 140 1080" fill="none" stroke="#F0A27A" stroke-width="5" stroke-dasharray="2 15" stroke-linecap="round" mask="url(#am2)"/><circle class="adot" r="10" fill="#fff"/>
+    <mask id="am3" maskUnits="userSpaceOnUse" x="0" y="0" width="1080" height="1920"><path class="amask" d="M760 650 C760 890.0 760 890.0 760 1130" fill="none" stroke="#fff" stroke-width="26"/></mask><path class="arc" d="M760 650 C760 890.0 760 890.0 760 1130" fill="none" stroke="#F0A27A" stroke-width="5" stroke-dasharray="2 15" stroke-linecap="round" mask="url(#am3)"/><circle class="adot" r="10" fill="#fff"/>
+    <mask id="am4" maskUnits="userSpaceOnUse" x="0" y="0" width="1080" height="1920"><path class="amask" d="M945 700 C945 890.0 560 890.0 560 1080" fill="none" stroke="#fff" stroke-width="26"/></mask><path class="arc" d="M945 700 C945 890.0 560 890.0 560 1080" fill="none" stroke="#F0A27A" stroke-width="5" stroke-dasharray="2 15" stroke-linecap="round" mask="url(#am4)"/><circle class="adot" r="10" fill="#fff"/>
+    <g data-in="0.20" data-fx="pop" style="transform-origin:140px 700px"><circle cx="140" cy="700" r="16" fill="#fff"/><circle cx="140" cy="700" r="6" fill="#14263D"/><text x="140" y="668" text-anchor="middle" class="city">Montréal</text></g>
+    <g data-in="0.28" data-fx="pop" style="transform-origin:350px 650px"><circle cx="350" cy="650" r="16" fill="#fff"/><circle cx="350" cy="650" r="6" fill="#14263D"/><text x="350" y="618" text-anchor="middle" class="city">Londres</text></g>
+    <g data-in="0.36" data-fx="pop" style="transform-origin:560px 700px"><circle cx="560" cy="700" r="16" fill="#fff"/><circle cx="560" cy="700" r="6" fill="#14263D"/><text x="560" y="668" text-anchor="middle" class="city">Bruxelles</text></g>
+    <g data-in="0.44" data-fx="pop" style="transform-origin:760px 650px"><circle cx="760" cy="650" r="16" fill="#fff"/><circle cx="760" cy="650" r="6" fill="#14263D"/><text x="760" y="618" text-anchor="middle" class="city">Paris</text></g>
+    <g data-in="0.52" data-fx="pop" style="transform-origin:945px 700px"><circle cx="945" cy="700" r="16" fill="#fff"/><circle cx="945" cy="700" r="6" fill="#14263D"/><text x="945" y="668" text-anchor="middle" class="city">Genève</text></g>
+    <g data-in="1.94" data-fx="pop" style="transform-origin:140px 1080px"><circle cx="140" cy="1080" r="16" fill="#F0A27A"/><circle cx="140" cy="1080" r="6" fill="#14263D"/><text x="140" y="1136" text-anchor="middle" class="city">Dakar</text></g>
+    <g data-in="1.50" data-fx="pop" style="transform-origin:350px 1130px"><circle cx="350" cy="1130" r="16" fill="#F0A27A"/><circle cx="350" cy="1130" r="6" fill="#14263D"/><text x="350" y="1186" text-anchor="middle" class="city">Abidjan</text></g>
+    <g data-in="2.38" data-fx="pop" style="transform-origin:560px 1080px"><circle cx="560" cy="1080" r="16" fill="#F0A27A"/><circle cx="560" cy="1080" r="6" fill="#14263D"/><text x="560" y="1136" text-anchor="middle" class="city">Lomé</text></g>
+    <g data-in="2.16" data-fx="pop" style="transform-origin:760px 1130px"><circle cx="760" cy="1130" r="16" fill="#F0A27A"/><circle cx="760" cy="1130" r="6" fill="#14263D"/><text x="760" y="1186" text-anchor="middle" class="city">Cotonou</text></g>
+    <g data-in="1.72" data-fx="pop" style="transform-origin:945px 1080px"><circle cx="945" cy="1080" r="16" fill="#F0A27A"/><circle cx="945" cy="1080" r="6" fill="#14263D"/><text x="945" y="1136" text-anchor="middle" class="city">Douala</text></g>
+  </svg>
   <div class="polar" data-in="2.55" data-fx="drop2"><div class="thumb"><div class="ph site"></div></div><p>Photo reçue · date inconnue</p></div>
 </section>
 
@@ -214,7 +222,7 @@ svg { display: block; overflow: visible; }
     <div class="half" id="hr"><div class="ph site"></div></div>
     <div class="stamp" data-in="1.35" data-fx="stamp"><svg width="44" height="44" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#26774B" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>VÉRIFIÉE</div>
     <div class="meta" data-in="1.65" data-fx="upmeta">
-      <span><svg width="34" height="34" viewBox="0 0 24 24"><path d="M12 22s7-7.2 7-12.5A7 7 0 0 0 5 9.5C5 14.8 12 22 12 22z" fill="#C2410C"/><circle cx="12" cy="9.5" r="2.6" fill="#fff"/></svg>Cotonou, Bénin</span>
+      <span><svg width="34" height="34" viewBox="0 0 24 24"><path d="M12 22s7-7.2 7-12.5A7 7 0 0 0 5 9.5C5 14.8 12 22 12 22z" fill="#C2410C"/><circle cx="12" cy="9.5" r="2.6" fill="#fff"/></svg>Position du chantier vérifiée</span>
       <span><svg width="34" height="34" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="#14263D" stroke-width="2.4"/><path d="M12 7v5l3.5 2" stroke="#14263D" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>Aujourd'hui · 14:32</span>
     </div>
   </div>
@@ -394,7 +402,6 @@ $("#tr").innerHTML = "« " + TR.map(([, s], k) => s.split(" ").map((w) => `<span
 const trWords = [...document.querySelectorAll("#tr .w")];
 
 const scenes = [...document.querySelectorAll(".scene")].map((el) => ({ el, a: +el.dataset.start, b: +el.dataset.end }));
-const route = $("#rt"), rlen = route.getTotalLength(), rdot = $("#rtdot");
 
 function fx(el, local) {
   const t0 = +el.dataset.in, kind = el.dataset.fx;
@@ -430,9 +437,14 @@ const per = {
     $(".glow").style.opacity = 0.6 + 0.4 * clamp((l - 0.1) / 0.3) * (0.8 + 0.2 * Math.sin(l * 9));
   },
   a2(l) {
-    const p = inout((l - 0.3) / 1.6);
-    const m = $("#rmask"); m.style.strokeDasharray = rlen; m.style.strokeDashoffset = rlen * (1 - p);
-    const pt = route.getPointAtLength(rlen * p); rdot.setAttribute("cx", pt.x); rdot.setAttribute("cy", pt.y); rdot.style.opacity = p > 0 && p < 1 ? 1 : 0;
+    // Cinq trajets, de l'étranger vers cinq villes d'Afrique, tracés l'un après l'autre ; puis la photo floue passe devant.
+    const arcs = [...document.querySelectorAll("#net2 .arc")], masks = [...document.querySelectorAll("#net2 .amask")], dots = [...document.querySelectorAll("#net2 .adot")];
+    arcs.forEach((arc, k) => {
+      const len = arc.getTotalLength(), p = inout((l - 0.3 - 0.22 * k) / 1.2);
+      masks[k].style.strokeDasharray = len; masks[k].style.strokeDashoffset = len * (1 - p);
+      const pt = arc.getPointAtLength(len * p); dots[k].setAttribute("cx", pt.x); dots[k].setAttribute("cy", pt.y); dots[k].style.opacity = p > 0 && p < 1 ? 1 : 0;
+    });
+    $("#net2").style.opacity = 1 - 0.5 * clamp((l - 2.5) / 0.4);
   },
   a3(l) {
     // La photo floue se déchire et s'écarte : dessous, la même photo, nette et vérifiée.

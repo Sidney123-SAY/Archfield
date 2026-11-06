@@ -40,7 +40,7 @@ async function page() {
     fs.mkdirSync(dir, { recursive: true });
     const sc = await pg.evaluate(() => window.SCENES());
     const end = (i, d = 0.25) => sc[i][2] - d;
-    const KEYS = [["1-accroche", end(0)], ["2-distance", end(1)], ["3a-dechirure", sc[2][1] + 0.6], ["3b-preuve", end(2)], ["4-rapport", end(3)], ["5-valider-payer", end(4)], ["6-fin", end(5, 0.3)]];
+    const KEYS = [["1-accroche", end(0)], ["2a-carte", sc[1][1] + 2.4], ["2b-photo-floue", end(1)], ["3a-dechirure", sc[2][1] + 0.6], ["3b-preuve", end(2)], ["4-rapport", end(3)], ["5-valider-payer", end(4)], ["6-fin", end(5, 0.3)]];
     for (const [name, t] of KEYS) {
       await pg.evaluate((x) => window.seek(x), t);
       await pg.screenshot({ path: path.join(dir, name + ".jpg"), type: "jpeg", quality: 90 });

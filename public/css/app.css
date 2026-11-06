@@ -788,3 +788,40 @@ select.dial { flex: none; width: 6.6em; max-width: 6.6em; }
 .planbox .sp-plan > .btn { grid-column: 2; grid-row: 1 / span 4; align-self: center; }
 .sp-price { white-space: nowrap; }
 @media (max-width: 560px) { .planbox .sp-plan { grid-template-columns: minmax(0, 1fr); } .planbox .sp-plan > .btn { grid-column: 1; grid-row: auto; justify-self: start; } }
+
+/* Guide « Les 7 vérifications » (/guide) */
+.guide-k { font: 700 .74rem/1 var(--f-ui); letter-spacing: .16em; text-transform: uppercase; color: var(--orange); }
+.legal .guide-lead { font-size: 1.15rem; color: var(--muted); }
+.guide-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 6px 0 4px; }
+.guide-actions .btn, .guide-offer .btn { font-size: .95rem; padding: 11px 18px; }
+.guide-list { list-style: none; counter-reset: v; margin: 6px 0 0; padding: 0; display: grid; gap: 0; }
+.guide-list > li { counter-increment: v; position: relative; padding: 18px 0 18px 58px; border-top: 1px solid var(--line); display: grid; gap: 8px; }
+.guide-list > li::before { content: counter(v); position: absolute; left: 0; top: 14px; font: 400 2.2rem/1 var(--f-display); color: var(--orange); }
+.guide-list h3 { font-family: var(--f-display); font-weight: 500; font-size: 1.2rem; }
+.legal .guide-tip { background: var(--vert-soft); border-radius: 10px; padding: 10px 14px; font-size: .95rem; }
+.guide-tip b { color: var(--vert); }
+.guide-table { overflow-x: auto; }
+.guide-table table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+.guide-table th, .guide-table td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.guide-table th { font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.guide-table td:last-child { white-space: nowrap; font-weight: 600; color: var(--orange); }
+.legal .guide-alerts { list-style: none; padding: 0; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.guide-alerts li { background: var(--orange-soft); border-radius: 10px; padding: 12px 14px; font-size: .95rem; }
+.guide-alerts b { color: var(--orange); }
+.guide-offer { margin-top: 18px; background: var(--panel); color: var(--panel-ink); border-radius: var(--r); padding: 22px 22px 24px; display: grid; gap: 10px; }
+.guide-offer h2 { margin-top: 0; }
+.legal .guide-offer p { color: var(--panel-muted, #C9D2DD); }
+.legal .guide-books { list-style: none; padding: 0; gap: 8px; }
+.guide-books a { display: block; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; color: var(--ink); font-weight: 600; text-decoration: none; background: var(--surface); }
+.guide-books a:hover { background: var(--hover); }
+.guide-books a::after { content: " ↗"; color: var(--orange); }
+.legal .guide-legal { font-size: .85rem; color: var(--muted); margin-top: 10px; }
+.legal .guide-offer h2 { color: var(--panel-ink); }
+@media (max-width: 600px) {
+  .guide-table thead { display: none; }
+  .guide-table table, .guide-table tbody, .guide-table tr, .guide-table td { display: block; }
+  .guide-table tr { position: relative; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .guide-table td { border: 0; padding: 2px 64px 2px 0; white-space: normal; }
+  .guide-table td:first-child { font-weight: 600; }
+  .guide-table td:last-child { position: absolute; right: 0; top: 12px; padding: 0; }
+}
