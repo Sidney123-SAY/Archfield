@@ -26,15 +26,13 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
 .dark .kick { color: var(--peche); }
 svg { display: block; overflow: visible; }
 
-/* 1. Le rêve */
-.facade .st, .facade .scaffold { transition: none !important; }
-#a1 .fx { position: absolute; left: 190px; top: 600px; width: 700px; }
-#a1 .facade { --fx-bg: #14263D; --fx-ink: rgba(240,162,122,.95); --fx-soft: rgba(240,162,122,.38); --fx-accent: #FFFFFF; }
-#a1 .glow { position: absolute; left: 140px; top: 560px; width: 800px; height: 560px; background: radial-gradient(closest-side, rgba(240,162,122,.16), transparent); }
+/* 1. L'accroche : une femme à Paris reçoit la demande d'argent */
+#a1 .card { left: 70px; top: 610px; width: 940px; padding: 30px 34px 34px; }
+#a1 .hl .big { font-size: 120px; line-height: 1; }
+#a1 .glow { position: absolute; left: 290px; top: 900px; width: 500px; height: 420px; background: radial-gradient(closest-side, rgba(221,230,245,.16), transparent); }
 
-/* 2. La peur */
+/* 2. La distance, aucune preuve */
 .card { position: absolute; background: #fff; color: var(--ink); border-radius: 36px; box-shadow: 0 30px 70px rgba(0,0,0,.35); }
-#a2 .card { left: 70px; top: 620px; width: 720px; padding: 30px 32px 32px; }
 .nt { display: flex; align-items: center; gap: 18px; font: 700 32px var(--sans); }
 .nt .av { width: 64px; height: 64px; border-radius: 50%; background: #F1E7DA; display: grid; place-items: center; flex: none; }
 .nt small { margin-left: auto; font: 500 26px var(--sans); color: var(--muted); }
@@ -42,9 +40,12 @@ svg { display: block; overflow: visible; }
 .msg b { color: var(--orange); font-weight: 800; }
 .thumb { height: 250px; border-radius: 22px; overflow: hidden; position: relative; background: #CFC8BB; }
 .thumb .ph { position: absolute; inset: -30px; filter: blur(16px) brightness(.82) saturate(.45); }
-.route { position: absolute; left: 820px; top: 610px; width: 200px; height: 640px; }
+.route { position: absolute; left: 110px; top: 640px; width: 200px; height: 640px; }
+.polar { position: absolute; left: 380px; top: 700px; width: 620px; padding: 22px 22px 70px; background: #fff; border-radius: 10px; box-shadow: 0 30px 60px rgba(0,0,0,.4); transform-origin: center; }
+.polar .thumb { height: 420px; border-radius: 4px; }
+.polar p { position: absolute; left: 0; right: 0; bottom: 18px; text-align: center; font: 600 30px var(--sans); color: var(--muted); }
 .route .lab { position: absolute; font: 700 34px var(--sans); color: #fff; white-space: nowrap; }
-.route .km { position: absolute; left: 116px; top: 300px; transform-origin: left top; font: 800 40px var(--sans); color: var(--peche); white-space: nowrap; }
+
 
 /* 3. La preuve */
 #a3 .kick { position: absolute; left: 70px; top: 290px; }
@@ -68,7 +69,7 @@ svg { display: block; overflow: visible; }
 #a4 .rep { left: 70px; top: 950px; width: 940px; padding: 24px 32px 22px; }
 .rep .top { display: flex; align-items: center; gap: 14px; font: 700 30px var(--sans); }
 .rep .top .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--orange); }
-.rep .top small { margin-left: auto; font: 500 26px var(--sans); color: var(--muted); }
+.rep .top small { margin-left: 14px; font: 500 26px var(--sans); color: var(--muted); }
 .voice { display: flex; align-items: center; gap: 20px; margin-top: 20px; }
 .play { width: 76px; height: 76px; border-radius: 50%; background: var(--vert); display: grid; place-items: center; flex: none; }
 .wave { flex: 1; display: flex; align-items: center; gap: 5px; height: 76px; }
@@ -90,10 +91,7 @@ svg { display: block; overflow: visible; }
 .vbtn { position: absolute; right: 0; top: 50%; transform: translateY(-50%); background: var(--ink); color: #fff; border-radius: 18px; padding: 16px 24px; font: 700 30px var(--sans); white-space: nowrap; }
 .ripple { position: absolute; border-radius: 50%; background: rgba(255,255,255,.5); width: 40px; height: 40px; pointer-events: none; }
 
-/* 6. Lancez-vous */
-#a6 .fx { position: absolute; left: 90px; top: 560px; width: 900px; }
-#a6 .facade { --fx-bg: #14263D; --fx-ink: rgba(255,255,255,.92); --fx-soft: rgba(255,255,255,.36); --fx-accent: #F0A27A; }
-#a6 .hl { font-size: 84px; }
+.net { display: inline-flex; align-items: center; gap: 10px; margin-left: auto; border-radius: 999px; padding: 8px 18px; font: 700 26px var(--sans); white-space: nowrap; }
 
 /* 7. Fin */
 #a7 .brand { position: absolute; left: 0; right: 0; top: 280px; display: flex; justify-content: center; align-items: center; gap: 26px; }
@@ -143,12 +141,12 @@ svg { display: block; overflow: visible; }
 </svg>
 </template>
 
-<!-- 1. Le rêve : 0 → 3,4 s -->
-<section class="scene dark" id="a1" data-start="0" data-end="3.4">
+<!-- 1. L'accroche : 0 → 4,6 s (accroche A ; B et C changent le texte et la durée, voir setHook) -->
+<section class="scene dark" id="a1" data-start="0" data-end="4.6">
   <svg class="abs" style="left:0;top:0" width="1080" height="1920" viewBox="0 0 1080 1920">
     <rect width="1080" height="1920" fill="#14263D"/>
     <!-- fenêtre de Paris, la nuit -->
-    <g transform="translate(800 960)">
+    <g transform="translate(800 980)">
       <path d="M0 330V110A100 100 0 0 1 200 110V330Z" fill="#0B1624"/>
       <circle cx="146" cy="80" r="22" fill="#F0A27A" opacity=".7"/>
       <g fill="#F4F2EE" opacity=".6"><circle cx="40" cy="70" r="2.5"/><circle cx="90" cy="40" r="2"/><circle cx="170" cy="150" r="2"/><circle cx="60" cy="140" r="1.8"/></g>
@@ -157,44 +155,41 @@ svg { display: block; overflow: visible; }
       <path d="M100 10V330M0 200H200" stroke="#2A3F5C" stroke-width="10"/>
       <path d="M0 330V110A100 100 0 0 1 200 110V330Z" fill="none" stroke="#2A3F5C" stroke-width="14"/>
     </g>
-    <!-- diplôme au mur -->
-    <g transform="translate(80 1030) rotate(-3)">
-      <rect width="200" height="150" rx="6" fill="#D99A2B"/><rect x="12" y="12" width="176" height="126" fill="#F4F2EE"/>
-      <path d="M44 48H156M58 70H142M68 90H132" stroke="#C9C3B8" stroke-width="6" stroke-linecap="round"/>
-      <circle cx="150" cy="112" r="14" fill="#C2410C"/><path d="M144 122l-6 18 10-6 4 8 4-20" fill="#C2410C"/>
+    <!-- lampe -->
+    <g transform="translate(120 1000)">
+      <defs><radialGradient id="lampg"><stop offset="0" stop-color="#D99A2B" stop-opacity=".28"/><stop offset="1" stop-color="#D99A2B" stop-opacity="0"/></radialGradient></defs><ellipse cx="80" cy="160" rx="190" ry="170" fill="url(#lampg)"/>
+      <path d="M30 0h100l30 90H0z" fill="#D99A2B"/><rect x="74" y="90" width="12" height="300" fill="#2A3F5C"/><rect x="30" y="384" width="100" height="14" rx="7" fill="#2A3F5C"/>
     </g>
   </svg>
-  <div class="glow" data-in=".2" data-fx="fade" data-dur="1.2"></div>
-  <div class="fx" id="fx1">{{FACADE}}</div>
-  <div class="abs" id="woman1" style="left:240px;top:960px;width:600px;height:640px" data-in="0" data-fx="none"></div>
-  <h1 class="hl"><span class="l" data-in=".25" data-fx="words">Et si cette année…</span><span class="l acc" data-in="1.45" data-fx="words">vous construisiez</span><span class="l acc" data-in="1.75" data-fx="words">au pays ?</span></h1>
+  <div class="glow"></div>
+  <div class="abs" id="woman1" style="left:240px;top:930px;width:600px;height:640px"></div>
+  <h1 class="hl"><span class="l acc big" id="h1a" data-in=".35" data-fx="words">15 000 €…</span><span class="l" id="h1b" data-in="2.85" data-fx="words">pour quoi ?</span></h1>
+  <div class="card" data-in=".1" data-fx="pop" data-origin="center top">
+    <div class="nt"><span class="av"><svg width="38" height="38" viewBox="0 0 24 24"><path d="M4 16a8 8 0 0 1 16 0" fill="#D99A2B"/><rect x="2.5" y="15.5" width="19" height="3" rx="1.5" fill="#B97F1C"/></svg></span>Le chantier<small>maintenant</small></div>
+    <p class="msg" id="msg1">Il faut encore <b>15&nbsp;000&nbsp;€</b> pour le ciment et&nbsp;le&nbsp;fer.</p>
+  </div>
 </section>
 
-<!-- 2. La peur : 3,4 → 6,6 s -->
-<section class="scene dark" id="a2" data-start="3.4" data-end="6.6">
+<!-- 2. 4 700 km, aucune preuve : 4,6 → 9,2 s -->
+<section class="scene dark" id="a2" data-start="4.6" data-end="9.2">
   <svg class="abs" style="left:0;top:0" width="1080" height="1920"><defs><pattern id="dots" width="36" height="36" patternUnits="userSpaceOnUse"><circle cx="18" cy="18" r="2.2" fill="#2A3F5C"/></pattern></defs><rect width="1080" height="1920" fill="url(#dots)"/></svg>
-  <h1 class="hl"><span class="l" data-in=".15" data-fx="words">La peur de</span><span class="l acc" data-in=".55" data-fx="words">se faire avoir ?</span></h1>
+  <h1 class="hl"><span class="l acc" data-in=".3" data-count="4700" data-suffix=" km." data-dur="1.6" data-fx="up"></span><span class="l" data-in="3.2" data-fx="words">Zéro preuve.</span></h1>
   <div class="route">
     <svg class="abs" style="left:0;top:0" width="200" height="640" viewBox="0 0 200 640">
       <mask id="rm" maskUnits="userSpaceOnUse" x="-100" y="-100" width="400" height="840"><path id="rmask" d="M60 30 C140 170 -10 420 60 600" fill="none" stroke="#fff" stroke-width="24"/></mask>
       <path id="rt" d="M60 30 C140 170 -10 420 60 600" fill="none" stroke="#F0A27A" stroke-width="6" stroke-dasharray="2 16" stroke-linecap="round" mask="url(#rm)"/>
       <circle id="rtdot" r="12" fill="#fff"/>
-      <g data-in=".5" data-fx="pop" style="transform-origin:60px 30px"><circle cx="60" cy="30" r="20" fill="#fff"/><circle cx="60" cy="30" r="8" fill="#14263D"/></g>
+      <g data-in=".3" data-fx="pop" style="transform-origin:60px 30px"><circle cx="60" cy="30" r="20" fill="#fff"/><circle cx="60" cy="30" r="8" fill="#14263D"/></g>
       <g data-in="1.9" data-fx="pop" style="transform-origin:60px 600px"><circle cx="60" cy="600" r="20" fill="#F0A27A"/><circle cx="60" cy="600" r="8" fill="#14263D"/></g>
     </svg>
-    <span class="lab" style="left:0;top:-48px" data-in=".55" data-fx="fade">Paris</span>
-    <span class="lab" style="left:-46px;top:632px" data-in="1.95" data-fx="fade">Cotonou</span>
-    <span class="km" data-in=".9" data-count="4700" data-suffix=" km" data-dur="1.1" data-fx="fade"></span>
+    <span class="lab" style="left:100px;top:6px" data-in=".35" data-fx="fade">Paris</span>
+    <span class="lab" style="left:100px;top:576px" data-in="1.95" data-fx="fade">Cotonou</span>
   </div>
-  <div class="card" data-in=".05" data-fx="pop" data-origin="center top">
-    <div class="nt"><span class="av"><svg width="38" height="38" viewBox="0 0 24 24"><path d="M4 16a8 8 0 0 1 16 0" fill="#D99A2B"/><rect x="2.5" y="15.5" width="19" height="3" rx="1.5" fill="#B97F1C"/></svg></span>Le chantier<small>maintenant</small></div>
-    <p class="msg">Il faut encore <b>15&nbsp;000&nbsp;€</b> pour le ciment et le fer.</p>
-    <div class="thumb"><div class="ph site"></div></div>
-  </div>
+  <div class="polar" data-in="2.55" data-fx="drop2"><div class="thumb"><div class="ph site"></div></div><p>Photo reçue · date inconnue</p></div>
 </section>
 
-<!-- 3. La preuve : 6,6 → 10,8 s -->
-<section class="scene light" id="a3" data-start="6.6" data-end="10.8">
+<!-- 3. La preuve : 9,2 → 13,2 s -->
+<section class="scene light" id="a3" data-start="9.2" data-end="13.2">
   <p class="kick" data-in=".2" data-fx="up">Avec Archfield</p>
   <h1 class="hl"><span class="l" data-in="2.5" data-fx="words">Datée.</span><span class="l acc" data-in="2.93" data-fx="words">Localisée.</span></h1>
   <div class="photo">
@@ -209,8 +204,8 @@ svg { display: block; overflow: visible; }
   </div>
 </section>
 
-<!-- 4. Le rapport du chef de chantier : 10,8 → 17 s -->
-<section class="scene light" id="a4" data-start="10.8" data-end="17">
+<!-- 4. Le rapport du chef de chantier, même sans réseau : 13,2 → 17,1 s -->
+<section class="scene light" id="a4" data-start="13.2" data-end="17.1">
   <svg class="site abs" width="1080" height="1920" viewBox="0 0 1080 1920">
     <defs><pattern id="blk2" width="60" height="30" patternUnits="userSpaceOnUse"><rect width="60" height="30" fill="#E2DBCF"/><path d="M0 29.5H60M30 0V15M0 15H60M60 15V30M0 15V30" stroke="#D2C9BA" stroke-width="2"/></pattern></defs>
     <circle cx="880" cy="640" r="110" fill="#F0A27A" opacity=".28"/>
@@ -219,7 +214,7 @@ svg { display: block; overflow: visible; }
     <g stroke="#7A4E06" stroke-width="4"><path d="M50 840V780M64 840V790M1010 840V785M1024 840V780"/></g>
     <rect x="0" y="1290" width="1080" height="630" fill="#D8C5A8"/>
   </svg>
-  <h1 class="hl"><span class="l" data-in=".2" data-fx="words">Un rapport</span><span class="l acc" data-in=".45" data-fx="words">chaque jour</span></h1>
+  <h1 class="hl"><span class="l" data-in=".2" data-fx="words">Un rapport</span><span class="l acc" data-in=".45" data-fx="words">par jour</span></h1>
   <div class="chef" data-in=".05" data-fx="up">
     <svg width="600" height="700" viewBox="0 0 600 700">
       <defs>
@@ -250,52 +245,45 @@ svg { display: block; overflow: visible; }
       <g id="sw" stroke="#C2410C" stroke-width="5" fill="none" stroke-linecap="round"><path d="M168 340 q-16 24 0 48"/><path d="M146 324 q-26 40 0 80"/><path d="M124 308 q-36 56 0 112"/></g>
     </svg>
   </div>
-  <span class="chip w" style="left:640px;top:640px" data-in="2.45" data-fx="pop"><svg width="40" height="40" viewBox="0 0 24 24"><path d="M5 15a7 7 0 0 1 14 0" fill="#D99A2B"/><rect x="3.5" y="14.5" width="17" height="3" rx="1.5" fill="#B97F1C"/></svg>12 ouvriers</span>
-  <span class="chip g" style="left:600px;top:760px" data-in="4.3" data-fx="pop"><svg width="40" height="40" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>50 sacs reçus</span>
+  <span class="chip w" style="left:640px;top:640px" data-in="1.0" data-fx="pop"><svg width="40" height="40" viewBox="0 0 24 24"><path d="M5 15a7 7 0 0 1 14 0" fill="#D99A2B"/><rect x="3.5" y="14.5" width="17" height="3" rx="1.5" fill="#B97F1C"/></svg>12 ouvriers</span>
+  <span class="chip g" style="left:600px;top:760px" data-in="1.5" data-fx="pop"><svg width="40" height="40" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>50 sacs reçus</span>
   <div class="card rep" data-in=".45" data-fx="up">
-    <div class="top"><span class="dot"></span>Rapport du jour · Chef de chantier<small>14:32</small></div>
+    <div class="top"><span class="dot"></span>Rapport du jour<small>14:32</small><span class="net" id="net"></span></div>
     <div class="voice"><span class="play"><svg width="34" height="34" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="#fff"/></svg></span><span class="wave" id="wave"></span><span class="tm" id="vtm">0:00</span></div>
     <p class="tr" id="tr"></p>
   </div>
 </section>
 
-<!-- 5. Valider puis payer : 17 → 20,9 s -->
-<section class="scene dark" id="a5" data-start="17" data-end="20.9">
+<!-- 5. Valider puis payer : 17,1 → 20,9 s -->
+<section class="scene dark" id="a5" data-start="17.1" data-end="20.9">
   <h1 class="hl"><span class="l" data-in=".6" data-fx="words">Validez,</span><span class="l acc" data-in="1.65" data-fx="words">puis payez.</span></h1>
   <div class="card" data-in=".05" data-fx="up">
     <div class="stg"><span class="ic" style="background:var(--vert-soft)"><svg width="34" height="34" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#26774B" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Fondations<span class="bar"><i style="width:100%"></i></span></span><span class="st">Payée</span></div>
     <div class="stg" id="murs"><span class="ic" id="mic"><svg width="34" height="34" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" fill="none" stroke="#14263D" stroke-width="2.2"/><path d="M4 12h16M12 6v6M8 12v6M16 12v6" stroke="#14263D" stroke-width="2"/></svg></span><span style="position:relative">Murs<span class="bar"><i id="mbar"></i></span><span class="vbtn" id="vbtn" style="top:-6px;transform:none">Valider l'étape</span></span><span class="st" id="mst" style="color:var(--muted)">72 %</span></div>
     <div class="stg off"><span class="ic"><svg width="34" height="34" viewBox="0 0 24 24"><path d="M3 12 12 5l9 7" stroke="#A3A8AE" stroke-width="2.4" fill="none"/></svg></span><span>Toiture<span class="bar"></span></span><span class="st" style="color:#A3A8AE">À venir</span></div>
-    <div class="btn" id="pay"><svg id="lock" width="46" height="46" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="currentColor"/><path id="shackle" d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2.4" fill="none"/></svg>Payer 15&nbsp;000&nbsp;€</div>
+    <div class="btn" id="pay"><svg id="lock" width="46" height="46" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="currentColor"/><path id="shackle" d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2.4" fill="none"/></svg>Versement suivant · 15&nbsp;000&nbsp;€</div>
   </div>
 </section>
 
-<!-- 6. Lancez-vous : 20,9 → 24,2 s -->
-<section class="scene dark" id="a6" data-start="20.9" data-end="24.2">
-  <div class="fx" id="fx6">{{FACADE}}</div>
-  <div class="abs" id="woman2" style="left:500px;top:1000px;width:600px;height:640px" data-in=".9" data-fx="up"></div>
-  <h1 class="hl"><span class="l" data-in="1.2" data-fx="words">Votre premier chantier,</span><span class="l acc" data-in="1.95" data-fx="words">c'est maintenant.</span></h1>
-</section>
-
-<!-- 7. Fin : 24,2 → 31 s -->
-<section class="scene dark" id="a7" data-start="24.2" data-end="31">
+<!-- 6. Fin : 20,9 → 29,6 s -->
+<section class="scene dark" id="a7" data-start="20.9" data-end="29.6">
   <div class="brand" data-in=".15" data-fx="up">
     <svg width="104" height="104" viewBox="0 0 32 32" aria-hidden="true"><path d="M7 27V15a9 9 0 0 1 18 0v12" fill="none" stroke="#C2410C" stroke-width="4"/><g fill="#fff"><rect x="11" y="21" width="2.6" height="6"/><rect x="14.7" y="18" width="2.6" height="9"/><rect x="18.4" y="15" width="2.6" height="12"/><rect x="3" y="27" width="26" height="2.4" rx="1"/></g></svg>
     <b>Archfield</b>
   </div>
-  <p class="tag" data-in="1.05" data-fx="up">Osez construire au pays.</p>
-  <div class="desk" data-in="3.5" data-fx="up">
+  <p class="tag" data-in="1.3" data-fx="up">Votre chantier, comme si vous y étiez.</p>
+  <div class="desk" data-in="5.6" data-fx="up">
     <span class="cup"></span><span class="pen"></span>
-    <div class="guide" data-in="3.65" data-fx="slide">
+    <div class="guide" data-in="5.8" data-fx="slide">
       <p class="gk">GUIDE OFFERT</p>
-      <h4>Premier chantier au pays</h4>
-      <p>Le guide pour se lancer sans se faire avoir</p>
+      <h4>Les 7 vérifications</h4>
+      <p>avant d'envoyer de l'argent pour votre chantier</p>
       <div class="gl"><svg width="30" height="30" viewBox="0 0 32 32"><path d="M7 27V15a9 9 0 0 1 18 0v12" fill="none" stroke="#C2410C" stroke-width="4"/></svg>Archfield</div>
     </div>
-    <span class="chip g mois" data-in="4.7" data-fx="pop">+ 2 mois offerts</span>
+    <span class="chip g mois" data-in="7.0" data-fx="pop">+ 2 mois offerts</span>
   </div>
-  <p class="cta" data-in="2.35" data-fx="up">Commentez</p>
-  <div class="field" data-in="2.45" data-fx="pop" data-origin="center">
+  <p class="cta" data-in="4.0" data-fx="up">Commentez</p>
+  <div class="field" data-in="4.1" data-fx="pop" data-origin="center">
     <span class="av"></span><span class="txt"><span id="typed"></span><span class="caret" id="caret"></span></span>
     <span class="send"><svg width="40" height="40" viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-2.5-6.5z" fill="#fff"/></svg></span>
   </div>
@@ -316,6 +304,7 @@ document.querySelectorAll(".site").forEach((el) => { if (el.tagName !== "svg") e
 // La jeune femme : même personnage, deux humeurs (elle rêve devant son ordinateur / elle se lance, le poing levé).
 function woman(mood) {
   const skin = "#9A6440", hair = "#1B1410", top = "#F0A27A", topd = "#D98A63";
+  if (mood === "worry") return womanWorry(skin, hair, top, topd);
   const eyes = mood === "joy" ? `<path d="M260 202 q15 -14 30 0M310 202 q15 -14 30 0" stroke="${hair}" stroke-width="5" fill="none" stroke-linecap="round"/>`
                               : `<path d="M262 198 q14 9 28 0M310 198 q14 9 28 0" stroke="${hair}" stroke-width="4.5" fill="none" stroke-linecap="round"/>`;
   const mouth = mood === "joy" ? `<path d="M272 234 q28 34 56 0 z" fill="#5A2A1E"/><path d="M280 236 q20 8 40 0 v4 q-20 6 -40 0z" fill="#fff"/>`
@@ -344,17 +333,38 @@ function woman(mood) {
     ${mouth}${arms}${laptop}
   </svg>`;
 }
-$("#woman1").innerHTML = woman("dream");
-$("#woman2").innerHTML = woman("joy");
+function womanWorry(skin, hair, top, topd) {
+  return `<svg width="600" height="640" viewBox="0 0 600 640">
+    <circle cx="300" cy="64" r="58" fill="${hair}"/>
+    <ellipse cx="300" cy="168" rx="104" ry="98" fill="${hair}"/>
+    <path d="M150 640 C150 420 200 330 300 320 C400 330 450 420 450 640 Z" fill="${top}"/>
+    <rect x="279" y="248" width="42" height="80" fill="#875636"/>
+    <path d="M262 322 Q300 352 338 322" stroke="${topd}" stroke-width="9" fill="none"/>
+    <circle cx="222" cy="202" r="13" fill="${skin}"/><circle cx="378" cy="202" r="13" fill="${skin}"/>
+    <circle cx="222" cy="228" r="12" fill="none" stroke="#D99A2B" stroke-width="4"/><circle cx="378" cy="228" r="12" fill="none" stroke="#D99A2B" stroke-width="4"/>
+    <ellipse cx="300" cy="190" rx="78" ry="90" fill="${skin}"/>
+    <ellipse cx="300" cy="220" rx="70" ry="56" fill="#DDE6F5" opacity=".13"/>
+    <path d="M222 178 C220 108 262 90 300 90 C340 90 380 108 378 178 C362 142 334 128 300 128 C266 128 238 142 222 178Z" fill="${hair}"/>
+    <path d="M256 180 q18 -2 34 -13M310 167 q16 11 34 13" stroke="${hair}" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <ellipse cx="276" cy="205" rx="6" ry="7" fill="${hair}"/><ellipse cx="324" cy="205" rx="6" ry="7" fill="${hair}"/>
+    <path d="M300 208 q-7 16 3 22" stroke="#6E4329" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    <path d="M284 248 q16 -8 32 0" stroke="#5A2A1E" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+    <path d="M178 420 Q160 530 262 540" stroke="${top}" stroke-width="58" fill="none" stroke-linecap="round"/>
+    <path d="M422 420 Q440 530 338 540" stroke="${top}" stroke-width="58" fill="none" stroke-linecap="round"/>
+    <g id="phone1"><rect x="262" y="430" width="76" height="132" rx="14" fill="#0B111A"/><rect x="268" y="440" width="64" height="112" rx="9" fill="#DDE6F5"/>
+      <rect x="274" y="452" width="52" height="18" rx="5" fill="#C2410C"/></g>
+    <circle cx="272" cy="548" r="22" fill="${skin}"/><circle cx="328" cy="548" r="22" fill="${skin}"/>
+  </svg>`;
+}
+$("#woman1").innerHTML = woman("worry");
 
 // Titres : chaque mot monte à son tour.
-document.querySelectorAll('[data-fx="words"]').forEach((el) => {
-  el.innerHTML = el.textContent.split(/(\s+)/).map((w) => (w.trim() ? `<span class="w">${w}</span>` : w)).join("");
-});
+const splitWords = (el) => { el.innerHTML = el.textContent.split(/(\s+)/).map((w) => (w.trim() ? `<span class="w">${w}</span>` : w)).join(""); };
+document.querySelectorAll('[data-fx="words"]').forEach(splitWords);
 
 // Vocal du chef : enveloppe sonore réelle (volume par image) pour la vague et la bouche ; transcription mot à mot.
 const ENV = window.CHEF_ENV || [];
-const CHEF_AT = 0.8; // début du vocal dans la scène 4
+const CHEF_AT = 0.3; // le chef enregistre son vocal dès le début de la scène 4 (sans le son : seule la voix off parle)
 const wave = $("#wave");
 for (let i = 0; i < 40; i++) wave.appendChild(document.createElement("i"));
 const TR = [[0.13, "Bonjour madame !"], [1.6, "Douze ouvriers aujourd'hui,"], [3.2, "et les cinquante sacs sont arrivés."]];
@@ -363,14 +373,12 @@ const trWords = [...document.querySelectorAll("#tr .w")];
 
 const scenes = [...document.querySelectorAll(".scene")].map((el) => ({ el, a: +el.dataset.start, b: +el.dataset.end }));
 const route = $("#rt"), rlen = route.getTotalLength(), rdot = $("#rtdot");
-const facades = ["#fx1", "#fx6"].map((s) => $(s).querySelector("svg"));
-facades.forEach((s) => s.setAttribute("data-stage", "6"));
 
 function fx(el, local) {
   const t0 = +el.dataset.in, kind = el.dataset.fx;
   const dur = +(el.dataset.dur || (kind === "pop" || kind === "stamp" ? 0.5 : 0.65));
   const p = (local - t0) / dur, e = out3(p), o = clamp(p * 1.8);
-  if (el.dataset.count !== undefined) el.textContent = Math.round(+el.dataset.count * out3(p)).toLocaleString("fr-FR") + (el.dataset.suffix || "");
+  if (el.dataset.count !== undefined) el.textContent = Math.round(+el.dataset.count * out3(p)).toLocaleString("fr-FR").replace(/\s/g, "\u00a0") + (el.dataset.suffix || "");
   if (el.dataset.origin) el.style.transformOrigin = el.dataset.origin;
   switch (kind) {
     case "up": el.style.opacity = o; el.style.transform = `translateY(${(1 - e) * 60}px)`; break;
@@ -379,6 +387,7 @@ function fx(el, local) {
     case "stamp": el.style.opacity = clamp(p * 4); el.style.transform = `rotate(-7deg) scale(${1 + 1.4 * (1 - out3(p))})`; break;
     case "slide": el.style.opacity = o; el.style.transform = `translate(${(1 - e) * 500}px, ${(1 - e) * -60}px) rotate(${-4 + (1 - e) * 22}deg)`; break;
     case "fade": el.style.opacity = o; break;
+    case "drop2": el.style.opacity = clamp(p * 3); el.style.transform = `translateY(${(1 - back(p)) * -120}px) rotate(${3 - (1 - e) * 10}deg)`; break;
     case "words": [...el.querySelectorAll(".w")].forEach((w, i) => { const q = (local - t0 - i * 0.09) / 0.55; w.style.opacity = clamp(q * 2); w.style.transform = `translateY(${(1 - out3(q)) * 0.5}em)`; }); break;
   }
 }
@@ -394,14 +403,13 @@ function facadeAt(svg, local, from, step) {
 
 const per = {
   a1(l) {
-    facadeAt(facades[0], l, 0.3, 0.34);
     $("#woman1").style.transform = `translateY(${Math.sin(l * 2.2) * 3}px)`;
+    $(".glow").style.opacity = 0.6 + 0.4 * clamp((l - 0.1) / 0.3) * (0.8 + 0.2 * Math.sin(l * 9));
   },
   a2(l) {
-    const p = inout((l - 0.6) / 1.4);
+    const p = inout((l - 0.3) / 1.6);
     const m = $("#rmask"); m.style.strokeDasharray = rlen; m.style.strokeDashoffset = rlen * (1 - p);
     const pt = route.getPointAtLength(rlen * p); rdot.setAttribute("cx", pt.x); rdot.setAttribute("cy", pt.y); rdot.style.opacity = p > 0 && p < 1 ? 1 : 0;
-    $("#a2 .km").style.transform = "rotate(90deg)";
   },
   a3(l) {
     // La photo floue se déchire et s'écarte : dessous, la même photo, nette et vérifiée.
@@ -424,8 +432,15 @@ const per = {
     });
     const secs = Math.max(0, Math.min(ENV.length / 30, c));
     $("#vtm").textContent = "0:" + String(Math.floor(secs)).padStart(2, "0");
-    let n = 0; TR.forEach(([at, s], k) => { const words = s.split(" ").length; const q = clamp((c - at) / (k === 2 ? 1.9 : 1.1)); n += q * words; });
+    const n = trWords.length * clamp((l - 0.4) / 2.2);
     trWords.forEach((w, k) => { w.style.opacity = k < n ? 1 : 0.18; });
+    // Même sans réseau : le rapport attend dans le téléphone, puis part dès que le réseau revient.
+    const net = $("#net"), off = l >= 2.4 && l < 3.3;
+    net.style.opacity = l < 2.4 ? 0 : 1;
+    net.style.background = off ? "#FCF1DB" : "var(--vert-soft)"; net.style.color = off ? "#7A4E06" : "var(--vert)";
+    net.innerHTML = off ? '<svg width="30" height="30" viewBox="0 0 24 24"><path d="M2 8.5a15 15 0 0 1 20 0M5.5 12a10 10 0 0 1 13 0M9 15.5a5 5 0 0 1 6 0M3 3l18 18" stroke="#7A4E06" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>Pas de réseau · en attente'
+                        : '<svg width="30" height="30" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#26774B" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>Envoyé';
+    net.style.transform = `scale(${l >= 3.3 ? 0.9 + 0.1 * back((l - 3.3) / 0.4) : 1})`;
   },
   a5(l) {
     const b = out3((l - 0.3) / 0.75);
@@ -442,15 +457,11 @@ const per = {
     let rp = pay.querySelector(".ripple"); if (!rp) { rp = document.createElement("span"); rp.className = "ripple"; pay.appendChild(rp); }
     const r = clamp((l - 2.75) / 0.5); rp.style.left = "50%"; rp.style.top = "50%"; rp.style.opacity = r > 0 ? 1 - r : 0; rp.style.transform = `translate(-50%,-50%) scale(${1 + r * 30})`;
   },
-  a6(l) {
-    facadeAt(facades[1], l, 0.05, 0.24);
-    $("#woman2").style.transform += ` rotate(${Math.sin(l * 6) * 1.2}deg)`;
-  },
   a7(l) {
-    const word = "CHANTIER", k = Math.max(0, Math.min(word.length, Math.floor((l - 2.65) / 0.09)));
+    const word = "CHANTIER", k = Math.max(0, Math.min(word.length, Math.floor((l - 4.35) / 0.09)));
     $("#typed").textContent = word.slice(0, k);
     $("#caret").style.opacity = k < word.length || Math.floor(l * 2.5) % 2 ? 1 : 0;
-    const f = $(".field"); if (l > 3.6) f.style.transform = `scale(${1 + 0.025 * Math.sin((l - 3.6) * 6)})`;
+    const f = $(".field"); if (l > 5.2) f.style.transform = `scale(${1 + 0.025 * Math.sin((l - 5.2) * 6)})`;
   },
 };
 
@@ -466,8 +477,24 @@ window.seek = (t) => {
     if (per[s.el.id]) per[s.el.id](local);
   }
 };
-window.DURATION = 31;
-window.SCENES = scenes.map((s) => [s.el.id, s.a, s.b]);
+window.DURATION = 29.6;
+// Accroches à tester. A : « 15 000 €… pour quoi ? » (par défaut). B et C changent le titre, le message et la durée du plan 1 :
+// toutes les scènes suivantes sont décalées de `shift` secondes (durée de la phrase d'accroche moins celle de A).
+const HOOKS = {
+  a: { h1a: ["15 000 €…", 0.35, "l acc big"], h1b: ["pour quoi ?", 2.85, "l"], msg: "Il faut encore <b>15&nbsp;000&nbsp;€</b> pour le ciment et&nbsp;le&nbsp;fer." },
+  b: { h1a: ["« Les murs avancent bien. »", 0.3, "l"], h1b: ["Vraiment ?", 1.75, "l acc"], msg: "Les murs avancent bien ! Il faut encore <b>15&nbsp;000&nbsp;€</b> pour le ciment et&nbsp;le&nbsp;fer." },
+  c: { h1a: ["Votre maison au pays,", 0.3, "l"], h1b: ["vous la voyez comment ?", 1.95, "l acc"], msg: "Il faut encore <b>15&nbsp;000&nbsp;€</b> pour le ciment et&nbsp;le&nbsp;fer." },
+};
+window.setHook = (h, shift) => {
+  const H = HOOKS[h] || HOOKS.a;
+  for (const k of ["h1a", "h1b"]) { const el = $("#" + k); el.textContent = H[k][0]; el.dataset.in = H[k][1]; el.className = H[k][2]; splitWords(el); }
+  $("#msg1").innerHTML = H.msg;
+  scenes.forEach((s, i) => { if (i > 0) s.a += shift; s.b += shift; });
+  window.DURATION += shift;
+  window.seek(0);
+  return window.DURATION;
+};
+window.SCENES = () => scenes.map((s) => [s.el.id, s.a, s.b]);
 window.seek(0);
 </script>
 </body>

@@ -1,6 +1,7 @@
 // Publicité Meta 9:16 : tools/video/pub.html rendu image par image (30 images/s), puis assemblé en MP4 (H.264) avec la voix et les bruitages.
-// Usage : npm run pub                → video/out/archfield-pub-9x16.mp4
-//         STORYBOARD=1 npm run pub   → images clés seulement (marketing/pub/storyboard/)
+// Usage : npm run pub                      → video/out/archfield-pub-9x16-a.mp4   (accroche A)
+//         HOOK=b npm run pub               → accroche B (HOOK=c : accroche C)
+//         STORYBOARD=1 npm run pub         → images clés seulement (marketing/pub/storyboard/)
 // Voix : tools/video/pub-voix/*.wav (Speko · ElevenLabs). Lancez d'abord npm run pub:son (bande son). Il faut ffmpeg et Playwright.
 const fs = require("node:fs");
 const path = require("node:path");
@@ -12,7 +13,10 @@ const VOIX = path.join(__dirname, "video", "pub-voix");
 const OUT = path.join(ROOT, "video", "out");
 const FRAMES = path.join(OUT, "frames-pub");
 const FPS = Number(process.env.FPS) || 30;
-const KEYS = [["1-reve", 3.15], ["2-peur", 6.25], ["3a-dechirure", 7.15], ["3b-preuve", 10.45], ["4-rapport", 16.4], ["5-valider-payer", 20.0], ["6-lancez-vous", 23.95], ["7-fin", 30.6]];
+const HOOK = (process.env.HOOK || "a").toLowerCase();
+const dur = (f) => Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", f]).toString());
+// Le plan 1 dure le temps de la phrase d'accroche : les accroches B et C décalent la suite de la vidéo.
+const SHIFT = dur(path.join(__dirname, "video", "pub-voix", `hook-${HOOK}.wav`)) - dur(path.join(__dirname, "video", "pub-voix", "hook-a.wav"));
 
 async function page() {
   const facade = fs.readFileSync(path.join(ROOT, "public/img/facade.svg"), "utf8");
@@ -24,14 +28,19 @@ async function page() {
   pg.on("pageerror", (e) => console.error("Erreur dans la page :", e.message));
   await pg.setContent(html, { waitUntil: "networkidle" });
   await pg.evaluate(() => document.fonts.ready);
+  await pg.evaluate(([h, sh]) => window.setHook(h, sh), [HOOK, SHIFT]);
   return { browser, pg };
 }
 
 (async () => {
   const { browser, pg } = await page();
   if (process.env.STORYBOARD) {
-    const dir = path.join(ROOT, "marketing", "pub", "storyboard");
+    const dir = path.join(ROOT, "marketing", "pub", "storyboard" + (HOOK === "a" ? "" : "-" + HOOK));
+    fs.rmSync(dir, { recursive: true, force: true });
     fs.mkdirSync(dir, { recursive: true });
+    const sc = await pg.evaluate(() => window.SCENES());
+    const end = (i, d = 0.25) => sc[i][2] - d;
+    const KEYS = [["1-accroche", end(0)], ["2-distance", end(1)], ["3a-dechirure", sc[2][1] + 0.6], ["3b-preuve", end(2)], ["4-rapport", end(3)], ["5-valider-payer", end(4)], ["6-fin", end(5, 0.3)]];
     for (const [name, t] of KEYS) {
       await pg.evaluate((x) => window.seek(x), t);
       await pg.screenshot({ path: path.join(dir, name + ".jpg"), type: "jpeg", quality: 90 });
@@ -50,8 +59,8 @@ async function page() {
     if (i % 150 === 0) process.stdout.write(`image ${i}/${total}\n`);
   }
   await browser.close();
-  const mp4 = path.join(OUT, "archfield-pub-9x16.mp4");
-  const mix = path.join(OUT, "pub-mix.wav");
+  const mp4 = path.join(OUT, `archfield-pub-9x16-${HOOK}.mp4`);
+  const mix = path.join(OUT, `pub-mix-${HOOK}.wav`);
   if (!fs.existsSync(mix)) throw new Error("Bande son absente : lancez d'abord npm run pub:son");
   execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-framerate", String(FPS), "-i", path.join(FRAMES, "%05d.jpg"), "-i", mix,
     "-map", "0:v", "-map", "1:a", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-preset", "slow", "-movflags", "+faststart",

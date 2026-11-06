@@ -1,12 +1,20 @@
 """Bande son de la pub 9:16 : voix (Speko · ElevenLabs), vocal du chef filtré comme un téléphone, bruitages et fond musical discret.
-Usage : npm run pub:son   →   video/out/pub-mix.wav (et pub-mix-sans-musique.wav). Les voix sont dans tools/video/pub-voix/."""
-import wave, sys, subprocess, numpy as np
+Usage : npm run pub:son (HOOK=b ou HOOK=c pour les autres accroches)   →   video/out/pub-mix-a.wav (et pub-mix-a-sans-musique.wav).
+Les voix sont dans tools/video/pub-voix/. Le calendrier ci-dessous suit les scènes de tools/video/pub.html."""
+import os, wave, sys, subprocess, numpy as np
 from pathlib import Path
 SR = 48000
 V = Path(__file__).resolve().parent / "pub-voix"
 O = Path(__file__).resolve().parents[2] / "video" / "out"
 O.mkdir(parents=True, exist_ok=True)
-DUR = 31.0
+HOOK = os.environ.get("HOOK", "a").lower()
+def dur(f): w = wave.open(str(V / f)); return w.getnframes() / w.getframerate()
+# Début des scènes pour l'accroche A ; les accroches B et C décalent tout ce qui suit le plan 1.
+SCENES = [0, 4.6, 9.2, 13.2, 17.1, 20.9]
+END = 29.6
+SHIFT = dur(f"hook-{HOOK}.wav") - dur("hook-a.wav")
+S = [SCENES[0]] + [x + SHIFT for x in SCENES[1:]]
+DUR = END + SHIFT
 rng = np.random.default_rng(7)
 
 def load(name):
@@ -70,10 +78,13 @@ def bed():  # fond musical : nappes douces Do – Sol – La m – Fa, pulsation
     lead = np.minimum(1, t / 1.5) * np.minimum(1, (DUR - t) / 1.5)
     return out * lead
 
-voice = {"l1.wav": .2, "l2.wav": 3.55, "l3.wav": 6.75, "l5.wav": 17.2, "l6.wav": 21.0, "l7.wav": 24.4}
-fx = [(pop, 3.45), (pop, 11.2), (click, 13.25), (click, 15.1)] + [(whoosh, t) for t in (3.2, 6.4, 10.6, 16.8, 20.7, 24.0)] + \
-     [(tear, 6.95), (thump, 8.2), (tap, 18.05), (chime, 18.15), (click, 18.75), (tap, 19.75), (rise, 20.95), (paper, 27.85), (pop, 28.9), (chime, 29.95)] + \
-     [(click, 26.85 + k * .09) for k in range(8)]
+voice = {f"hook-{HOOK}.wav": S[0] + .25, "v2.wav": S[1] + .15, "v3.wav": S[2] + .15, "v4.wav": S[3] + .15, "v5.wav": S[4] + .2, "v6.wav": S[5] + .2}
+fx = [(pop, S[0] + .1)] + [(whoosh, t - .2) for t in S[1:]] + \
+     [(click, S[1] + .3), (click, S[1] + 1.9), (paper, S[1] + 2.55), (thump, S[1] + 2.75)] + \
+     [(tear, S[2] + .4), (thump, S[2] + 1.6)] + \
+     [(click, S[3] + 1.0), (click, S[3] + 1.5), (tap, S[3] + 2.4), (chime, S[3] + 3.3)] + \
+     [(tap, S[4] + 1.05), (chime, S[4] + 1.15), (click, S[4] + 1.75), (tap, S[4] + 2.75)] + \
+     [(click, S[5] + 4.35 + k * .09) for k in range(8)] + [(paper, S[5] + 5.85), (pop, S[5] + 7.0), (chime, S[5] + 7.9)]
 
 def place(dst, a, at, g=1.0):
     s = int(at * SR); e = min(len(dst), s + len(a)); dst[s:e] += a[: e - s] * g
@@ -81,7 +92,6 @@ def place(dst, a, at, g=1.0):
 n = int(DUR * SR)
 vox = np.zeros(n); sfx = np.zeros(n)
 for f, at in voice.items(): place(vox, load(f), at)
-place(vox, tel(load("chef.wav")), 11.6, 0.9)
 for a, at in fx: place(sfx, a, at)
 # La musique baisse quand quelqu'un parle (ducking).
 level = np.convolve(np.abs(vox), np.ones(4800) / 4800, mode="same"); duck = 1 - 0.55 * np.minimum(1, level / .03)
@@ -90,7 +100,7 @@ def write(name, x):
     x = x / max(1e-9, np.max(np.abs(x))) * .89
     w = wave.open(str(O / name), "wb"); w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((x * 32767).astype(np.int16).tobytes()); w.close()
 write("pub-mix-brut.wav", vox + sfx + music); write("pub-mix-sans-musique-brut.wav", vox + sfx)
-for a, b in (("pub-mix-brut.wav", "pub-mix.wav"), ("pub-mix-sans-musique-brut.wav", "pub-mix-sans-musique.wav")):
+for a, b in (("pub-mix-brut.wav", f"pub-mix-{HOOK}.wav"), ("pub-mix-sans-musique-brut.wav", f"pub-mix-{HOOK}-sans-musique.wav")):
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(O / a), "-af", "loudnorm=I=-14:TP=-1.5:LRA=11", "-ar", str(SR), str(O / b)], check=True)
     (O / a).unlink()
-print("ok", O / "pub-mix.wav")
+print("ok", O / f"pub-mix-{HOOK}.wav")
