@@ -81,7 +81,7 @@ Le dépôt GitHub est privé : la machine doit prouver que c'est vous.
 2. Dans la machine, lancez :
 
 ```bash
-git clone -b claude/artifact-session-g0q340 https://github.com/Sidney123-SAY/Arcfield.git
+git clone -b claude/artifact-session-g0q340 https://github.com/Sidney123-SAY/Archfield.git
 ```
 
 À « Username », tapez votre nom GitHub ; à « Password », collez le jeton (rien ne s'affiche, c'est normal).

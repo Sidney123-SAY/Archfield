@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Archfield · vidéo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+<style>
+/* Vidéo de présentation, 1920 × 1080, rendue image par image par tools/video.js (temps piloté par window.seek). */
+:root { --navy: #14263D; --navy2: #0E1B2C; --paper: #F4F2EE; --surface: #fff; --ink: #14263D; --muted: #5D6570; --line: #E4E0D8;
+  --orange: #C2410C; --orange-soft: #FBEAE2; --vert: #26774B; --vert-soft: #E2F1E7; --ambre: #D99A2B; --ambre-soft: #FCF1DB; --ambre-ink: #7A4E06; --bleu: #4C7BC2;
+  --serif: "Source Serif 4", Georgia, serif; --sans: "Geist", "Segoe UI", sans-serif; }
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--navy); font-family: var(--sans); color: var(--ink); -webkit-font-smoothing: antialiased; }
+.scene { position: absolute; inset: 0; opacity: 0; overflow: hidden; }
+.dark { background: var(--navy); color: #fff; }
+.light { background: var(--paper); }
+[data-in] { will-change: transform, opacity; }
+.k { font: 600 22px/1 var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--orange); }
+.dark .k { color: #F0A27A; }
+.h { font: 500 84px/1.04 var(--serif); letter-spacing: -.02em; }
+.h2 { font: 500 64px/1.08 var(--serif); letter-spacing: -.015em; }
+.p { font: 400 30px/1.45 var(--sans); color: var(--muted); }
+.dark .p { color: #C9D2DD; }
+
+/* 1. Ouverture */
+#s1 { display: grid; place-items: center; }
+#s1 .mid { display: grid; justify-items: center; gap: 34px; }
+#s1 .word { font: 600 150px/1 var(--serif); letter-spacing: -.03em; }
+#s1 .tag { font: 400 40px/1.3 var(--serif); color: #C9D2DD; font-style: italic; }
+.arch path { fill: none; stroke: var(--orange); stroke-width: 4; stroke-linecap: square; }
+
+/* 2. Le problème */
+#s2 .col { position: absolute; left: 150px; top: 230px; width: 860px; display: grid; gap: 30px; }
+#s2 .line { font: 500 66px/1.12 var(--serif); }
+#s2 .q { position: absolute; left: 150px; bottom: 150px; font: 600 64px/1.1 var(--serif); color: #F0A27A; width: 900px; }
+.phone { position: absolute; width: 470px; height: 900px; border-radius: 64px; background: #0B111A; padding: 16px; box-shadow: 0 40px 80px rgba(0,0,0,.35); }
+.phone .scr { width: 100%; height: 100%; border-radius: 50px; overflow: hidden; background: var(--paper); position: relative; }
+#s2 .phone { right: 190px; top: 90px; }
+.win .main, .chat, .phone .scr { color: var(--ink); }
+.chat { background: #E9E4DA; height: 100%; padding: 110px 24px 24px; display: flex; flex-direction: column; gap: 18px; }
+.chat .top { position: absolute; inset: 0 0 auto; height: 92px; background: #2F5D50; color: #fff; display: flex; align-items: center; gap: 16px; padding: 30px 26px 0; font: 600 24px var(--sans); }
+.chat .av { width: 44px; height: 44px; border-radius: 50%; background: #CBD5D0; }
+.bub { max-width: 82%; background: #fff; border-radius: 18px; padding: 14px 18px; font: 400 24px/1.35 var(--sans); box-shadow: 0 1px 1px rgba(0,0,0,.08); }
+.bub.me { align-self: flex-end; background: #DCF3C8; }
+.bub small { display: block; text-align: right; color: #8A8F96; font-size: 16px; margin-top: 4px; }
+.blur { height: 220px; border-radius: 12px; background: linear-gradient(135deg, #b7a58a, #8d8270 40%, #c9bfae); filter: blur(7px); margin: -4px -6px 8px; }
+
+/* 3. La promesse */
+#s3 .txt { position: absolute; left: 150px; top: 200px; width: 640px; display: grid; gap: 30px; }
+#s3 .h { font-size: 74px; }
+#s3 .fx { position: absolute; right: 70px; top: 190px; width: 1000px; }
+.facade .st, .facade .scaffold { transition: none !important; }
+
+/* 4. Sur le chantier */
+#s4 .phone, #s5 .phone { left: 200px; top: 90px; }
+.tr { padding: 72px 26px 26px; display: grid; gap: 18px; align-content: start; height: 100%; }
+.tr h3 { font: 500 34px/1.1 var(--serif); }
+.tr .sub { color: var(--muted); font-size: 20px; margin-top: -10px; }
+.blk { background: #fff; border: 1px solid var(--line); border-radius: 22px; padding: 18px 20px; display: grid; gap: 14px; }
+.blk b { font: 700 21px var(--sans); display: flex; gap: 12px; align-items: center; }
+.n { width: 32px; height: 32px; border-radius: 50%; background: var(--paper); display: inline-grid; place-items: center; font-size: 17px; }
+.voice { display: flex; align-items: center; gap: 14px; background: var(--paper); border-radius: 16px; padding: 12px 14px; }
+.play { width: 46px; height: 46px; border-radius: 50%; background: var(--vert); display: grid; place-items: center; flex: none; }
+.wave { flex: 1; display: flex; align-items: center; gap: 4px; height: 44px; }
+.wave i { flex: 1; background: var(--vert); border-radius: 3px; opacity: .75; }
+.voice .tm { font: 600 20px var(--sans); font-variant-numeric: tabular-nums; }
+.step { display: flex; align-items: center; justify-content: center; gap: 40px; }
+.step span { width: 62px; height: 62px; border: 1px solid var(--line); border-radius: 16px; display: grid; place-items: center; font-size: 34px; }
+.step output { font: 700 56px var(--sans); font-variant-numeric: tabular-nums; min-width: 90px; text-align: center; }
+.chip { white-space: nowrap; display: inline-flex; align-items: center; gap: 10px; border-radius: 999px; padding: 10px 18px; font: 600 21px var(--sans); }
+.chip.g { background: var(--vert-soft); color: var(--vert); }
+.chip.o { background: var(--orange-soft); color: var(--orange); }
+.chip.a { background: var(--ambre-soft); color: var(--ambre-ink); }
+.chip.w { background: var(--paper); color: var(--ink); border: 1px solid var(--line); }
+.big { background: var(--vert); color: #fff; border-radius: 22px; padding: 24px; font: 700 26px var(--sans); text-align: center; }
+.side { position: absolute; left: 820px; top: 210px; width: 920px; display: grid; gap: 30px; }
+.bul { display: grid; gap: 22px; margin-top: 12px; }
+.bul div { display: flex; gap: 20px; align-items: center; font: 500 32px/1.3 var(--sans); }
+.bul svg { flex: none; }
+.done { position: absolute; inset: 0; background: rgba(244,242,238,.96); display: grid; place-items: center; align-content: center; gap: 18px; text-align: center; }
+.done h3 { font: 500 40px var(--serif); }
+
+/* 5. Photos vérifiées */
+#s5 .ph { position: absolute; left: 150px; top: 200px; width: 760px; height: 560px; border-radius: 26px; overflow: hidden; background: var(--navy); box-shadow: 0 30px 60px rgba(20,38,61,.2); }
+#s5 .ph .fx { position: absolute; inset: 40px 30px; }
+.stamp { position: absolute; left: 22px; bottom: 22px; background: rgba(0,0,0,.6); color: #fff; font: 600 22px var(--sans); padding: 8px 14px; border-radius: 10px; font-variant-numeric: tabular-nums; }
+.map { position: absolute; left: 960px; top: 200px; width: 520px; height: 380px; border-radius: 26px; background: #E7E3DA; overflow: hidden; border: 1px solid var(--line); }
+.map .grid { position: absolute; inset: -40px; background-image: linear-gradient(#d8d2c6 2px, transparent 2px), linear-gradient(90deg, #d8d2c6 2px, transparent 2px); background-size: 90px 90px; transform: rotate(-12deg); }
+.map .road { position: absolute; left: -40px; right: -40px; top: 210px; height: 26px; background: #fff; transform: rotate(-12deg); }
+.pin { position: absolute; left: 238px; top: 120px; }
+.ring { position: absolute; left: 200px; top: 150px; width: 120px; height: 120px; border-radius: 50%; border: 3px solid var(--vert); background: rgba(38,119,75,.12); }
+.dot2 { position: absolute; left: 272px; top: 196px; width: 18px; height: 18px; border-radius: 50%; background: var(--bleu); border: 4px solid #fff; }
+.badge { position: absolute; display: flex; gap: 14px; align-items: center; border-radius: 18px; padding: 18px 24px; font: 600 28px/1.25 var(--sans); }
+.badge.ok { left: 960px; top: 620px; width: 760px; background: var(--vert-soft); color: var(--vert); }
+.badge.warn { left: 960px; top: 790px; width: 760px; background: var(--ambre-soft); color: var(--ambre-ink); }
+#s5 .ttl { position: absolute; left: 150px; top: 80px; }
+#s5 .m { position: absolute; left: 1510px; top: 230px; width: 260px; font: 500 26px/1.35 var(--sans); color: var(--muted); }
+#s5 .m b { display: block; font: 700 58px var(--sans); color: var(--ink); }
+
+/* 6. L'argent */
+#s6 .ttl { position: absolute; left: 150px; top: 120px; width: 1300px; }
+.money { position: absolute; left: 150px; top: 360px; width: 980px; background: #fff; border: 1px solid var(--line); border-radius: 30px; padding: 44px 50px; display: grid; gap: 30px; }
+.row { display: grid; grid-template-columns: 200px 1fr 120px; align-items: center; gap: 26px; font: 600 30px var(--sans); }
+.row .t { height: 22px; border-radius: 11px; background: #ECE8E0; overflow: hidden; }
+.row .t i { display: block; height: 100%; border-radius: 11px; }
+.row .num { text-align: right; font-variant-numeric: tabular-nums; }
+.alert { display: flex; gap: 16px; align-items: center; background: var(--ambre-soft); color: var(--ambre-ink); border-radius: 18px; padding: 20px 24px; font: 600 28px/1.3 var(--sans); }
+.steps { position: absolute; left: 1220px; top: 360px; width: 560px; display: grid; gap: 22px; }
+.st2 { display: flex; gap: 18px; align-items: center; background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 22px 24px; font: 600 28px var(--sans); }
+.st2 .c { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--paper); font-size: 22px; }
+.st2.ok .c { background: var(--vert); color: #fff; }
+.st2 small { display: block; color: var(--muted); font: 500 22px var(--sans); margin-top: 4px; }
+
+/* 7. Le dirigeant */
+#s7 .ttl { position: absolute; left: 150px; top: 90px; width: 1500px; }
+.win { position: absolute; left: 150px; top: 290px; width: 1620px; height: 720px; border-radius: 26px; background: var(--paper); overflow: hidden; box-shadow: 0 40px 90px rgba(0,0,0,.35); display: grid; grid-template-columns: 290px 1fr; }
+.win .sb { background: var(--navy2); padding: 34px 26px; display: grid; gap: 16px; align-content: start; color: #C9D2DD; font: 500 22px var(--sans); }
+.win .sb b { color: #fff; font: 700 28px var(--sans); margin-bottom: 18px; }
+.win .sb .on { background: rgba(255,255,255,.08); color: #fff; border-radius: 12px; padding: 10px 14px; margin: 0 -14px; }
+.win .main { padding: 34px 40px; display: grid; gap: 24px; align-content: start; }
+.win h4 { font: 700 40px var(--sans); }
+.kp { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+.kp div { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 18px 20px; display: grid; gap: 6px; font: 500 20px var(--sans); color: var(--muted); }
+.kp div.at { border-color: #E9C98A; }
+.kp div.hot { border-color: #E9A889; }
+.kp b { font: 700 46px var(--sans); color: var(--ink); font-variant-numeric: tabular-nums; }
+.kp div.hot b { color: var(--orange); }
+.cols { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; }
+.card { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 20px 24px; display: grid; gap: 14px; align-content: start; }
+.card h5 { font: 700 24px var(--sans); }
+.srow { display: grid; grid-template-columns: 210px 1fr 150px; gap: 16px; align-items: center; font: 600 20px var(--sans); border-top: 1px solid var(--line); padding-top: 12px; }
+.srow small { display: block; color: var(--muted); font: 500 16px var(--sans); }
+.bars { display: grid; gap: 8px; }
+.bars span { display: grid; grid-template-columns: 1fr 50px; gap: 10px; align-items: center; font: 600 16px var(--sans); }
+.bars em { height: 8px; border-radius: 4px; background: #ECE8E0; overflow: hidden; display: block; }
+.bars em i { display: block; height: 100%; }
+.todo { display: flex; gap: 14px; align-items: center; border-top: 1px solid var(--line); padding-top: 12px; font: 600 20px/1.3 var(--sans); }
+.todo small { display: block; color: var(--muted); font: 500 16px var(--sans); }
+.todo .btn { margin-left: auto; border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; font: 600 17px var(--sans); }
+
+/* 8. Trois espaces */
+#s8 .ttl { position: absolute; left: 0; right: 0; top: 130px; text-align: center; }
+.trio { position: absolute; left: 150px; right: 150px; top: 380px; display: grid; grid-template-columns: 1fr 120px 1fr 120px 1fr; align-items: center; }
+.who { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); border-radius: 30px; padding: 44px 36px; display: grid; gap: 18px; justify-items: start; min-height: 420px; align-content: start; }
+.who .ico { width: 84px; height: 84px; border-radius: 22px; background: rgba(240,162,122,.16); display: grid; place-items: center; }
+.who .k { font-size: 18px; }
+.who h3 { font: 500 46px/1.1 var(--serif); color: #fff; }
+.who p { font: 400 26px/1.45 var(--sans); color: #C9D2DD; }
+.arrow { display: grid; place-items: center; }
+
+/* 9. Fin */
+#s9 { display: grid; place-items: center; text-align: center; }
+#s9 .mid { display: grid; justify-items: center; gap: 30px; }
+#s9 .word { font: 600 120px/1 var(--serif); letter-spacing: -.03em; }
+#s9 .tag { font: 400 46px/1.25 var(--serif); font-style: italic; color: #fff; }
+#s9 .cta { margin-top: 26px; background: var(--orange); color: #fff; border-radius: 16px; padding: 24px 44px; font: 700 34px var(--sans); }
+#s9 .small { font: 500 26px var(--sans); color: #A9B4C2; letter-spacing: .04em; }
+</style>
+</head>
+<body>
+
+<!-- 1. Ouverture : l'arche se dessine, le nom, la promesse -->
+<section class="scene dark" id="s1" data-start="0" data-end="4.6">
+  <div class="mid">
+    <svg class="arch" width="220" height="220" viewBox="0 0 32 32" aria-hidden="true"><path id="archpath" d="M7 27V15a9 9 0 0 1 18 0v12" stroke-width="3.2"/><g fill="#fff"><rect x="11" y="21" width="2.6" height="6" data-in=".9" data-fx="grow"/><rect x="14.7" y="18" width="2.6" height="9" data-in="1.05" data-fx="grow"/><rect x="18.4" y="15" width="2.6" height="12" data-in="1.2" data-fx="grow"/><rect x="3" y="27" width="26" height="2.4" rx="1" data-in=".7" data-fx="fade"/></g></svg>
+    <p class="word" data-in="1.3" data-fx="up">Archfield</p>
+    <p class="tag" data-in="2.1" data-fx="up">Votre chantier, comme si vous y étiez.</p>
+  </div>
+</section>
+
+<!-- 2. Le problème : construire de loin, par messages -->
+<section class="scene dark" id="s2" data-start="4.6" data-end="11.2">
+  <div class="col">
+    <p class="k" data-in=".2" data-fx="up">Le problème</p>
+    <p class="line" data-in=".4" data-fx="up">Vous faites construire au pays.</p>
+    <p class="line" data-in="1.1" data-fx="up">Vous vivez à Paris, à Montréal, ou à Cotonou sans avoir le temps d'y aller.</p>
+  </div>
+  <div class="phone" data-in=".3" data-fx="right"><div class="scr"><div class="chat">
+    <div class="top"><span class="av"></span>Chef de chantier</div>
+    <div class="bub" data-in="1.4" data-fx="pop"><div class="blur"></div>Les murs avancent bien.<small>10:42</small></div>
+    <div class="bub" data-in="2.3" data-fx="pop">Il faut encore 500 000 FCFA pour le ciment.<small>10:43</small></div>
+    <div class="bub me" data-in="3.1" data-fx="pop">D'accord, j'envoie.<small>10:51</small></div>
+  </div></div></div>
+  <p class="q" data-in="4.1" data-fx="up">Mais qu'est-ce qui est vraiment construit&nbsp;?</p>
+</section>
+
+<!-- 3. La promesse : le plan de façade se construit -->
+<section class="scene dark" id="s3" data-start="11.2" data-end="17.2">
+  <div class="txt">
+    <p class="k" data-in=".2" data-fx="up">Archfield</p>
+    <p class="h" data-in=".4" data-fx="up">Ce qui est construit. Ce que devient votre argent.</p>
+    <p class="p" data-in="1.2" data-fx="up">Le suivi de chantier à distance, pour la diaspora, les entreprises du BTP et ceux qui n'ont pas le temps d'aller sur place.</p>
+  </div>
+  <div class="fx" id="facade3">{{FACADE}}</div>
+</section>
+
+<!-- 4. Sur le chantier : le rapport du jour -->
+<section class="scene light" id="s4" data-start="17.2" data-end="25.4">
+  <div class="phone" data-in=".1" data-fx="up"><div class="scr"><div class="tr">
+    <h3>Rapport du 6 novembre</h3><p class="sub">Villa R+1 · Abomey-Calavi</p>
+    <div class="blk"><b><span class="n">1</span>Qu'avez-vous fait aujourd'hui ?</b>
+      <div class="voice" data-in=".8" data-fx="left"><span class="play"><svg width="20" height="20" viewBox="0 0 20 20"><path d="M6 4l10 6-10 6z" fill="#fff"/></svg></span><span class="wave" id="wave"></span><span class="tm" id="vtime">0:00</span></div>
+    </div>
+    <div class="blk"><b><span class="n">2</span>Ouvriers présents</b><div class="step"><span>−</span><output data-count="12" data-in="2.2" data-dur="1.4">0</output><span>+</span></div></div>
+    <div class="blk"><b><span class="n">3</span>Livraisons reçues</b><div><span class="chip w" data-in="3.6" data-fx="pop"><svg width="22" height="22" viewBox="0 0 18 18"><path d="M1.8 4.5h9v8h-9zM10.8 7.5h3l2.4 2.6v2.4h-5.4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>50 sacs de ciment</span></div></div>
+    <div class="blk"><b><span class="n">4</span>Météo</b><div style="display:flex;gap:10px"><span class="chip g" data-in="4.3" data-fx="pop"><svg width="22" height="22" viewBox="0 0 18 18"><circle cx="9" cy="9" r="3.2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M9 1.8v1.8M9 14.4v1.8M1.8 9h1.8M14.4 9h1.8M3.9 3.9l1.3 1.3M12.8 12.8l1.3 1.3M3.9 14.1l1.3-1.3M12.8 5.2l1.3-1.3" stroke="currentColor" stroke-width="1.5"/></svg>Soleil</span><span class="chip w">Pluie</span></div></div>
+    <div class="big" data-in="4.9" data-fx="pop">Transmettre le rapport</div>
+    <div class="done" data-in="5.9" data-fx="fade"><svg width="90" height="90" viewBox="0 0 18 18"><circle cx="9" cy="9" r="7" stroke="#26774B" stroke-width="1.4" fill="none"/><path d="m5.8 9.2 2.2 2.2 4.2-4.6" stroke="#26774B" stroke-width="1.5" fill="none"/></svg><h3>Rapport transmis</h3><p class="sub">Le dirigeant le voit tout de suite.</p></div>
+  </div></div></div>
+  <div class="side">
+    <p class="k" data-in=".2" data-fx="up">Sur le chantier</p>
+    <p class="h2" data-in=".4" data-fx="up">Le rapport du jour, en deux minutes, en parlant.</p>
+    <div class="bul">
+      <div data-in="1.4" data-fx="left"><svg width="44" height="44" viewBox="0 0 18 18"><rect x="6.5" y="2" width="5" height="9" rx="2.5" stroke="#C2410C" stroke-width="1.4" fill="none"/><path d="M4 8.5a5 5 0 0 0 10 0M9 13.5V16" stroke="#C2410C" stroke-width="1.4" fill="none"/></svg>Messages vocaux de 2 minutes, sans rien écrire</div>
+      <div data-in="2.3" data-fx="left"><svg width="44" height="44" viewBox="0 0 18 18"><circle cx="7" cy="6.5" r="2.5" stroke="#C2410C" stroke-width="1.4" fill="none"/><path d="M2.5 15c.5-2.6 2.2-4 4.5-4s4 1.4 4.5 4" stroke="#C2410C" stroke-width="1.4" fill="none"/></svg>Ouvriers présents, livraisons, météo, photos</div>
+      <div data-in="3.2" data-fx="left"><svg width="44" height="44" viewBox="0 0 18 18"><path d="M2 6.5a10.5 10.5 0 0 1 14 0M4.5 9.3a6.8 6.8 0 0 1 9 0M7 12a3 3 0 0 1 4 0" stroke="#C2410C" stroke-width="1.4" fill="none"/></svg>Sans réseau : envoyé tout seul quand il revient</div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. Des photos qui prouvent -->
+<section class="scene light" id="s5" data-start="25.4" data-end="32">
+  <div class="ttl"><p class="k" data-in=".1" data-fx="up">Photos vérifiées</p><p class="h2" data-in=".3" data-fx="up" style="margin-top:18px">Chaque photo garde sa date et son lieu.</p></div>
+  <div class="ph" data-in=".6" data-fx="scale"><div class="fx" id="facade5">{{FACADE}}</div><span class="stamp" data-in="1.4" data-fx="fade">06/11/2026 · 10:42</span></div>
+  <div class="map" data-in="1.2" data-fx="up"><div class="grid"></div><div class="road"></div><div class="ring" data-in="2" data-fx="pop"></div><div class="dot2" data-in="2.5" data-fx="pop"></div>
+    <svg class="pin" width="44" height="60" viewBox="0 0 44 60" data-in="1.7" data-fx="drop"><path d="M22 58S4 36 4 22a18 18 0 0 1 36 0c0 14-18 36-18 36z" fill="#C2410C"/><circle cx="22" cy="22" r="7" fill="#fff"/></svg></div>
+  <p class="m" data-in="2.6" data-fx="up"><b data-count="18" data-in="2.6" data-dur="1" data-suffix=" m">0 m</b>de la position du chantier</p>
+  <div class="badge ok" data-in="3.2" data-fx="left"><svg width="34" height="34" viewBox="0 0 18 18"><circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="m5.8 9.2 2.2 2.2 4.2-4.6" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>Vérifiée : photo récente, prise sur le chantier</div>
+  <div class="badge warn" data-in="4.2" data-fx="left"><svg width="34" height="34" viewBox="0 0 18 18"><path d="M9 2.5 16 15H2z" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M9 7v3.5" stroke="currentColor" stroke-width="1.6"/></svg>À vérifier : photo du 12 octobre, prise à 8,4 km</div>
+</section>
+
+<!-- 6. L'argent -->
+<section class="scene light" id="s6" data-start="32" data-end="38.6">
+  <div class="ttl"><p class="k" data-in=".1" data-fx="up">L'argent du chantier</p><p class="h2" data-in=".3" data-fx="up" style="margin-top:18px">Ne payez plus avant que ce soit construit.</p></div>
+  <div class="money" data-in=".6" data-fx="up">
+    <div class="row"><span>Versé</span><span class="t"><i data-bar="45" data-in="1.1" data-dur="1.3" style="background:var(--orange)"></i></span><span class="num" data-count="45" data-in="1.1" data-dur="1.3" data-suffix=" %">0 %</span></div>
+    <div class="row"><span>Réalisé</span><span class="t"><i data-bar="31" data-in="1.4" data-dur="1.3" style="background:var(--vert)"></i></span><span class="num" data-count="31" data-in="1.4" data-dur="1.3" data-suffix=" %">0 %</span></div>
+    <div class="alert" data-in="2.9" data-fx="pop"><svg width="34" height="34" viewBox="0 0 18 18"><path d="M9 2.5 16 15H2z" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M9 7v3.5" stroke="currentColor" stroke-width="1.6"/></svg>45 % du budget versé pour 31 % des travaux : demandez où en est le chantier.</div>
+  </div>
+  <div class="steps">
+    <div class="st2 ok" data-in="3.6" data-fx="left"><span class="c">✓</span><div>Fondations validées<small>par vous, photos à l'appui</small></div></div>
+    <div class="st2" data-in="4.2" data-fx="left"><span class="c">→</span><div>Versement suivant : 2 500 000 FCFA<small>seulement après la validation</small></div></div>
+    <div class="st2" data-in="4.8" data-fx="left"><span class="c"><svg width="22" height="22" viewBox="0 0 18 18"><path d="M4 2.5h6.5L14 6v9.5H4z" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M6.5 9.5h5M6.5 12h5" stroke="currentColor" stroke-width="1.4"/></svg></span><div>Chaque dépense avec son reçu<small>approuvée par le responsable</small></div></div>
+  </div>
+</section>
+
+<!-- 7. Le dirigeant -->
+<section class="scene dark" id="s7" data-start="38.6" data-end="45.4">
+  <div class="ttl"><p class="k" data-in=".1" data-fx="up">Au bureau</p><p class="h2" data-in=".3" data-fx="up" style="margin-top:18px">Le dirigeant voit, en cinq secondes, ce qui demande une action.</p></div>
+  <div class="win" data-in=".7" data-fx="up">
+    <div class="sb"><b>Archfield</b><span class="on">Tableau de bord</span><span>Chantiers</span><span>Rapports</span><span>Dépenses</span><span>Équipe</span></div>
+    <div class="main">
+      <h4>Bonjour, Koffi</h4>
+      <div class="kp">
+        <div>Chantiers en cours<b data-count="5" data-in="1.2" data-dur=".8">0</b></div>
+        <div class="at">Rapports à vérifier<b data-count="2" data-in="1.4" data-dur=".8">0</b></div>
+        <div class="at">Dépenses en attente<b data-count="4" data-in="1.6" data-dur=".8">0</b></div>
+        <div class="hot">Chantiers à surveiller<b data-count="2" data-in="1.8" data-dur=".8">0</b></div>
+      </div>
+      <div class="cols">
+        <div class="card"><h5>Vos chantiers</h5>
+          <div class="srow" data-in="2.2" data-fx="left"><div>Villa R+1<small>Abomey-Calavi</small></div><div class="bars"><span><em><i data-bar="48" data-in="2.3" data-dur="1" style="background:var(--vert)"></i></em>48 %</span><span><em><i data-bar="52" data-in="2.3" data-dur="1" style="background:var(--bleu)"></i></em>52 %</span></div><span class="chip g">En cours</span></div>
+          <div class="srow" data-in="2.5" data-fx="left"><div>Immeuble R+3<small>Cotonou</small></div><div class="bars"><span><em><i data-bar="31" data-in="2.6" data-dur="1" style="background:var(--vert)"></i></em>31 %</span><span><em><i data-bar="45" data-in="2.6" data-dur="1" style="background:var(--orange)"></i></em>45 %</span></div><span class="chip a">À surveiller</span></div>
+          <div class="srow" data-in="2.8" data-fx="left"><div>Route pavée<small>Porto-Novo</small></div><div class="bars"><span><em><i data-bar="22" data-in="2.9" data-dur="1" style="background:var(--vert)"></i></em>22 %</span><span><em><i data-bar="25" data-in="2.9" data-dur="1" style="background:var(--bleu)"></i></em>25 %</span></div><span class="chip o">En retard</span></div>
+        </div>
+        <div class="card"><h5>À traiter aujourd'hui</h5>
+          <div class="todo" data-in="3.4" data-fx="left"><div>2 rapports à vérifier<small>Villa R+1 · Adjovi</small></div><span class="btn">Vérifier</span></div>
+          <div class="todo" data-in="3.8" data-fx="left"><div>4 dépenses à approuver<small>1 240 000 FCFA déclarés</small></div><span class="btn">Examiner</span></div>
+          <div class="todo" data-in="4.2" data-fx="left"><div>Route pavée : aucun rapport depuis 3 jours<small>Chef de chantier : R. Agossou</small></div><span class="btn">Relancer</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8. Un même chantier, trois espaces -->
+<section class="scene dark" id="s8" data-start="45.4" data-end="50.6">
+  <div class="ttl"><p class="k" data-in=".1" data-fx="up">Un seul chantier</p><p class="h2" data-in=".3" data-fx="up" style="margin-top:18px">Chacun voit ce dont il a besoin.</p></div>
+  <div class="trio">
+    <div class="who" data-in=".8" data-fx="up"><span class="ico"><svg width="44" height="44" viewBox="0 0 18 18"><path d="M2.5 6h3l1.4-2h4.2L12.5 6h3v9h-13z" stroke="#F0A27A" stroke-width="1.4" fill="none"/><circle cx="9" cy="10.2" r="2.6" stroke="#F0A27A" stroke-width="1.4" fill="none"/></svg></span><p class="k">Sur le chantier</p><h3>Le chef de chantier</h3><p>Rapport du jour, photos, dépenses, problèmes.</p></div>
+    <div class="arrow" data-in="1.4" data-fx="left"><svg width="80" height="30" viewBox="0 0 80 30"><path d="M4 15h66M58 5l12 10-12 10" stroke="#F0A27A" stroke-width="3" fill="none"/></svg></div>
+    <div class="who" data-in="1.6" data-fx="up"><span class="ico"><svg width="44" height="44" viewBox="0 0 18 18"><path d="M3 15h12M5 12V8M9 12V4M13 12V9" stroke="#F0A27A" stroke-width="1.5" fill="none"/></svg></span><p class="k">Au bureau</p><h3>Le dirigeant</h3><p>Vérifie, approuve, envoie le rapport PDF.</p></div>
+    <div class="arrow" data-in="2.2" data-fx="left"><svg width="80" height="30" viewBox="0 0 80 30"><path d="M4 15h66M58 5l12 10-12 10" stroke="#F0A27A" stroke-width="3" fill="none"/></svg></div>
+    <div class="who" data-in="2.4" data-fx="up"><span class="ico"><svg width="44" height="44" viewBox="0 0 18 18"><path d="M3 8.5 9 3.5l6 5V15H11v-4H7v4H3z" stroke="#F0A27A" stroke-width="1.5" fill="none"/></svg></span><p class="k">À distance</p><h3>Le client</h3><p>Suit, valide chaque étape, paie au bon moment.</p></div>
+  </div>
+</section>
+
+<!-- 9. Fin -->
+<section class="scene dark" id="s9" data-start="50.6" data-end="56">
+  <div class="mid">
+    <svg width="150" height="150" viewBox="0 0 32 32" aria-hidden="true"><path d="M7 27V15a9 9 0 0 1 18 0v12" fill="none" stroke="#C2410C" stroke-width="4"/><g fill="#fff"><rect x="11" y="21" width="2.6" height="6"/><rect x="14.7" y="18" width="2.6" height="9"/><rect x="18.4" y="15" width="2.6" height="12"/><rect x="3" y="27" width="26" height="2.4" rx="1"/></g></svg>
+    <p class="word" data-in=".2" data-fx="up">Archfield</p>
+    <p class="tag" data-in=".6" data-fx="up">Votre argent mérite des preuves.</p>
+    <p class="cta" data-in="1.2" data-fx="pop">Deux mois offerts</p>
+    <p class="small" data-in="1.8" data-fx="fade">Entreprises du BTP · Particuliers · Diaspora · Afrique de l'Ouest et centrale</p>
+  </div>
+</section>
+
+<script>
+// Moteur : tout dépend du temps t (secondes). Aucune animation CSS : chaque image est calculée, donc identique à chaque rendu.
+const clamp = (x) => Math.max(0, Math.min(1, x));
+const out3 = (x) => 1 - Math.pow(1 - clamp(x), 3);
+const back = (x) => { x = clamp(x); const c = 1.6; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const scenes = [...document.querySelectorAll(".scene")].map((el) => ({ el, a: +el.dataset.start, b: +el.dataset.end }));
+const FADE = 0.45;
+// Vague du message vocal : 34 barres.
+const wave = document.getElementById("wave");
+for (let i = 0; i < 34; i++) wave.appendChild(document.createElement("i"));
+const facades = ["facade3", "facade5"].map((id) => document.getElementById(id).querySelector("svg"));
+facades.forEach((s) => s.setAttribute("data-stage", "6"));
+const arch = document.getElementById("archpath");
+const archLen = arch.getTotalLength();
+arch.style.strokeDasharray = archLen;
+
+function fx(el, local) {
+  const t0 = +el.dataset.in, dur = +(el.dataset.dur || (el.dataset.fx === "pop" ? 0.55 : 0.7));
+  const p = (local - t0) / dur;
+  if (el.dataset.count !== undefined) {
+    const v = Math.round(+el.dataset.count * out3(p));
+    el.textContent = v.toLocaleString("fr-FR") + (el.dataset.suffix || "");
+    if (!el.dataset.fx) return;
+  }
+  if (el.dataset.bar !== undefined) { el.style.width = (+el.dataset.bar * out3(p)) + "%"; return; }
+  const e = out3(p), o = clamp(p * 1.6);
+  switch (el.dataset.fx) {
+    case "up": el.style.opacity = o; el.style.transform = `translateY(${(1 - e) * 46}px)`; break;
+    case "left": el.style.opacity = o; el.style.transform = `translateX(${(1 - e) * -60}px)`; break;
+    case "right": el.style.opacity = o; el.style.transform = `translateX(${(1 - e) * 120}px)`; break;
+    case "scale": el.style.opacity = o; el.style.transform = `scale(${0.88 + 0.12 * e})`; break;
+    case "pop": el.style.opacity = clamp(p * 3); el.style.transform = `scale(${0.7 + 0.3 * back(p)})`; el.style.transformOrigin = "left center"; break;
+    case "drop": el.style.opacity = clamp(p * 3); el.style.transform = `translateY(${(1 - back(p)) * -70}px)`; break;
+    case "grow": el.style.transformBox = "fill-box"; el.style.transformOrigin = "bottom"; el.style.transform = `scaleY(${out3(p)})`; break;
+    case "fade": el.style.opacity = o; break;
+  }
+}
+
+// Plan de façade : les étapes (terrain, fondations, murs, dalle, toiture, finitions) montent l'une après l'autre.
+function facadeAt(svg, local, from, step) {
+  for (let k = 0; k <= 6; k++) {
+    const p = out3((local - from - k * step) / (step * 1.3));
+    svg.querySelectorAll(".st-" + k).forEach((g) => { g.style.opacity = clamp(p * 1.4); g.style.clipPath = `inset(${(1 - p) * 100}% 0 0 0)`; });
+  }
+  const scaf = out3((local - from - 7 * step) / 0.8);
+  svg.querySelectorAll(".scaffold").forEach((g) => { g.style.opacity = 1 - scaf; });
+}
+
+window.seek = (t) => {
+  for (const s of scenes) {
+    const local = t - s.a;
+    // Fondu enchaîné : la scène suivante (au-dessus dans la page) apparaît sur la précédente, restée entière.
+    const vis = t >= s.a - 0.01 && t <= s.b + FADE;
+    s.el.style.opacity = vis ? (s.a === 0 ? 1 : clamp(local / FADE)) : 0;
+    s.el.style.display = vis ? "" : "none";
+    if (!vis) continue;
+    s.el.querySelectorAll("[data-in]").forEach((el) => fx(el, local));
+    if (s.el.id === "s1") arch.style.strokeDashoffset = archLen * (1 - out3(local / 1.1));
+    if (s.el.id === "s3") facadeAt(facades[0], local, 0.6, 0.62);
+    if (s.el.id === "s5") facadeAt(facades[1], local, -10, 0.1);
+    if (s.el.id === "s4") {
+      // Enregistrement : la vague bouge pendant que le temps défile jusqu'à 0:42.
+      const rec = clamp((local - 0.8) / 1.4);
+      document.getElementById("vtime").textContent = "0:" + String(Math.round(42 * out3(rec))).padStart(2, "0");
+      [...wave.children].forEach((b, i) => { const h = 0.25 + 0.75 * Math.abs(Math.sin(i * 0.9 + local * 7) * Math.cos(i * 0.37 + local * 3)); b.style.height = (rec > 0 ? 8 + h * 34 : 8) + "px"; });
+    }
+  }
+};
+window.DURATION = 56;
+window.seek(0);
+</script>
+</body>
+</html>
