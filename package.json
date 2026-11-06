@@ -16,7 +16,8 @@
     "test": "node --no-warnings --test test/*.test.js",
     "admin": "node --no-warnings --env-file-if-exists=.env server/activate.js --admin",
     "purge-demo": "node --no-warnings --env-file-if-exists=.env server/purge-demo.js",
-    "video": "node tools/video.js"
+    "video": "node tools/video.js",
+    "voix": "python3 tools/video/voix.py"
   },
   "engines": {
     "node": ">=22.13"

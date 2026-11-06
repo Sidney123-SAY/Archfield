@@ -301,7 +301,7 @@ html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--
 const clamp = (x) => Math.max(0, Math.min(1, x));
 const out3 = (x) => 1 - Math.pow(1 - clamp(x), 3);
 const back = (x) => { x = clamp(x); const c = 1.6; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
-const scenes = [...document.querySelectorAll(".scene")].map((el) => ({ el, a: +el.dataset.start, b: +el.dataset.end }));
+const scenes = [...document.querySelectorAll(".scene")].map((el) => ({ el, a: +el.dataset.start, b: +el.dataset.end, k: 1 }));
 const FADE = 0.45;
 // Vague du message vocal : 34 barres.
 const wave = document.getElementById("wave");
@@ -349,22 +349,38 @@ window.seek = (t) => {
     const local = t - s.a;
     // Fondu enchaîné : la scène suivante (au-dessus dans la page) apparaît sur la précédente, restée entière.
     const vis = t >= s.a - 0.01 && t <= s.b + FADE;
-    s.el.style.opacity = vis ? (s.a === 0 ? 1 : clamp(local / FADE)) : 0;
+    s.el.style.opacity = vis ? (s === scenes[0] ? 1 : clamp(local / FADE)) : 0;
     s.el.style.display = vis ? "" : "none";
     if (!vis) continue;
     s.el.querySelectorAll("[data-in]").forEach((el) => fx(el, local));
     if (s.el.id === "s1") arch.style.strokeDashoffset = archLen * (1 - out3(local / 1.1));
-    if (s.el.id === "s3") facadeAt(facades[0], local, 0.6, 0.62);
+    if (s.el.id === "s3") facadeAt(facades[0], local, 0.6 * s.k, 0.62 * s.k);
     if (s.el.id === "s5") facadeAt(facades[1], local, -10, 0.1);
     if (s.el.id === "s4") {
       // Enregistrement : la vague bouge pendant que le temps défile jusqu'à 0:42.
-      const rec = clamp((local - 0.8) / 1.4);
+      const rec = clamp((local - 0.8 * s.k) / (1.4 * s.k));
       document.getElementById("vtime").textContent = "0:" + String(Math.round(42 * out3(rec))).padStart(2, "0");
       [...wave.children].forEach((b, i) => { const h = 0.25 + 0.75 * Math.abs(Math.sin(i * 0.9 + local * 7) * Math.cos(i * 0.37 + local * 3)); b.style.height = (rec > 0 ? 8 + h * 34 : 8) + "px"; });
     }
   }
 };
 window.DURATION = 56;
+// Voix off : chaque scène prend la durée de sa phrase ; ses animations s'étirent dans la même proportion (k).
+window.setTimeline = (list) => {
+  let t = 0;
+  list.forEach((d, i) => {
+    const s = scenes[i], orig = s.b - s.a;
+    s.k = Math.min(1.8, Math.max(1, d / orig));
+    s.a = t; s.b = t + d; t += d;
+    s.el.querySelectorAll("[data-in]").forEach((el) => {
+      if (el.dataset.in0 === undefined) { el.dataset.in0 = el.dataset.in; if (el.dataset.dur) el.dataset.dur0 = el.dataset.dur; }
+      el.dataset.in = String(+el.dataset.in0 * s.k);
+      if (el.dataset.dur0) el.dataset.dur = String(+el.dataset.dur0 * s.k);
+    });
+  });
+  window.DURATION = t;
+  return t;
+};
 window.seek(0);
 </script>
 </body>
