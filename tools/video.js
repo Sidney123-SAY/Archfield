@@ -24,13 +24,12 @@ const FPS = Number(process.env.FPS) || 30;
   // Voix off (npm run voix) : chaque scène dure le temps de sa phrase, plus une respiration.
   const VOIX = path.join(ROOT, "video", "voix");
   const durees = fs.existsSync(path.join(VOIX, "durees.json")) ? JSON.parse(fs.readFileSync(path.join(VOIX, "durees.json"), "utf8")) : null;
-  const LEAD = 0.5, TAIL = 0.75;
+  const { timeline, LEAD } = require("./video/timeline");
   let starts = null;
   if (durees) {
-    const base = [4.6, 6.6, 6, 8.2, 6.6, 6.6, 6.8, 5.2, 5.4];
-    const list = base.map((d, i) => Math.max(d, LEAD + durees["s" + (i + 1)] + (i === 8 ? 2.2 : TAIL)));
-    await page.evaluate((l) => window.setTimeline(l), list);
-    starts = list.reduce((acc, d, i) => (acc.push(i ? acc[i - 1] + list[i - 1] : 0), acc), []);
+    const tl = timeline(durees);
+    await page.evaluate((l) => window.setTimeline(l), tl.list);
+    starts = tl.starts;
   }
   const duration = await page.evaluate(() => window.DURATION);
   const total = Math.round(duration * FPS);

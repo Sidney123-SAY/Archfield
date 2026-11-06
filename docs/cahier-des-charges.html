@@ -1,0 +1,420 @@
+<title>Cahier des charges Archfield</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap">
+<style>
+/* Mise en page : document technique d'une colonne, sommaire en tête, sections numérotées, exigences en tableaux avec priorité et état. */
+:root {
+  --paper: #F7F5F0; --surface: #FFFFFF; --ink: #121820; --text: #2E343C; --muted: #6B7079; --line: #DDD7CC;
+  --navy: #14263D; --navy-text: #C9D2DD; --accent: #C2410C;
+  --ok-bg: #E2F1E7; --ok: #1F6A41; --part-bg: #FCF1DB; --part: #7A4E06; --todo-bg: #EEF0F3; --todo: #3A4250;
+  --p1-bg: #FBE4DF; --p1: #8F2A17;
+  --f-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --f-body: "Geist", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #0F1216; --surface: #161B22; --ink: #EEEBE5; --text: #D6D3CD; --muted: #9EA3AB; --line: #2A2F37;
+  --navy: #0E1B2C; --navy-text: #C9D2DD; --accent: #EA6A32;
+  --ok-bg: #12301F; --ok: #7FD1A3; --part-bg: #35270D; --part: #F0C46E; --todo-bg: #232A33; --todo: #C3C9D1;
+  --p1-bg: #3C1913; --p1: #F4A897; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --paper: #0F1216; --surface: #161B22; --ink: #EEEBE5; --text: #D6D3CD; --muted: #9EA3AB; --line: #2A2F37;
+  --navy: #0E1B2C; --navy-text: #C9D2DD; --accent: #EA6A32;
+  --ok-bg: #12301F; --ok: #7FD1A3; --part-bg: #35270D; --part: #F0C46E; --todo-bg: #232A33; --todo: #C3C9D1;
+  --p1-bg: #3C1913; --p1: #F4A897; color-scheme: dark; }
+body { background: var(--paper); color: var(--text); font: 15.5px/1.65 var(--f-body); -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 920px; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { color: var(--ink); text-wrap: balance; margin: 0; }
+h2 { font-family: var(--f-display); font-weight: 400; font-size: clamp(1.6rem, 1.3rem + 1.1vw, 2.1rem); line-height: 1.15; letter-spacing: -.012em; }
+h3 { font-size: 1.02rem; font-weight: 600; margin-top: 10px; }
+p { margin: 0; max-width: 68ch; }
+a { color: var(--accent); text-underline-offset: 3px; }
+.label { font-size: .74rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+ul.plain { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; max-width: 68ch; }
+
+header.cover { background: var(--navy); color: var(--navy-text); }
+header.cover .wrap { padding-block: clamp(36px, 6vw, 64px); display: grid; gap: 18px; }
+header.cover .label { color: #A9B4C2; }
+header.cover h1 { font-family: var(--f-display); font-weight: 400; color: #fff; font-size: clamp(2.2rem, 1.6rem + 2.6vw, 3.4rem); line-height: 1.05; letter-spacing: -.02em; }
+header.cover p { color: var(--navy-text); font-size: 1.05rem; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 28px; font-size: .86rem; color: #A9B4C2; }
+.meta b { color: #fff; font-weight: 500; }
+
+nav.toc .wrap { padding-block: 28px; }
+nav.toc ol { margin: 10px 0 0; padding-left: 1.4em; columns: 2 260px; column-gap: 40px; font-size: .95rem; }
+nav.toc li { break-inside: avoid; padding: 3px 0; }
+nav.toc a { color: var(--ink); text-decoration: none; }
+nav.toc a:hover { text-decoration: underline; }
+
+section.part { border-top: 1px solid var(--line); scroll-margin-top: 12px; }
+section.part > .wrap { padding-block: clamp(32px, 5vw, 52px); display: grid; gap: 16px; }
+.num { font-family: var(--f-display); color: var(--accent); margin-right: .35em; }
+
+.tbl { overflow-x: auto; border-top: 1px solid var(--ink); }
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th, td { text-align: left; padding: 10px 12px 10px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: .72rem; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+td.id { font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; font-size: .82rem; }
+td.what { color: var(--ink); font-weight: 500; min-width: 11em; }
+td.desc { min-width: 18em; }
+.chip { display: inline-block; font-size: .72rem; font-weight: 600; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.ok { background: var(--ok-bg); color: var(--ok); }
+.part { background: var(--part-bg); color: var(--part); }
+.todo { background: var(--todo-bg); color: var(--todo); }
+.p1 { background: var(--p1-bg); color: var(--p1); }
+
+.roles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.role { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px 18px; display: grid; gap: 6px; align-content: start; min-width: 0; }
+.role p { font-size: .92rem; }
+
+.phases { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.phases li { display: grid; grid-template-columns: minmax(0, 11em) minmax(0, 1fr); gap: 6px 20px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.phases li b { color: var(--ink); }
+.phases li span { color: var(--muted); font-size: .86rem; display: block; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: .84rem; color: var(--muted); align-items: center; }
+
+footer .wrap { border-top: 1px solid var(--line); padding-block: 24px 44px; color: var(--muted); font-size: .84rem; }
+
+@media (max-width: 640px) {
+  .roles { grid-template-columns: minmax(0, 1fr); }
+  .phases li { grid-template-columns: minmax(0, 1fr); }
+}
+</style>
+
+<header class="cover">
+  <div class="wrap">
+    <p class="label">Cahier des charges</p>
+    <h1>Archfield</h1>
+    <p>Application de suivi de chantier et d'argent à distance : le chef de chantier rapporte, le dirigeant pilote, le client suit et paie au bon moment. Projet commun Archfield et SuiviBat.</p>
+    <div class="meta"><span>Version <b>2.0</b></span><span>Date <b>6 novembre 2026</b></span><span>État <b>fusion faite, test local prêt, avant mise en ligne</b></span><span>Porteurs <b>Sidney · Jean-Baptiste GBEHA</b></span></div>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Sommaire">
+  <div class="wrap">
+    <p class="label">Sommaire</p>
+    <ol>
+      <li><a href="#contexte">Contexte et objectifs</a></li>
+      <li><a href="#cibles">Cibles et périmètre</a></li>
+      <li><a href="#acteurs">Acteurs et rôles</a></li>
+      <li><a href="#fonctionnel">Exigences fonctionnelles</a></li>
+      <li><a href="#modele">Offres et modèle économique</a></li>
+      <li><a href="#technique">Exigences techniques</a></li>
+      <li><a href="#securite">Sécurité et données personnelles</a></li>
+      <li><a href="#contraintes">Contraintes, risques et hypothèses</a></li>
+      <li><a href="#planning">Planning et livrables</a></li>
+      <li><a href="#reussite">Critères de réussite du test</a></li>
+      <li><a href="#ameliorations">Pôles d'amélioration</a></li>
+    </ol>
+  </div>
+</nav>
+
+<section class="part" id="contexte">
+  <div class="wrap">
+    <h2><span class="num">1.</span>Contexte et objectifs</h2>
+    <p>Une grande partie de la diaspora africaine fait construire au pays depuis l'Europe ou l'Amérique. En Afrique de l'Ouest et centrale, beaucoup de salariés, cadres et chefs d'entreprise n'ont pas le temps d'aller sur leur chantier, ou ont un terrain loin de la ville. Dans les deux cas, le suivi se fait aujourd'hui par téléphone et par WhatsApp : des photos sans date ni lieu, des versements sans lien avec l'avancement, et parfois de l'argent versé pour des travaux qui n'ont pas été faits.</p>
+    <h3>Objectifs</h3>
+    <ul class="plain">
+      <li>Montrer ce qui est vraiment construit, avec des photos dont la date et le lieu sont vérifiés.</li>
+      <li>Relier chaque versement à l'avancement réel et alerter quand on paie trop tôt.</li>
+      <li>Faire valider chaque étape par le client avant le versement suivant.</li>
+      <li>Permettre à une entreprise ou à un proche de publier en trente secondes, même sans réseau.</li>
+      <li>Garder un historique complet et inaltérable, utile en cas de litige.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="part" id="cibles">
+  <div class="wrap">
+    <h2><span class="num">2.</span>Cibles et périmètre</h2>
+    <h3>Cibles</h3>
+    <ul class="plain">
+      <li>La diaspora qui construit au Sénégal, en Côte d'Ivoire, au Cameroun, au Mali, au Burkina Faso, au Bénin, au Togo, au Niger, au Gabon, au Congo, au Tchad…</li>
+      <li>Les particuliers vivant en Afrique de l'Ouest et centrale qui ne peuvent pas suivre leur chantier sur place.</li>
+      <li>Les entreprises du BTP qui veulent rassurer leurs clients et se faire payer à temps.</li>
+    </ul>
+    <h3>Dans le périmètre</h3>
+    <ul class="plain">
+      <li>Site web et application installable sur téléphone (Android, iPhone, ordinateur Windows et Mac).</li>
+      <li>Français et anglais ; euro, franc CFA d'Afrique de l'Ouest (XOF) et d'Afrique centrale (XAF).</li>
+      <li>Construction neuve et rénovation, de la préparation du terrain aux finitions.</li>
+    </ul>
+    <h3>Hors périmètre de cette version</h3>
+    <ul class="plain">
+      <li>Paiement des travaux par l'application (l'argent continue de passer par Wave, Orange Money, virement…).</li>
+      <li>Gestion comptable de l'entreprise, plans, métrés, commandes de matériaux.</li>
+      <li>Applications publiées sur le Play Store et l'App Store.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="part" id="acteurs">
+  <div class="wrap">
+    <h2><span class="num">3.</span>Acteurs et rôles</h2>
+    <div class="roles">
+      <div class="role"><p class="label">Client (propriétaire)</p><p>Fait construire et paie. Crée son espace, ajoute ses chantiers par numéro de suivi ou les crée, les confie, valide les étapes, note ses versements, demande des visites de contrôle.</p></div>
+      <div class="role"><p class="label">Dirigeant d'entreprise du BTP</p><p>Pilote tous ses chantiers : tableau de bord, rapports à vérifier, dépenses à approuver, équipe et droits, rapport PDF au client. Paie l'offre Démarrage, PME ou Pro ; gratuit sur les chantiers qu'un client lui confie.</p></div>
+      <div class="role"><p class="label">Chef de chantier, chef d'équipe</p><p>Invité par le dirigeant (ou par le client) avec des droits choisis. Écran simple : rapport du jour, photos, dépense, problème, message vocal, même sans réseau. Gratuit.</p></div>
+      <div class="role"><p class="label">Proche sur place</p><p>Membre de la famille invité par le client. Publie l'avancement et note les dépenses depuis son téléphone. Gratuit, accès offert par le client.</p></div>
+      <div class="role"><p class="label">Client sans compte</p><p>Suit un chantier par un lien privé reçu de l'entreprise : journal, étapes à valider, argent en lecture, rapports.</p></div>
+      <div class="role"><p class="label">Équipe Archfield</p><p>Espace d'administration : comptes, offres activées à la main (Wave, Orange Money), demandes de visite, paiements, images du site.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="part" id="fonctionnel">
+  <div class="wrap">
+    <h2><span class="num">4.</span>Exigences fonctionnelles</h2>
+    <div class="legend"><span>État :</span><span class="chip ok">Fait</span><span class="chip part">Partiel</span><span class="chip todo">À faire</span><span>· Priorité : Indispensable, Important, Souhaitable</span></div>
+
+    <h3>4.1 Comptes et accès</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>Réf.</th><th>Fonction</th><th>Description</th><th>Priorité</th><th>État</th></tr></thead>
+      <tbody>
+        <tr><td class="id">F-01</td><td class="what">Inscription par profil</td><td class="desc">Client, entreprise ou proche (par invitation), en quelques questions successives.</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-02</td><td class="what">Numéro d'entreprise</td><td class="desc">SIRET obligatoire et vérifié en France (clé et annuaire public), BCE, IDE, RCS ; NINEA, RCCM ou NIU facultatifs en Afrique.</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-03</td><td class="what">Connexion Google et Apple</td><td class="desc">Boutons « Continuer avec Google / Apple ». Code prêt et testé ; identifiants Google et compte Apple Developer à créer.</td><td>Important</td><td><span class="chip part">Partiel</span></td></tr>
+        <tr><td class="id">F-04</td><td class="what">Mot de passe</td><td class="desc">Mot de passe oublié (lien d'une heure), changement, mots de passe trop courants refusés.</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-05</td><td class="what">Appareils connectés</td><td class="desc">Déconnexion de tous les autres appareils.</td><td>Important</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-06</td><td class="what">Données du compte</td><td class="desc">Export de toutes les données, suppression définitive du compte.</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-08</td><td class="what">Connexion par téléphone</td><td class="desc">Téléphone ou e-mail dans le même champ, indicatif du pays ; code à 6 chiffres par WhatsApp ou SMS (Twilio Verify) pour confirmer le numéro et retrouver son mot de passe ; « Rester connecté ». En test, le code s'affiche à l'écran.</td><td>Indispensable</td><td><span class="chip part">Partiel</span></td></tr>
+        <tr><td class="id">F-09</td><td class="what">Équipe et droits</td><td class="desc">Modèles Chef de chantier et Chef d'équipe, droits cochés un par un ; un bouton non autorisé n'apparaît pas ; voir le budget est un droit.</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-07</td><td class="what">Double authentification</td><td class="desc">Code par SMS ou application à la connexion.</td><td>Important</td><td><span class="chip todo">À faire</span></td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>4.2 Espace client et chantiers</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>Réf.</th><th>Fonction</th><th>Description</th><th>Priorité</th><th>État</th></tr></thead>
+      <tbody>
+        <tr><td class="id">F-10</td><td class="what">Numéro de suivi</td><td class="desc">Chaque chantier a un numéro (ARC-XXXX-XXXX) qui l'ajoute à l'espace du client.</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-11</td><td class="what">Création de chantier</td><td class="desc">Par l'entreprise ou par le client : lieu, monnaie, budget, étapes à partir de modèles (construction, rénovation).</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-12</td><td class="what">Confier un chantier</td><td class="desc">Invitation d'une entreprise ou d'un proche par lien ou code, envoi par WhatsApp, reprise de la main par le client.</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-13</td><td class="what">Étapes</td><td class="desc">Durées prévues, démarrage, fin, validation par le client ; l'étape suivante démarre seule. Alerte quand une étape dépasse sa durée de plus de 20 %.</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-14</td><td class="what">Lien privé</td><td class="desc">Suivi sans compte, lien changeable à tout moment.</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-15</td><td class="what">Chantier livré</td><td class="desc">Clôture quand toutes les étapes sont validées.</td><td>Important</td><td><span class="chip ok">Fait</span></td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>4.3 Journal et preuves</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>Réf.</th><th>Fonction</th><th>Description</th><th>Priorité</th><th>État</th></tr></thead>
+      <tbody>
+        <tr><td class="id">F-20</td><td class="what">Publication</td><td class="desc">Jusqu'à 10 photos (JPEG, PNG, WebP, HEIC d'iPhone converti) et une phrase ; photos allégées sur le téléphone avant l'envoi.</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-21</td><td class="what">Photos vérifiées</td><td class="desc">Date de prise de vue et position lues dans la photo, position du téléphone comparée à celle du chantier ; statut « Vérifiée », « Vérification partielle » ou « À vérifier ».</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-22</td><td class="what">Publication sans réseau</td><td class="desc">La publication attend sur le téléphone et part seule au retour du réseau.</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-23</td><td class="what">Accusé de lecture</td><td class="desc">« Vu par … à … » pour chaque publication.</td><td>Important</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-25</td><td class="what">Rapport du jour</td><td class="desc">Travaux (écrits ou messages vocaux de 2 minutes), ouvriers présents, livraisons, météo, photos ; à vérifier par le dirigeant.</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-26</td><td class="what">Problèmes signalés</td><td class="desc">Accident, panne, retard, matériel manquant… ; visibles de l'équipe, montrés au client si le dirigeant le décide ; marqués résolus.</td><td>Important</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-27</td><td class="what">Livraisons</td><td class="desc">Matériaux reçus, listés par chantier et repris dans le rapport de la semaine.</td><td>Important</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-24</td><td class="what">Galerie de photos</td><td class="desc">Toutes les photos d'un chantier, datées.</td><td>Souhaitable</td><td><span class="chip ok">Fait</span></td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>4.4 Argent</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>Réf.</th><th>Fonction</th><th>Description</th><th>Priorité</th><th>État</th></tr></thead>
+      <tbody>
+        <tr><td class="id">F-30</td><td class="what">Devis et factures</td><td class="desc">Ajout, statut (signé, à régler, payée), totaux.</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-31</td><td class="what">Versements</td><td class="desc">Notés par le client (Wave, Orange Money, MTN MoMo, virement, espèces) ou par l'entreprise.</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-36</td><td class="what">Dépenses à approuver</td><td class="desc">Une dépense de l'équipe reste « En attente » jusqu'à l'approbation ; refusée, elle reste visible, barrée.</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-32</td><td class="what">Dépenses avec reçu</td><td class="desc">Notées par le gestionnaire avec la photo du reçu, par catégorie.</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-33</td><td class="what">Échéancier</td><td class="desc">Versement prévu à la validation de chaque étape.</td><td>Important</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-34</td><td class="what">Alerte versé / réalisé</td><td class="desc">Alerte quand le client a versé plus de 15 points au-delà de l'avancement réel.</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-35</td><td class="what">Historique inaltérable</td><td class="desc">Aucune ligne effacée : une annulation reste visible, avec auteur, date et motif.</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>4.5 Communication et services</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>Réf.</th><th>Fonction</th><th>Description</th><th>Priorité</th><th>État</th></tr></thead>
+      <tbody>
+        <tr><td class="id">F-40</td><td class="what">Rapport du lundi</td><td class="desc">Résumé de la semaine chaque lundi à 7 h (UTC), par e-mail et sur le lien privé. Envoi d'e-mails réel dès qu'un service (Brevo) est branché.</td><td>Important</td><td><span class="chip part">Partiel</span></td></tr>
+        <tr><td class="id">F-41</td><td class="what">Alerte nouvelle publication</td><td class="desc">E-mail au client (au plus un toutes les 3 heures), message WhatsApp prérempli.</td><td>Important</td><td><span class="chip part">Partiel</span></td></tr>
+        <tr><td class="id">F-42</td><td class="what">Visite de contrôle</td><td class="desc">Demande depuis l'espace client, transmise par e-mail à l'équipe. Réseau de contrôleurs sur place à constituer.</td><td>Important</td><td><span class="chip part">Partiel</span></td></tr>
+        <tr><td class="id">F-44</td><td class="what">Tableau du dirigeant</td><td class="desc">4 chiffres (chantiers, rapports à vérifier, dépenses en attente, chantiers à surveiller), avancement et budget côte à côte, « À traiter aujourd'hui », activité récente.</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-45</td><td class="what">Rapport PDF de la semaine</td><td class="desc">Sur fond blanc, avec photos, effectif moyen, dépenses et livraisons ; pour le dirigeant et le lien du client.</td><td>Important</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-43</td><td class="what">Notifications sur le téléphone</td><td class="desc">Notification immédiate à chaque publication, étape à valider ou alerte d'argent.</td><td>Important</td><td><span class="chip todo">À faire</span></td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>4.6 Offres et paiement</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>Réf.</th><th>Fonction</th><th>Description</th><th>Priorité</th><th>État</th></tr></thead>
+      <tbody>
+        <tr><td class="id">F-50</td><td class="what">Offres à deux payeurs</td><td class="desc">Client : Gratuit et Plus. Entreprise : Démarrage, PME, Pro (limites de chantiers et d'équipe). Deux mois d'essai sans carte.</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-51</td><td class="what">Paiement par carte</td><td class="desc">Stripe : euros TTC en Europe, dollars ailleurs, abonnement mensuel, portail client, webhook signé. Paiement simulé pour les tests. Reste : compte Stripe et structure juridique.</td><td>Indispensable</td><td><span class="chip part">Partiel</span></td></tr>
+        <tr><td class="id">F-52</td><td class="what">Mobile money</td><td class="desc">Orange Money, Wave, MTN MoMo par FedaPay, KkiaPay ou CinetPay. En attendant : activation à la main.</td><td>Important</td><td><span class="chip todo">À faire</span></td></tr>
+        <tr><td class="id">F-53</td><td class="what">Espace d'administration</td><td class="desc">Comptes, offres activées à la main, visites, paiements, images de la page d'accueil et galerie de vrais chantiers.</td><td>Important</td><td><span class="chip ok">Fait</span></td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>4.7 Interface</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>Réf.</th><th>Fonction</th><th>Description</th><th>Priorité</th><th>État</th></tr></thead>
+      <tbody>
+        <tr><td class="id">F-60</td><td class="what">Application installable</td><td class="desc">Icône sur l'écran d'accueil, plein écran, mise à jour automatique, écrans consultables hors connexion.</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-61</td><td class="what">Langues et monnaies</td><td class="desc">Français et anglais ; euro, FCFA XOF et XAF, monnaie choisie par chantier. Fon, arabe et chinois : à traduire par des locuteurs natifs.</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-62</td><td class="what">Thèmes</td><td class="desc">Clair, sombre ou celui de l'appareil.</td><td>Souhaitable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-63</td><td class="what">Cookies</td><td class="desc">Bandeau de consentement, choix gardé six mois.</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+        <tr><td class="id">F-64</td><td class="what">Compatibilité</td><td class="desc">Windows, Mac (avec zoom d'affichage), Android, iPhone, tablette ; aucune page plus large que l'écran.</td><td>Indispensable</td><td><span class="chip ok">Fait</span></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<section class="part" id="modele">
+  <div class="wrap">
+    <h2><span class="num">5.</span>Offres et modèle économique</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Offre</th><th>Pour qui</th><th>Prix</th><th>Contenu</th></tr></thead>
+      <tbody>
+        <tr><td class="what">Client Gratuit</td><td>Celui qui fait construire</td><td>0</td><td>Suivi des chantiers, photos vérifiées, validation des étapes, devis et rapports.</td></tr>
+        <tr><td class="what">Client Plus</td><td>Celui qui fait construire</td><td>9,99 € TTC ou 9,99 $</td><td>Suivi de l'argent et alertes, 5 proches ou personnes d'équipe, visites de contrôle.</td></tr>
+        <tr><td class="what">Démarrage</td><td>Artisan, petite entreprise</td><td>15 € TTC ou 17 $</td><td>3 chantiers, 3 personnes dans l'équipe.</td></tr>
+        <tr><td class="what">PME</td><td>Entreprise de 5 à 50 salariés</td><td>39 € TTC ou 45 $</td><td>10 chantiers, 15 personnes ; essai de deux mois.</td></tr>
+        <tr><td class="what">Pro</td><td>Multi-chantiers, bureaux d'études</td><td>79 € TTC ou 89 $</td><td>Illimité, aide par WhatsApp.</td></tr>
+        <tr><td class="what">Entreprise invitée</td><td>Chantier confié par un client</td><td>Gratuit</td><td>Le client paie ; l'entreprise publie sans abonnement.</td></tr>
+      </tbody>
+    </table></div>
+    <p>Principe : l'entreprise paie pour piloter ses chantiers, le client paie pour protéger son argent. Prix en euros TTC en Europe, en dollars ailleurs (usage des abonnements en ligne en Afrique), avec une indication en FCFA. Ce sont des hypothèses à confirmer pendant les entretiens. Revenus complémentaires : visites de contrôle, partenariats.</p>
+  </div>
+</section>
+
+<section class="part" id="technique">
+  <div class="wrap">
+    <h2><span class="num">6.</span>Exigences techniques</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Domaine</th><th>Choix ou exigence</th></tr></thead>
+      <tbody>
+        <tr><td class="what">Serveur</td><td>Node.js 22, Express ; base SQLite intégrée ; photos et reçus stockés sur le disque du serveur.</td></tr>
+        <tr><td class="what">Interface</td><td>HTML, CSS et JavaScript sans framework ; application installable (service worker, manifeste) ; polices Source Serif 4 et Geist.</td></tr>
+        <tr><td class="what">Hébergement</td><td>Un serveur Linux (Oracle Cloud gratuit ou Hetzner), Docker Compose, Caddy pour le HTTPS automatique ; installation, sauvegarde, mise à jour et retour en arrière en une commande. Test : machine virtuelle sur le PC et tunnel HTTPS Cloudflare (deploy/TEST-LOCAL.md).</td></tr>
+        <tr><td class="what">Réseau lent</td><td>Photos réduites avant l'envoi (quelques centaines de Ko), publication différée sans réseau, pages légères.</td></tr>
+        <tr><td class="what">Services externes</td><td>E-mails (Brevo), Google et Apple, annuaire public des entreprises (SIRET), Twilio Verify (codes WhatsApp et SMS), Stripe (cartes), plus tard un agrégateur de mobile money.</td></tr>
+        <tr><td class="what">Qualité</td><td>21 tests automatiques du serveur (dont équipe, téléphone, paiement, administration), parcours joués dans un navigateur, recette des écrans sur ordinateur et téléphone, en français et en anglais.</td></tr>
+        <tr><td class="what">Disponibilité</td><td>Surveillance de l'adresse /healthz ; redémarrage automatique du service.</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<section class="part" id="securite">
+  <div class="wrap">
+    <h2><span class="num">7.</span>Sécurité et données personnelles</h2>
+    <ul class="plain">
+      <li>Mots de passe chiffrés, blocage après 8 essais ratés, sessions protégées, HTTPS imposé en production.</li>
+      <li>Requêtes refusées si elles ne viennent pas du site ; limites de requêtes par adresse et par compte.</li>
+      <li>Photos et reçus visibles seulement par les personnes du chantier ; contenu réel des fichiers contrôlé.</li>
+      <li>Position exacte du chantier jamais envoyée au lien privé.</li>
+      <li>Export et suppression des données (RGPD) ; consentement aux cookies.</li>
+      <li>Dépendances sans faille connue à la date du document ; contrôle mensuel prévu.</li>
+      <li>Fichiers envoyés (photos, vocaux) contrôlés par leur contenu ; problèmes et vocaux internes jamais servis au lien du client ; signature des événements de paiement vérifiée.</li>
+      <li>À compléter avant l'ouverture : pages légales, CGU et CGV, registre des traitements, déclarations auprès des autorités locales de protection des données (APDP au Bénin, CDP au Sénégal, ARTCI en Côte d'Ivoire…).</li>
+    </ul>
+  </div>
+</section>
+
+<section class="part" id="contraintes">
+  <div class="wrap">
+    <h2><span class="num">8.</span>Contraintes, risques et hypothèses</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Risque</th><th>Conséquence</th><th>Réponse prévue</th></tr></thead>
+      <tbody>
+        <tr><td class="what">Les entreprises ne publient pas</td><td>Le client ne voit rien, l'application perd son intérêt.</td><td>Gratuit pour elles, publication en trente secondes, rapport automatique ; test pilote pour le mesurer.</td></tr>
+        <tr><td class="what">Fraude sur les photos</td><td>Fausse position ou photo retouchée.</td><td>Vérification date et lieu, visites de contrôle ; plus tard, signature des photos par une application native.</td></tr>
+        <tr><td class="what">Réseau faible sur le chantier</td><td>Publications perdues ou impossibles.</td><td>Publication différée et photos allégées (fait).</td></tr>
+        <tr><td class="what">Paiement mobile</td><td>Intégration Orange Money, Wave, MTN variable selon les pays.</td><td>Passer par un agrégateur couvrant l'Afrique de l'Ouest et centrale.</td></tr>
+        <tr><td class="what">Cadre légal</td><td>Encaissement impossible sans structure.</td><td>Créer une micro-entreprise ou une société avant le paiement en ligne.</td></tr>
+        <tr><td class="what">Adoption par les chefs de chantier</td><td>Sans rapport, le dirigeant et le client ne voient rien.</td><td>Écran très simple, messages vocaux, gros boutons, hors connexion (fait) ; test terrain avec le réseau de Jean-Baptiste.</td></tr>
+        <tr><td class="what">Coût des codes WhatsApp et SMS</td><td>Chaque code coûte quelques francs CFA.</td><td>À intégrer dans le prix ; connexion par e-mail toujours possible.</td></tr>
+        <tr><td class="what">Concurrence de WhatsApp</td><td>Habitude gratuite et déjà installée.</td><td>Apporter ce que WhatsApp ne donne pas : preuves, étapes, argent suivi, historique.</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<section class="part" id="planning">
+  <div class="wrap">
+    <h2><span class="num">9.</span>Planning et livrables</h2>
+    <ol class="phases">
+      <li><div><b>Maintenant</b><span>novembre 2026</span></div><p>Comptes Instagram, Facebook, TikTok et WhatsApp Business (kit de lancement) ; liste d'attente ; 10 entretiens ; test local sur PC avec de vrais comptes.</p></li>
+      <li><div><b>29 novembre</b><span>décision</span></div><p>Continuer ou changer d'angle, d'après les entretiens. Nom définitif (Archfield ou SuiviBat) et pacte d'associés.</p></li>
+      <li><div><b>Décembre</b><span>3 à 4 semaines</span></div><p>Mise en ligne : serveur, nom de domaine, HTTPS, e-mails, codes WhatsApp et SMS, pages légales.</p></li>
+      <li><div><b>Janvier</b><span>4 à 6 semaines</span></div><p>Pilote : 3 entreprises au Bénin et 5 clients de la diaspora ; corrections chaque semaine.</p></li>
+      <li><div><b>Février</b><span>ensuite</span></div><p>Structure juridique, paiement par carte réel, mobile money, ouverture au public et publicité payante.</p></li>
+    </ol>
+    <p>Livrables : le code source (dépôt GitHub), les guides d'hébergement, de test local, de paiement, de téléphone et de sécurité, les scripts d'installation et de sauvegarde, la vidéo de présentation, le kit de lancement et ce cahier des charges.</p>
+  </div>
+</section>
+
+<section class="part" id="reussite">
+  <div class="wrap">
+    <h2><span class="num">10.</span>Critères de réussite du test</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Indicateur</th><th>Objectif</th></tr></thead>
+      <tbody>
+        <tr><td class="what">Publications par chantier</td><td>Au moins une par semaine sur chaque chantier suivi.</td></tr>
+        <tr><td class="what">Clients actifs</td><td>Au moins 70 % des clients ouvrent leur suivi chaque semaine.</td></tr>
+        <tr><td class="what">Photos vérifiées</td><td>Au moins 60 % des publications marquées « Vérifiée ».</td></tr>
+        <tr><td class="what">Intention de payer</td><td>Au moins 30 % des clients prêts à payer l'offre Plus, idéalement par un premier paiement réel.</td></tr>
+        <tr><td class="what">Satisfaction des entreprises</td><td>La majorité continue à publier après le test sans relance.</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<section class="part" id="ameliorations">
+  <div class="wrap">
+    <h2><span class="num">11.</span>Pôles d'amélioration</h2>
+    <div class="legend"><span>Priorité :</span><span class="chip p1">P1</span><span>avant l'ouverture</span><span class="chip part">P2</span><span>premiers mois</span><span class="chip todo">P3</span><span>plus tard · Effort : S (jours), M (1 à 2 semaines), L (plusieurs semaines)</span></div>
+
+    <h3>11.1 Produit</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>Priorité</th><th>Amélioration</th><th>Pourquoi</th><th>Effort</th></tr></thead>
+      <tbody>
+        <tr><td><span class="chip p1">P1</span></td><td class="what">Mobile money</td><td>Orange Money, Wave, MTN MoMo : la carte (Stripe) est prête, le mobile money manque.</td><td>M</td></tr>
+        <tr><td><span class="chip p1">P1</span></td><td class="what">Comptes Stripe et Twilio réels</td><td>Le code est prêt ; il faut une structure juridique et les clés.</td><td>S</td></tr>
+        <tr><td><span class="chip p1">P1</span></td><td class="what">Notifications sur le téléphone</td><td>Le client doit être prévenu tout de suite, sans dépendre de l'e-mail.</td><td>M</td></tr>
+        <tr><td><span class="chip part">P2</span></td><td class="what">Messages WhatsApp automatiques</td><td>Le canal que tout le monde lit en Afrique (WhatsApp Business, payant au message).</td><td>M</td></tr>
+        <tr><td><span class="chip part">P2</span></td><td class="what">Fon, arabe, chinois</td><td>Prévus par SuiviBat ; à traduire par des locuteurs natifs, l'arabe s'affiche de droite à gauche.</td><td>M</td></tr>
+        <tr><td><span class="chip part">P2</span></td><td class="what">Réseau de contrôleurs</td><td>Rendre les visites de contrôle réelles dans chaque grande ville.</td><td>L</td></tr>
+        <tr><td><span class="chip part">P2</span></td><td class="what">Documents locaux</td><td>Attachements, situations de travaux, PV de réception (idée de SuiviBat).</td><td>M</td></tr>
+        <tr><td><span class="chip todo">P3</span></td><td class="what">Annuaire d'entreprises fiables</td><td>Indice de fiabilité calculé sur les chantiers livrés (code déjà présent, masqué).</td><td>L</td></tr>
+        <tr><td><span class="chip todo">P3</span></td><td class="what">Messagerie intégrée</td><td>Échanges liés au chantier, gardés dans l'historique.</td><td>M</td></tr>
+        <tr><td><span class="chip todo">P3</span></td><td class="what">Comparaison de devis</td><td>Aider le client à choisir son entreprise.</td><td>M</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>11.2 Technique et sécurité</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>Priorité</th><th>Amélioration</th><th>Pourquoi</th><th>Effort</th></tr></thead>
+      <tbody>
+        <tr><td><span class="chip p1">P1</span></td><td class="what">Double authentification</td><td>Protéger les comptes qui suivent beaucoup d'argent.</td><td>M</td></tr>
+        <tr><td><span class="chip p1">P1</span></td><td class="what">Sauvegardes chiffrées hors serveur</td><td>Ne rien perdre si le serveur tombe.</td><td>S</td></tr>
+        <tr><td><span class="chip p1">P1</span></td><td class="what">Tests automatiques à chaque envoi</td><td>Intégration continue sur GitHub : aucune régression ne part en ligne.</td><td>S</td></tr>
+        <tr><td><span class="chip part">P2</span></td><td class="what">E-mails en anglais</td><td>Le site est bilingue, les e-mails partent encore en français.</td><td>S</td></tr>
+        <tr><td><span class="chip part">P2</span></td><td class="what">Audit d'accessibilité</td><td>Contrastes, lecteurs d'écran, navigation au clavier.</td><td>M</td></tr>
+        <tr><td><span class="chip part">P2</span></td><td class="what">Test d'intrusion</td><td>Contrôle de sécurité indépendant avant une forte croissance.</td><td>M</td></tr>
+        <tr><td><span class="chip todo">P3</span></td><td class="what">Base PostgreSQL et stockage des photos dans le cloud</td><td>Au-delà de quelques centaines de chantiers actifs.</td><td>L</td></tr>
+        <tr><td><span class="chip todo">P3</span></td><td class="what">Application native et photos signées</td><td>Preuve renforcée et présence sur les stores.</td><td>L</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>11.3 Contenu, image et organisation</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>Priorité</th><th>Amélioration</th><th>Pourquoi</th><th>Effort</th></tr></thead>
+      <tbody>
+        <tr><td><span class="chip p1">P1</span></td><td class="what">Vraies photos de chantier</td><td>À ajouter depuis l'administration (galerie de la page d'accueil, captures) et pour les réseaux sociaux.</td><td>S</td></tr>
+        <tr><td><span class="chip p1">P1</span></td><td class="what">Nom et marque</td><td>Trancher Archfield ou SuiviBat, réserver le domaine et les comptes, vérifier la marque (INPI, OAPI).</td><td>S</td></tr>
+        <tr><td><span class="chip p1">P1</span></td><td class="what">Pages légales, CGU et CGV</td><td>Obligatoires dès l'ouverture au public et le premier paiement.</td><td>M</td></tr>
+        <tr><td><span class="chip p1">P1</span></td><td class="what">Structure juridique</td><td>Nécessaire pour encaisser et pour les comptes de paiement.</td><td>S</td></tr>
+        <tr><td><span class="chip part">P2</span></td><td class="what">Wolof et autres langues locales</td><td>Pour les proches et les ouvriers sur place (le message vocal aide déjà).</td><td>M</td></tr>
+        <tr><td><span class="chip part">P2</span></td><td class="what">Guide de démarrage</td><td>Accompagner la première publication et la première validation.</td><td>S</td></tr>
+        <tr><td><span class="chip todo">P3</span></td><td class="what">Partenariats</td><td>Promoteurs immobiliers, banques, services de transfert d'argent, associations de la diaspora.</td><td>L</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<footer><div class="wrap">Cahier des charges Archfield · version 2.0 · 6 novembre 2026. Les états « Fait » correspondent à la version présente dans le dépôt du projet à cette date.</div></footer>

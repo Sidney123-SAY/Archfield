@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Archfield · visuels réseaux sociaux</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Source+Serif+4:opsz,ital,wght@8..60,0,400;8..60,0,500;8..60,1,400&display=swap">
+<style>
+/* Visuels des comptes Archfield, exportés un par un par tools/kit.js (chaque .ab est une image). */
+:root { --navy: #14263D; --navy2: #0E1B2C; --paper: #F4F2EE; --ink: #14263D; --muted: #5D6570; --line: #E4E0D8; --orange: #C2410C; --peche: #F0A27A;
+  --vert: #26774B; --vert-soft: #E2F1E7; --ambre-soft: #FCF1DB; --ambre-ink: #7A4E06; --bleu: #4C7BC2; --serif: "Source Serif 4", Georgia, serif; --sans: "Geist", sans-serif; }
+* { box-sizing: border-box; margin: 0; }
+body { background: #555; font-family: var(--sans); display: grid; gap: 40px; padding: 40px; justify-items: start; }
+.ab { position: relative; overflow: hidden; color: var(--ink); background: var(--paper); }
+.dk { background: var(--navy); color: #fff; }
+.sq { width: 1080px; height: 1080px; }
+.post { width: 1080px; height: 1350px; padding: 90px; display: flex; flex-direction: column; }
+.story { width: 1080px; height: 1920px; padding: 260px 90px 260px; display: flex; flex-direction: column; }
+.story .h { font-size: 118px; } .story .h2 { font-size: 96px; } .story .p { font-size: 44px; } .story .li { font-size: 46px; } .story .k { font-size: 34px; }
+.k { font: 600 28px/1 var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--orange); }
+.dk .k { color: var(--peche); }
+.h { font: 500 92px/1.03 var(--serif); letter-spacing: -.02em; }
+.h2 { font: 500 76px/1.06 var(--serif); letter-spacing: -.015em; }
+.p { font: 400 36px/1.4 var(--sans); color: var(--muted); }
+.dk .p { color: #C9D2DD; }
+.foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; font: 600 28px var(--sans); color: var(--muted); }
+.dk .foot { color: #A9B4C2; }
+.brand { display: inline-flex; align-items: center; gap: 14px; font: 600 34px var(--serif); color: var(--ink); }
+.dk .brand { color: #fff; }
+.logo path { fill: none; stroke: var(--orange); stroke-width: 4; }
+.dk .logo g { fill: #fff; } .logo g { fill: var(--ink); }
+.facade .st { opacity: 1 !important; clip-path: none !important; transition: none !important; }
+.facade .scaffold { opacity: 0 !important; }
+.card { background: #fff; border: 1px solid var(--line); border-radius: 28px; padding: 34px 38px; }
+.chip { display: inline-flex; align-items: center; gap: 12px; border-radius: 999px; padding: 12px 22px; font: 600 28px var(--sans); white-space: nowrap; }
+.g { background: var(--vert-soft); color: var(--vert); } .a { background: var(--ambre-soft); color: var(--ambre-ink); } .w { background: #fff; border: 1px solid var(--line); }
+.badge { display: flex; gap: 16px; align-items: center; border-radius: 22px; padding: 24px 28px; font: 600 34px/1.25 var(--sans); }
+.row { display: grid; grid-template-columns: 200px 1fr 120px; align-items: center; gap: 26px; font: 600 36px var(--sans); }
+.row .t { height: 26px; border-radius: 13px; background: #ECE8E0; overflow: hidden; } .row .t i { display: block; height: 100%; border-radius: 13px; }
+.phone { width: 520px; border-radius: 70px; background: #0B111A; padding: 18px; box-shadow: 0 40px 80px rgba(20,38,61,.28); }
+.phone .scr { border-radius: 54px; background: var(--paper); padding: 70px 28px 34px; display: grid; gap: 20px; }
+.blk { background: #fff; border: 1px solid var(--line); border-radius: 24px; padding: 20px 22px; display: grid; gap: 14px; }
+.blk b { font: 700 24px var(--sans); }
+.voice { display: flex; align-items: center; gap: 14px; background: var(--paper); border-radius: 18px; padding: 12px 14px; }
+.play { width: 50px; height: 50px; border-radius: 50%; background: var(--vert); display: grid; place-items: center; flex: none; }
+.wave { flex: 1; display: flex; align-items: center; gap: 4px; height: 46px; } .wave i { flex: 1; background: var(--vert); border-radius: 3px; opacity: .75; }
+.kp { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.kp div { background: #fff; border: 1px solid var(--line); border-radius: 24px; padding: 28px 30px; display: grid; gap: 10px; font: 500 28px var(--sans); color: var(--muted); }
+.kp b { font: 700 84px var(--sans); color: var(--ink); line-height: 1; }
+.kp .at { border-color: #E9C98A; } .kp .hot { border-color: #E9A889; } .kp .hot b { color: var(--orange); }
+.who { display: flex; gap: 28px; align-items: center; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); border-radius: 28px; padding: 30px 34px; }
+.who .ico { width: 92px; height: 92px; border-radius: 24px; background: rgba(240,162,122,.16); display: grid; place-items: center; flex: none; }
+.who h3 { font: 500 46px/1.1 var(--serif); } .who p { font: 400 28px/1.35 var(--sans); color: #C9D2DD; margin-top: 6px; }
+.list { display: grid; gap: 26px; }
+.li { display: flex; gap: 24px; align-items: flex-start; font: 500 40px/1.3 var(--sans); }
+.li .n { flex: none; width: 60px; height: 60px; border-radius: 50%; background: var(--orange); color: #fff; display: grid; place-items: center; font: 700 30px var(--sans); }
+.dk .li .n { background: var(--peche); color: var(--navy); }
+.quote { font: 400 64px/1.2 var(--serif); font-style: italic; }
+.bubble { background: #fff; border-radius: 28px; padding: 26px 32px; font: 400 38px/1.35 var(--sans); box-shadow: 0 2px 2px rgba(0,0,0,.08); max-width: 760px; }
+.bubble small { display: block; text-align: right; color: #8A8F96; font-size: 24px; margin-top: 6px; }
+.chat { background: #E9E4DA; border-radius: 36px; padding: 40px; display: grid; gap: 22px; }
+.blur { height: 260px; border-radius: 16px; background: linear-gradient(135deg, #b7a58a, #8d8270 40%, #c9bfae); filter: blur(9px); margin-bottom: 14px; }
+.cta { display: inline-block; background: var(--orange); color: #fff; border-radius: 18px; padding: 26px 44px; font: 700 40px var(--sans); }
+.word { font: 600 150px/1 var(--serif); letter-spacing: -.03em; }
+.sticker { border: 3px dashed rgba(255,255,255,.35); border-radius: 30px; height: 300px; display: grid; place-items: center; color: rgba(255,255,255,.5); font: 500 30px var(--sans); text-align: center; padding: 20px; }
+</style>
+</head>
+<body>
+
+<!-- Photo de profil (Instagram, Facebook, TikTok, WhatsApp Business) : le logo reste lisible dans le rond. -->
+<div class="ab dk sq" id="profil" style="display:grid;place-items:center">
+  <svg class="logo" width="620" height="620" viewBox="0 0 32 32"><path d="M7 27V15a9 9 0 0 1 18 0v12" stroke-width="4"/><g><rect x="11" y="21" width="2.6" height="6"/><rect x="14.7" y="18" width="2.6" height="9"/><rect x="18.4" y="15" width="2.6" height="12"/><rect x="3" y="27" width="26" height="2.4" rx="1"/></g></svg>
+</div>
+
+<!-- Couverture Facebook (1640 × 624) : l'essentiel au centre, les côtés sont coupés sur téléphone. -->
+<div class="ab dk" id="couverture-facebook" style="width:1640px;height:624px">
+  <div style="position:absolute;left:230px;top:140px;width:640px;display:grid;gap:22px">
+    <p class="k">Suivi de chantier à distance</p>
+    <p style="font:500 74px/1.04 var(--serif)">Votre chantier, comme si vous y étiez.</p>
+    <p class="p" style="font-size:28px">Photos vérifiées · Rapport du jour · Argent suivi</p>
+  </div>
+  <div style="position:absolute;left:900px;top:80px;width:600px">{{FACADE}}</div>
+</div>
+
+<!-- Bannière LinkedIn (1584 × 396) -->
+<div class="ab dk" id="banniere-linkedin" style="width:1584px;height:396px">
+  <div style="position:absolute;left:470px;top:90px;width:560px;display:grid;gap:16px">
+    <p class="k" style="font-size:22px">Archfield</p>
+    <p style="font:500 54px/1.06 var(--serif)">Votre chantier, comme si vous y étiez.</p>
+  </div>
+  <div style="position:absolute;left:1060px;top:40px;width:470px">{{FACADE}}</div>
+</div>
+
+<!-- 1. La marque -->
+<div class="ab dk post" id="post-01-marque">
+  <svg class="logo" width="150" height="150" viewBox="0 0 32 32"><path d="M7 27V15a9 9 0 0 1 18 0v12"/><g><rect x="11" y="21" width="2.6" height="6"/><rect x="14.7" y="18" width="2.6" height="9"/><rect x="18.4" y="15" width="2.6" height="12"/><rect x="3" y="27" width="26" height="2.4" rx="1"/></g></svg>
+  <p class="word" style="margin-top:150px">Archfield</p>
+  <p class="h2" style="margin-top:40px;font-style:italic;font-weight:400;color:#E6EAF0">Votre chantier, comme si vous y étiez.</p>
+  <p class="p" style="margin-top:46px">Suivi de chantier et d'argent à distance, pour la diaspora, les entreprises du BTP et tous ceux qui ne peuvent pas être sur place.</p>
+  <div class="foot"><span>Bientôt disponible</span><span style="color:var(--peche)">Abonnez-vous</span></div>
+</div>
+
+<!-- 2. Le problème -->
+<div class="ab post" id="post-02-probleme">
+  <p class="k">Le problème</p>
+  <div class="chat" style="margin-top:50px">
+    <div class="bubble"><div class="blur"></div>Les murs avancent bien.<small>10:42</small></div>
+    <div class="bubble">Il faut encore 500 000 FCFA pour le ciment.<small>10:43</small></div>
+  </div>
+  <p class="h2" style="margin-top:60px">Et vous, vous voyez quoi&nbsp;?</p>
+  <div class="foot"><span class="brand"><svg class="logo" width="44" height="44" viewBox="0 0 32 32"><path d="M7 27V15a9 9 0 0 1 18 0v12"/><g><rect x="11" y="21" width="2.6" height="6"/><rect x="14.7" y="18" width="2.6" height="9"/><rect x="18.4" y="15" width="2.6" height="12"/><rect x="3" y="27" width="26" height="2.4" rx="1"/></g></svg>Archfield</span><span>Construire de loin</span></div>
+</div>
+
+<!-- 3. Photos vérifiées -->
+<div class="ab post" id="post-03-photos">
+  <p class="k">Photos vérifiées</p>
+  <p class="h2" style="margin-top:26px">Chaque photo garde sa date et son lieu.</p>
+  <div style="margin-top:50px;position:relative;border-radius:30px;overflow:hidden;background:var(--navy);padding:50px 40px 90px">{{FACADE}}<span style="position:absolute;left:28px;bottom:26px;background:rgba(0,0,0,.6);color:#fff;font:600 28px var(--sans);padding:10px 18px;border-radius:12px">06/11/2026 · 10:42 · à 18 m du chantier</span></div>
+  <div class="badge g" style="margin-top:34px"><svg width="40" height="40" viewBox="0 0 18 18"><circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="m5.8 9.2 2.2 2.2 4.2-4.6" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>Vérifiée : photo récente, prise sur le chantier</div>
+  <div class="badge a" style="margin-top:18px"><svg width="40" height="40" viewBox="0 0 18 18"><path d="M9 2.5 16 15H2z" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M9 7v3.5" stroke="currentColor" stroke-width="1.6"/></svg>Ancienne ou prise ailleurs : « À vérifier »</div>
+  <div class="foot"><span class="brand"><svg class="logo" width="44" height="44" viewBox="0 0 32 32"><path d="M7 27V15a9 9 0 0 1 18 0v12"/><g><rect x="11" y="21" width="2.6" height="6"/><rect x="14.7" y="18" width="2.6" height="9"/><rect x="18.4" y="15" width="2.6" height="12"/><rect x="3" y="27" width="26" height="2.4" rx="1"/></g></svg>Archfield</span><span>Photos vérifiées</span></div>
+</div>
+
+<!-- 4. L'argent -->
+<div class="ab post" id="post-04-argent">
+  <p class="k">L'argent du chantier</p>
+  <p class="h" style="margin-top:26px">Ne payez plus avant que ce soit construit.</p>
+  <div class="card" style="margin-top:70px;display:grid;gap:34px">
+    <div class="row"><span>Versé</span><span class="t"><i style="width:45%;background:var(--orange)"></i></span><span style="text-align:right">45 %</span></div>
+    <div class="row"><span>Réalisé</span><span class="t"><i style="width:31%;background:var(--vert)"></i></span><span style="text-align:right">31 %</span></div>
+    <div class="badge a" style="font-size:30px">Alerte : vous avez versé plus que ce qui est construit.</div>
+  </div>
+  <p class="p" style="margin-top:44px">Chaque étape validée avant le versement suivant. Chaque dépense avec son reçu.</p>
+  <div class="foot"><span class="brand"><svg class="logo" width="44" height="44" viewBox="0 0 32 32"><path d="M7 27V15a9 9 0 0 1 18 0v12"/><g><rect x="11" y="21" width="2.6" height="6"/><rect x="14.7" y="18" width="2.6" height="9"/><rect x="18.4" y="15" width="2.6" height="12"/><rect x="3" y="27" width="26" height="2.4" rx="1"/></g></svg>Archfield</span><span>Argent suivi</span></div>
+</div>
+
+<!-- 5. Le rapport du jour -->
+<div class="ab post" id="post-05-rapport" style="flex-direction:row;gap:60px;align-items:center;padding:80px">
+  <div class="phone" style="flex:none;width:470px"><div class="scr">
+    <p style="font:500 36px var(--serif)">Rapport du jour</p>
+    <div class="blk"><b>Qu'avez-vous fait aujourd'hui ?</b><div class="voice"><span class="play"><svg width="20" height="20" viewBox="0 0 20 20"><path d="M6 4l10 6-10 6z" fill="#fff"/></svg></span><span class="wave">{{WAVE}}</span><b>0:42</b></div></div>
+    <div class="blk"><b>Ouvriers présents</b><p style="font:700 60px var(--sans);text-align:center">12</p></div>
+    <div class="blk"><b>Livraisons reçues</b><span class="chip w" style="justify-self:start;font-size:24px">50 sacs de ciment</span></div>
+    <div style="background:var(--vert);color:#fff;border-radius:20px;padding:22px;font:700 26px var(--sans);text-align:center">Transmettre le rapport</div>
+  </div></div>
+  <div style="display:grid;gap:30px">
+    <p class="k">Sur le chantier</p>
+    <p class="h2" style="font-size:66px">Le rapport du jour, en deux minutes, en parlant.</p>
+    <p class="p" style="font-size:32px">Messages vocaux, ouvriers, livraisons, météo, photos. Même sans réseau.</p>
+  </div>
+</div>
+
+<!-- 6. Le dirigeant -->
+<div class="ab post" id="post-06-dirigeant">
+  <p class="k">Pour les entreprises du BTP</p>
+  <p class="h2" style="margin-top:26px">Tous vos chantiers, d'un coup d'œil.</p>
+  <div class="kp" style="margin-top:60px">
+    <div>Chantiers en cours<b>5</b></div><div class="at">Rapports à vérifier<b>2</b></div>
+    <div class="at">Dépenses à approuver<b>4</b></div><div class="hot">Chantiers à surveiller<b>2</b></div>
+  </div>
+  <p class="p" style="margin-top:50px">Votre équipe envoie le rapport du jour. Vous vérifiez, vous approuvez les dépenses, votre client reçoit un PDF chaque semaine.</p>
+  <div class="foot"><span class="brand"><svg class="logo" width="44" height="44" viewBox="0 0 32 32"><path d="M7 27V15a9 9 0 0 1 18 0v12"/><g><rect x="11" y="21" width="2.6" height="6"/><rect x="14.7" y="18" width="2.6" height="9"/><rect x="18.4" y="15" width="2.6" height="12"/><rect x="3" y="27" width="26" height="2.4" rx="1"/></g></svg>Archfield</span><span>Entreprises du BTP</span></div>
+</div>
+
+<!-- 7. Trois espaces -->
+<div class="ab dk post" id="post-07-trois">
+  <p class="k">Un seul chantier</p>
+  <p class="h2" style="margin-top:26px">Chacun voit ce dont il a besoin.</p>
+  <div style="display:grid;gap:26px;margin-top:60px">
+    <div class="who"><span class="ico"><svg width="46" height="46" viewBox="0 0 18 18"><path d="M2.5 6h3l1.4-2h4.2L12.5 6h3v9h-13z" stroke="#F0A27A" stroke-width="1.4" fill="none"/><circle cx="9" cy="10.2" r="2.6" stroke="#F0A27A" stroke-width="1.4" fill="none"/></svg></span><div><h3>Le chef de chantier</h3><p>Rapport du jour, photos, dépenses, problèmes.</p></div></div>
+    <div class="who"><span class="ico"><svg width="46" height="46" viewBox="0 0 18 18"><path d="M3 15h12M5 12V8M9 12V4M13 12V9" stroke="#F0A27A" stroke-width="1.5" fill="none"/></svg></span><div><h3>Le dirigeant</h3><p>Vérifie, approuve, envoie le rapport PDF.</p></div></div>
+    <div class="who"><span class="ico"><svg width="46" height="46" viewBox="0 0 18 18"><path d="M3 8.5 9 3.5l6 5V15H11v-4H7v4H3z" stroke="#F0A27A" stroke-width="1.5" fill="none"/></svg></span><div><h3>Le client</h3><p>Suit, valide chaque étape, paie au bon moment.</p></div></div>
+  </div>
+</div>
+
+<!-- 8. Pour qui -->
+<div class="ab post" id="post-08-pour-qui">
+  <p class="k">Archfield est fait pour vous si…</p>
+  <div class="list" style="margin-top:60px">
+    <div class="li"><span class="n">1</span>Vous faites construire au pays et vous vivez en Europe ou en Amérique.</div>
+    <div class="li"><span class="n">2</span>Vous vivez en Afrique, mais vous n'avez pas le temps d'aller sur le chantier.</div>
+    <div class="li"><span class="n">3</span>Votre terrain est loin de la ville où vous travaillez.</div>
+    <div class="li"><span class="n">4</span>Vous dirigez une entreprise du BTP et vous voulez suivre toutes vos équipes.</div>
+  </div>
+  <div class="foot"><span>Bénin · Sénégal · Côte d'Ivoire · Cameroun · diaspora</span></div>
+</div>
+
+<!-- 9. Lancement -->
+<div class="ab dk post" id="post-09-lancement">
+  <p class="k">Bientôt disponible</p>
+  <p class="h" style="margin-top:30px">Soyez parmi les premiers.</p>
+  <p class="p" style="margin-top:40px">Nous ouvrons Archfield à quelques chantiers pour le tester avec nous. Deux mois offerts, sans carte bancaire.</p>
+  <div style="margin-top:70px"><span class="cta">Écrivez-nous « CHANTIER »</span></div>
+  <p class="p" style="margin-top:30px;font-size:30px">en message privé ou sur WhatsApp</p>
+  <div class="foot"><span class="brand">Archfield</span><span>Votre argent mérite des preuves.</span></div>
+</div>
+
+<!-- Stories (1080 × 1920) : la zone en pointillés reçoit l'autocollant Instagram (sondage, question, lien). -->
+<div class="ab dk story" id="story-01-sondage">
+  <p class="k">Question</p>
+  <p class="h" style="margin-top:40px">Vous faites construire au pays&nbsp;?</p>
+  <p class="p" style="margin-top:40px">Comment savez-vous où en sont les travaux&nbsp;?</p>
+  <div class="sticker" style="margin-top:90px">Ajoutez ici l'autocollant « Sondage » : « Par des photos WhatsApp » / « Je ne sais pas vraiment »</div>
+  <div class="foot" style="justify-content:center"><span class="brand">Archfield</span></div>
+</div>
+<div class="ab story" id="story-02-comment">
+  <p class="k">Comment ça marche</p>
+  <p class="h2" style="margin-top:36px">Trois étapes, depuis votre téléphone.</p>
+  <div class="list" style="margin-top:80px;gap:44px">
+    <div class="li"><span class="n">1</span>Le chef de chantier envoie le rapport du jour : photos datées, vocal, livraisons.</div>
+    <div class="li"><span class="n">2</span>Vous voyez ce qui est construit et ce que devient votre argent.</div>
+    <div class="li"><span class="n">3</span>Vous validez l'étape, puis vous payez la suivante. Pas avant.</div>
+  </div>
+  <div class="foot" style="justify-content:center"><span class="brand">Archfield</span></div>
+</div>
+<div class="ab dk story" id="story-03-liste">
+  <p class="k">Bientôt disponible</p>
+  <p class="h" style="margin-top:40px">Votre argent mérite des preuves.</p>
+  <p class="p" style="margin-top:40px">Deux mois offerts aux premiers chantiers.</p>
+  <div class="sticker" style="margin-top:90px">Ajoutez ici l'autocollant « Lien » (liste d'attente) ou « Question » : « Où faites-vous construire ? »</div>
+  <div class="foot" style="justify-content:center"><span class="cta" style="font-size:34px">Écrivez « CHANTIER »</span></div>
+</div>
+</body>
+</html>

@@ -1,3 +1,5 @@
+> **Ancienne version (avant la fusion avec SuiviBat).** Les textes et visuels à jour sont dans `marketing/kit/` : ouvrez `kit-lancement.html` ou `archfield-kit-de-lancement.pdf`.
+
 # Textes pour les visuels Archfield
 
 Visuels : `archfield-post-apercu.png` et `archfield-post-diaspora.png` (posts Instagram 4:5),
