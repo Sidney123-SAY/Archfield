@@ -164,7 +164,9 @@ test("rapport du lundi : relance de l'artisan resté muet, une seule fois", asyn
   const f = new FormData(); f.append("text", "Tuyaux posés.");
   const up = (await call("POST", `/api/sites/${s.id}/updates`, undefined, { form: f })).data;
   const nextMonday = monday + 7 * 864e5;
-  require("../server/db").run("UPDATE updates SET created_at = ? WHERE id = ?", new Date(nextMonday - 3 * 864e5).toISOString(), up.id);
+  // Publiée dans la semaine que couvre ce rapport (avant le lundi qui la clôt), quel que soit le jour où le test tourne.
+  const { lastMonday } = require("../server/reports");
+  require("../server/db").run("UPDATE updates SET created_at = ? WHERE id = ?", new Date(lastMonday(nextMonday).getTime() - 3 * 864e5).toISOString(), up.id);
   assert.ok(await sendReport(site(), false, nextMonday));
   assert.equal(relances().length, before + 1);
 });

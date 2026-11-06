@@ -13,7 +13,7 @@ db.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;");
 db.exec(`
 CREATE TABLE IF NOT EXISTS artisans (
   id INTEGER PRIMARY KEY,
-  email TEXT NOT NULL UNIQUE,
+  email TEXT UNIQUE,
   password_hash TEXT NOT NULL,
   company TEXT NOT NULL,
   contact_name TEXT NOT NULL,
@@ -223,6 +223,135 @@ addColumn("sites", "position_confirmed_by", "TEXT");
 
 // Monnaie propre au chantier : un client à Paris peut construire en FCFA à Thiès.
 db.exec("UPDATE sites SET currency = (SELECT currency FROM artisans WHERE artisans.id = sites.artisan_id) WHERE currency IS NULL");
+
+// Compte ouvert avec un numéro de téléphone seulement : l'e-mail devient facultatif. SQLite ne sait pas retirer
+// un NOT NULL : la table est reconstruite (procédure officielle, clés étrangères suspendues le temps de la copie).
+if (db.prepare("PRAGMA table_info(artisans)").all().find((c) => c.name === "email").notnull) {
+  const cols = db.prepare("PRAGMA table_info(artisans)").all().map((c) => c.name).join(", ");
+  const sql = db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'artisans'").get().sql;
+  db.exec("PRAGMA foreign_keys = OFF");
+  try {
+    db.exec("BEGIN");
+    db.exec(sql.replace(/email TEXT NOT NULL UNIQUE/, "email TEXT UNIQUE").replace(/CREATE TABLE (IF NOT EXISTS )?"?artisans"?/, "CREATE TABLE artisans_new"));
+    db.exec(`INSERT INTO artisans_new (${cols}) SELECT ${cols} FROM artisans`);
+    db.exec("DROP TABLE artisans");
+    db.exec("ALTER TABLE artisans_new RENAME TO artisans");
+    db.exec("COMMIT");
+  } catch (e) { db.exec("ROLLBACK"); throw e; } finally { db.exec("PRAGMA foreign_keys = ON"); }
+}
+addColumn("artisans", "phone", "TEXT");
+addColumn("artisans", "phone_verified_at", "TEXT");
+addColumn("artisans", "is_admin", "INTEGER NOT NULL DEFAULT 0");
+// Abonnement payé par carte (Stripe) ou activé à la main par l'équipe.
+addColumn("artisans", "stripe_customer_id", "TEXT");
+addColumn("artisans", "stripe_subscription_id", "TEXT");
+addColumn("artisans", "sub_status", "TEXT");
+addColumn("artisans", "sub_currency", "TEXT");
+addColumn("artisans", "sub_cancel_at_end", "INTEGER NOT NULL DEFAULT 0");
+db.exec(`
+CREATE UNIQUE INDEX IF NOT EXISTS idx_artisans_google ON artisans(google_sub) WHERE google_sub IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_artisans_apple ON artisans(apple_sub) WHERE apple_sub IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_artisans_phone ON artisans(phone) WHERE phone IS NOT NULL;
+-- Codes à 6 chiffres envoyés par WhatsApp ou SMS : confirmer un numéro, retrouver son mot de passe.
+CREATE TABLE IF NOT EXISTS phone_codes (
+  id INTEGER PRIMARY KEY,
+  phone TEXT NOT NULL,
+  purpose TEXT NOT NULL,
+  channel TEXT NOT NULL,
+  code_hash TEXT,
+  attempts INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  used_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_phone_codes ON phone_codes(phone, purpose, created_at);
+
+-- Équipe d'un chantier : chef de chantier, chef d'équipe ou droits choisis case par case.
+CREATE TABLE IF NOT EXISTS members (
+  id INTEGER PRIMARY KEY,
+  site_id INTEGER NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+  artisan_id INTEGER NOT NULL REFERENCES artisans(id) ON DELETE CASCADE,
+  role TEXT NOT NULL,
+  perms TEXT NOT NULL,
+  added_by INTEGER REFERENCES artisans(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL,
+  UNIQUE (site_id, artisan_id)
+);
+CREATE TABLE IF NOT EXISTS team_invites (
+  id INTEGER PRIMARY KEY,
+  code TEXT NOT NULL UNIQUE,
+  site_id INTEGER NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+  role TEXT NOT NULL,
+  perms TEXT NOT NULL,
+  invitee_name TEXT NOT NULL DEFAULT '',
+  invitee_contact TEXT NOT NULL DEFAULT '',
+  created_by INTEGER NOT NULL REFERENCES artisans(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL,
+  accepted_by INTEGER REFERENCES artisans(id) ON DELETE SET NULL,
+  accepted_at TEXT,
+  revoked_at TEXT
+);
+
+-- Messages vocaux (2 minutes au plus chacun) et livraisons de matériaux, rattachés à une publication.
+CREATE TABLE IF NOT EXISTS audios (
+  id INTEGER PRIMARY KEY,
+  update_id INTEGER NOT NULL REFERENCES updates(id) ON DELETE CASCADE,
+  file TEXT NOT NULL,
+  duration REAL NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_audios_update ON audios(update_id);
+CREATE TABLE IF NOT EXISTS deliveries (
+  id INTEGER PRIMARY KEY,
+  site_id INTEGER NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+  update_id INTEGER REFERENCES updates(id) ON DELETE CASCADE,
+  label TEXT NOT NULL,
+  quantity TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_deliveries_site ON deliveries(site_id, created_at);
+
+-- Paiements : chaque événement Stripe n'est traité qu'une fois ; sessions du paiement simulé (tests en local).
+CREATE TABLE IF NOT EXISTS billing_events (
+  id TEXT PRIMARY KEY,
+  type TEXT NOT NULL,
+  artisan_id INTEGER,
+  summary TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS billing_sessions (
+  id TEXT PRIMARY KEY,
+  artisan_id INTEGER NOT NULL REFERENCES artisans(id) ON DELETE CASCADE,
+  plan TEXT NOT NULL,
+  currency TEXT NOT NULL,
+  amount INTEGER NOT NULL,
+  created_at TEXT NOT NULL,
+  completed_at TEXT
+);
+
+-- Images de la page d'accueil remplacées depuis l'espace d'administration (vraies photos de chantier).
+CREATE TABLE IF NOT EXISTS site_images (
+  slot TEXT PRIMARY KEY,
+  file TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+`);
+// Publications : rapport du jour, problème signalé ou publication simple ; visible du client ou de l'équipe seulement.
+addColumn("updates", "topic", "TEXT NOT NULL DEFAULT 'post'");
+addColumn("updates", "visibility", "TEXT NOT NULL DEFAULT 'all'");
+addColumn("updates", "author_id", "INTEGER");
+addColumn("updates", "author_name", "TEXT");
+addColumn("updates", "data", "TEXT");
+addColumn("updates", "checked_at", "TEXT");
+addColumn("updates", "checked_by_name", "TEXT");
+addColumn("updates", "resolved_at", "TEXT");
+// Dépense notée par un membre de l'équipe : « En attente » jusqu'à l'approbation de celui qui gère le chantier.
+addColumn("ledger", "status", "TEXT NOT NULL DEFAULT 'approuvee'");
+addColumn("ledger", "reviewed_at", "TEXT");
+addColumn("ledger", "reviewed_by_name", "TEXT");
+addColumn("ledger", "review_note", "TEXT NOT NULL DEFAULT ''");
+addColumn("site_images", "caption", "TEXT NOT NULL DEFAULT ''");
+fs.mkdirSync(path.join(DATA_DIR, "site-images"), { recursive: true });
 
 // Codes lisibles à dicter ou recopier : sans 0/O, 1/I/L. 31^8 combinaisons par code.
 const ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";

@@ -15,6 +15,10 @@ const space = require("./space");
 const money = require("./money");
 const { verify, cleanMeta } = require("./verify");
 const { newTrackingCode } = require("./db");
+const phoneLib = require("./phone");
+const billing = require("./billing");
+const team = require("./team");
+const { publicPlans } = require("./plans");
 
 const PORT = Number(process.env.PORT || 3000);
 const PROD = process.env.NODE_ENV === "production";
@@ -34,14 +38,15 @@ if (process.env.TRUST_PROXY) app.set("trust proxy", Number(process.env.TRUST_PRO
 app.use((req, res, next) => {
   res.setHeader("Content-Security-Policy", [
     "default-src 'self'", "script-src 'self'", "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", "font-src 'self' https://fonts.gstatic.com",
-    "img-src 'self' data: blob:", "connect-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'", "worker-src 'self'", "manifest-src 'self'"
+    "img-src 'self' data: blob:", "media-src 'self' blob:", "connect-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'", "worker-src 'self'", "manifest-src 'self'"
   ].join("; "));
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "same-origin");
   res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
   // La position sert à vérifier qu'une photo est prise sur le chantier ; micro et paiement restent bloqués.
-  res.setHeader("Permissions-Policy", "geolocation=(self), camera=(self), microphone=(), payment=(), usb=()");
+  // Micro : messages vocaux du chantier. Le paiement passe par la page de Stripe, pas par cette page.
+  res.setHeader("Permissions-Policy", "geolocation=(self), camera=(self), microphone=(self), payment=(), usb=()");
   res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
   if (PROD) res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
   next();
@@ -75,6 +80,7 @@ function limit(name, max, windowMs, key = (req) => req.ip) {
 setInterval(() => { const now = Date.now(); for (const [k, b] of buckets) if (b.reset < now) buckets.delete(k); }, 10 * 60e3).unref();
 
 app.use("/api", limit("api", 900, 5 * 60e3));
+billing.mountWebhook(app, express); // corps brut, avant express.json()
 app.use(express.json({ limit: "200kb" }));
 
 /* ---------- Outils ---------- */
@@ -100,17 +106,21 @@ const email = (v, field, required) => { const e = str(v, 200, field, required).t
 function cookies(req) {
   return Object.fromEntries((req.headers.cookie || "").split(";").map((c) => c.trim().split("=")).filter((p) => p[0]).map(([k, ...v]) => [k, decodeURIComponent(v.join("="))]));
 }
+// maxAge null : cookie de session (effacé à la fermeture du navigateur), quand « Rester connecté » est décoché.
 function setSession(res, t, maxAge) {
-  res.append("Set-Cookie", `af_session=${t}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${PROD ? "; Secure" : ""}`);
+  res.append("Set-Cookie", `af_session=${t}; Path=/; HttpOnly; SameSite=Lax${maxAge == null ? "" : `; Max-Age=${maxAge}`}${PROD ? "; Secure" : ""}`);
 }
 const hasPassword = (a) => !a.password_hash.startsWith("!");
 // Propriétaires qui confient un chantier à ce proche (ils paient pour lui).
 const sponsorsOf = (a) => all("SELECT DISTINCT o.contact_name FROM sites s JOIN artisans o ON o.id = s.owner_id WHERE s.artisan_id = ? AND s.owner_id <> ?", a.id, a.id).map((x) => x.contact_name);
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "").split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
+const isAdmin = (a) => !!a && (a.is_admin === 1 || (a.email && ADMIN_EMAILS.includes(a.email)));
 const publicArtisan = (a) => ({
-  id: a.id, email: a.email, account_type: a.account_type, company: a.company, contact_name: a.contact_name, city: a.city, country: a.country, company_id: a.company_id,
-  market: a.market, currency: a.currency, trial_ends_at: a.trial_ends_at, google: !!a.google_sub, apple: !!a.apple_sub, has_password: hasPassword(a), created_at: a.created_at,
-  // Archfield est gratuit pour les entreprises et les proches : c'est le client (propriétaire) qui paie l'offre Plus.
-  access: { status: "free", active: true, until: null, days_left: 0 },
+  id: a.id, email: a.email, phone: a.phone, phone_pretty: phoneLib.pretty(a.phone), phone_verified: !!a.phone_verified_at, account_type: a.account_type, company: a.company, contact_name: a.contact_name, city: a.city, country: a.country, company_id: a.company_id,
+  market: a.market, currency: a.currency, trial_ends_at: a.trial_ends_at, google: !!a.google_sub, apple: !!a.apple_sub, has_password: hasPassword(a), created_at: a.created_at, admin: isAdmin(a),
+  // Entreprise : offre en cours (essai, Démarrage, PME, Pro ou gratuite). Les proches et l'équipe ne paient pas.
+  access: a.account_type === "pro" ? billing.proPlan(a) : { status: "free", active: true, until: null, days_left: 0 },
+  team_sites: a.account_type === "membre" || team.memberSiteIds(a).length ? team.memberSiteIds(a).length : 0,
   client: a.account_type === "client" ? space.clientInfo(a) : undefined,
   sponsors: a.account_type === "proche" ? sponsorsOf(a) : undefined
 });
@@ -127,11 +137,21 @@ function auth(req, res, next) {
   if (!req.artisan) return res.status(401).json({ error: "Connectez-vous pour continuer." });
   next();
 }
-function openSession(res, artisanId) {
+// « Rester connecté » (coché par défaut) : 30 jours. Sinon, la session s'arrête à la fermeture du navigateur (12 h au plus).
+function openSession(res, artisanId, remember = true) {
   const t = token(32);
-  run("INSERT INTO sessions (token, artisan_id, expires_at) VALUES (?, ?, ?)", t, artisanId, new Date(Date.now() + 30 * DAY).toISOString());
-  setSession(res, t, 30 * 86400);
+  run("INSERT INTO sessions (token, artisan_id, expires_at) VALUES (?, ?, ?)", t, artisanId, new Date(Date.now() + (remember ? 30 * DAY : 12 * 36e5)).toISOString());
+  setSession(res, t, remember ? 30 * 86400 : null);
 }
+// Identifiant de connexion : adresse e-mail, ou numéro de téléphone (avec l'indicatif choisi à côté du champ).
+function identOf(v, dial) {
+  const raw = str(v, 200, "téléphone ou e-mail");
+  if (raw.includes("@")) return { email: email(raw, "e-mail", true) };
+  const p = phoneLib.normalize(raw, dial);
+  if (!p) fail(400, "Numéro de téléphone illisible. Choisissez le pays à côté du champ, ou écrivez le numéro avec l'indicatif (+229…).");
+  return { phone: p };
+}
+const byIdent = (id) => (id.email ? get("SELECT * FROM artisans WHERE email = ?", id.email) : get("SELECT * FROM artisans WHERE phone = ?", id.phone));
 const attempts = new Map();
 function throttle(key) {
   const a = attempts.get(key) || { n: 0, until: 0 };
@@ -150,57 +170,82 @@ const passwordOk = (p) => {
 // Inscription : par e-mail et mot de passe, ou après « Continuer avec Google / Apple » (google_token : jeton de l'identité en attente).
 app.post("/api/signup", limit("signup", 10, 60 * 60e3), wrap(async (req, res) => {
   const b = req.body || {};
-  const invite = b.invite_code ? spaceApi.findInvitation(b.invite_code) : null;
-  const type = invite ? (invite.kind === "pro" ? "pro" : "proche") : b.account_type === "client" ? "client" : "pro";
-  if (b.account_type === "proche" && !invite) fail(400, "Un compte « proche » se crée avec le lien d'invitation reçu.");
+  const teamInvite = b.invite_code && /^EQP-/i.test(String(b.invite_code)) ? teamApi.findTeamInvite(b.invite_code) : null;
+  const invite = b.invite_code && !teamInvite ? spaceApi.findInvitation(b.invite_code) : null;
+  const type = teamInvite ? "membre" : invite ? (invite.kind === "pro" ? "pro" : "proche") : b.account_type === "client" ? "client" : "pro";
+  if ((b.account_type === "proche" || b.account_type === "membre") && !invite && !teamInvite) fail(400, "Ce type de compte se crée avec le lien d'invitation reçu.");
   let co;
   if (type === "pro") co = checkCompany(b.country, b.company_id);
   else {
     // Client ou proche : pas de numéro d'entreprise ; la zone (euros ou FCFA) suit le pays, ou l'inviteur pour un proche.
-    const owner = invite ? get("SELECT market, currency FROM artisans WHERE id = ?", invite.created_by) : null;
+    const owner = invite || teamInvite ? get("SELECT market, currency FROM artisans WHERE id = ?", (invite || teamInvite).created_by) : null;
     const country = COUNTRIES[b.country] ? b.country : "";
     co = owner ? { country, company_id: "", market: owner.market, currency: owner.currency }
       : { country, company_id: "", market: COUNTRIES[country]?.market || "eu", currency: COUNTRIES[country]?.currency || "EUR" };
   }
   if (co.error) fail(400, co.error);
-  let mail, hash, googleSub = null, appleSub = null;
+  let mail = null, tel = null, hash, googleSub = null, appleSub = null;
   if (b.google_token) {
     const p = get("SELECT * FROM oauth_pending WHERE token_hash = ? AND expires_at > ?", sha256(String(b.google_token)), nowIso());
     if (!p) fail(400, "La connexion a expiré. Recommencez avec « Continuer avec Google » ou « Continuer avec Apple ».");
     mail = p.email; hash = "!" + p.provider;
     if (p.provider === "apple") appleSub = p.subject; else googleSub = p.subject;
   } else {
-    mail = email(b.email, "e-mail", true);
+    // Téléphone ou e-mail dans le même champ (« ident ») ; « email » reste accepté seul.
+    const id = identOf(b.ident ?? b.email, b.dial || b.country);
+    mail = id.email || null; tel = id.phone || null;
     hash = await bcrypt.hash(passwordOk(b.password), 10);
   }
-  if (get("SELECT 1 FROM artisans WHERE email = ?", mail)) fail(409, "Un compte existe déjà avec cet e-mail. Connectez-vous.");
+  if (mail && get("SELECT 1 FROM artisans WHERE email = ?", mail)) fail(409, "Un compte existe déjà avec cet e-mail. Connectez-vous.");
+  if (tel && get("SELECT 1 FROM artisans WHERE phone = ?", tel)) fail(409, "Un compte existe déjà avec ce numéro. Connectez-vous.");
   const contact = str(b.contact_name, 120, "nom");
   const id = tx(() => {
     const r = run(
-      `INSERT INTO artisans (email, password_hash, account_type, company, contact_name, city, country, company_id, market, currency, google_sub, apple_sub, email_verified_at, trial_ends_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      mail, hash, type, type === "pro" ? str(b.company, 120, "entreprise") : contact, contact, str(b.city, 120, "ville", false), co.country, co.company_id,
+      `INSERT INTO artisans (email, phone, password_hash, account_type, company, contact_name, city, country, company_id, market, currency, google_sub, apple_sub, email_verified_at, trial_ends_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      mail, tel, hash, type, type === "pro" ? str(b.company, 120, "entreprise") : contact, contact, str(b.city, 120, "ville", false), co.country, co.company_id,
       co.market, co.currency, googleSub, appleSub, b.google_token ? nowIso() : null, new Date(Date.now() + (type === "client" ? space.CLIENT_TRIAL_DAYS : TRIAL_DAYS) * DAY).toISOString(), nowIso());
     if (b.google_token) run("DELETE FROM oauth_pending WHERE token_hash = ?", sha256(String(b.google_token)));
     return Number(r.lastInsertRowid);
   });
   if (invite) spaceApi.acceptInvitation(invite.code, get("SELECT * FROM artisans WHERE id = ?", id));
-  openSession(res, id);
-  res.status(201).json({ ok: true });
+  if (teamInvite) teamApi.acceptTeamInvite(teamInvite.code, get("SELECT * FROM artisans WHERE id = ?", id));
+  openSession(res, id, b.remember !== false);
+  // Inscription par téléphone : le numéro est confirmé ensuite par un code (WhatsApp ou SMS).
+  res.status(201).json({ ok: true, confirm_phone: !!tel });
 }));
 
 app.post("/api/login", wrap(async (req, res) => {
-  const mail = str(req.body?.email, 200, "e-mail").toLowerCase();
-  const t = throttle(req.ip + "|" + mail);
-  const a = get("SELECT * FROM artisans WHERE email = ?", mail);
+  const b = req.body || {};
+  const id = identOf(b.ident ?? b.email, b.dial);
+  const t = throttle(req.ip + "|" + (id.email || id.phone));
+  const a = byIdent(id);
   if (a && !hasPassword(a)) fail(400, a.apple_sub && !a.google_sub ? "Ce compte se connecte avec Apple. Cliquez sur « Continuer avec Apple »." : "Ce compte se connecte avec Google. Cliquez sur « Continuer avec Google ».");
-  if (!a || !(await bcrypt.compare(String(req.body?.password || ""), a.password_hash))) { t.failed(); fail(401, "E-mail ou mot de passe incorrect."); }
+  if (!a || !(await bcrypt.compare(String(b.password || ""), a.password_hash))) { t.failed(); fail(401, id.phone ? "Numéro ou mot de passe incorrect." : "E-mail ou mot de passe incorrect."); }
   t.ok();
-  openSession(res, a.id);
+  openSession(res, a.id, b.remember !== false && b.remember !== "off");
+  res.json({ ok: true, confirm_phone: !!(a.phone && !a.phone_verified_at && !a.email) });
+}));
+
+/* ---------- Numéro de téléphone : code à 6 chiffres par WhatsApp ou SMS ---------- */
+app.post("/api/phone/send", limit("phone-send", 12, 60 * 60e3), wrap(async (req, res) => {
+  const a = sessionArtisan(req);
+  if (!a) fail(401, "Connectez-vous pour continuer.");
+  if (!a.phone) fail(400, "Aucun numéro de téléphone sur ce compte.");
+  if (a.phone_verified_at) return res.json({ ok: true, verified: true });
+  const r = await phoneLib.sendCode(a.phone, "verify", req.body?.channel);
+  res.json({ ok: true, phone: phoneLib.pretty(a.phone), ...r });
+}));
+app.post("/api/phone/verify", limit("phone-check", 30, 60 * 60e3), wrap(async (req, res) => {
+  const a = sessionArtisan(req);
+  if (!a) fail(401, "Connectez-vous pour continuer.");
+  await phoneLib.checkCode(a.phone, "verify", req.body?.code);
+  run("UPDATE artisans SET phone_verified_at = ? WHERE id = ?", nowIso(), a.id);
   res.json({ ok: true });
 }));
 
-// Comptes de démo en un clic (seulement si DEMO=on, ou hors production).
-const DEMO_ON = process.env.DEMO === "on" || (!PROD && process.env.DEMO !== "off");
+// Comptes de démo en un clic : seulement si DEMO=on (tests automatiques, captures). Désactivés par défaut :
+// les vrais tests se font avec de vrais comptes (npm run purge-demo retire les comptes de démo d'une base).
+const DEMO_ON = process.env.DEMO === "on";
 const DEMO_ACCOUNTS = { eu: "demo@archfield.app", af: "demo-afrique@archfield.app", client: "demo-client@archfield.app", proche: "demo-proche@archfield.app" };
 app.post("/api/demo-login", (req, res) => {
   if (!DEMO_ON) fail(404, "La démo n'est pas disponible.");
@@ -236,8 +281,16 @@ app.post("/api/logout", (req, res) => {
 });
 
 // Mot de passe oublié : même réponse que le compte existe ou non.
+// Par téléphone : un code est envoyé par WhatsApp ou SMS, puis /api/password/reset-code.
 app.post("/api/password/forgot", limit("forgot", 5, 60 * 60e3), wrap(async (req, res) => {
-  const mail = email(req.body?.email, "e-mail", true);
+  const id = identOf(req.body?.ident ?? req.body?.email, req.body?.dial);
+  if (id.phone) {
+    const a = get("SELECT id FROM artisans WHERE phone = ?", id.phone);
+    let r = {};
+    if (a) r = await phoneLib.sendCode(id.phone, "reset", req.body?.channel);
+    return res.json({ ok: true, method: "code", phone: id.phone, phone_pretty: phoneLib.pretty(id.phone), wait: phoneLib.RESEND_S, ...(r.test_code ? { test_code: r.test_code } : {}) });
+  }
+  const mail = id.email;
   const a = get("SELECT * FROM artisans WHERE email = ?", mail);
   if (a) {
     const t = token(32);
@@ -265,9 +318,27 @@ app.post("/api/password/reset", limit("reset", 20, 60 * 60e3), wrap(async (req, 
   openSession(res, r.artisan_id);
   res.json({ ok: true });
 }));
+app.post("/api/password/reset-code", limit("reset", 20, 60 * 60e3), wrap(async (req, res) => {
+  const tel = phoneLib.normalize(req.body?.phone, null);
+  if (!tel) fail(400, "Numéro de téléphone illisible.");
+  const password = passwordOk(req.body?.password);
+  const a = get("SELECT * FROM artisans WHERE phone = ?", tel);
+  if (!a) fail(400, "Ce code a expiré. Demandez-en un nouveau.");
+  await phoneLib.checkCode(tel, "reset", req.body?.code);
+  const hash = await bcrypt.hash(password, 10);
+  tx(() => {
+    run("UPDATE artisans SET password_hash = ?, phone_verified_at = COALESCE(phone_verified_at, ?) WHERE id = ?", hash, nowIso(), a.id);
+    run("DELETE FROM sessions WHERE artisan_id = ?", a.id);
+  });
+  openSession(res, a.id);
+  res.json({ ok: true });
+}));
 
 // Les comptes de démo ne sont affichés sur la page de connexion que si DEMO=on.
-app.get("/api/config", (req, res) => res.json({ demo: DEMO_ON, google: GOOGLE.enabled, apple: APPLE.enabled, countries: publicCountries() }));
+app.get("/api/config", (req, res) => res.json({
+  demo: DEMO_ON, google: GOOGLE.enabled, apple: APPLE.enabled, countries: publicCountries(), dial: phoneLib.publicDial(),
+  plans: publicPlans(), billing: billing.live() ? "stripe" : billing.testMode() ? "test" : "off", sms: phoneLib.PROVIDER || "test"
+}));
 
 /* ---------- Connexion avec Google (OpenID Connect) ---------- */
 const GOOGLE = {
@@ -412,16 +483,8 @@ function ownStep(req, id) {
   if (!st) fail(404, "Étape introuvable.");
   return st;
 }
-// mediaBase : « /media/ » pour l'artisan connecté, « /c/<lien>/media/ » pour le client.
-function updatesOf(siteId, mediaBase, limitN = 300) {
-  const ups = all(`SELECT u.*, st.name AS step_name FROM updates u LEFT JOIN steps st ON st.id = u.step_id WHERE u.site_id = ? ORDER BY u.created_at DESC, u.id DESC LIMIT ?`, siteId, limitN);
-  const photos = ups.length ? all(`SELECT * FROM photos WHERE update_id IN (${ups.map(() => "?").join(",")}) ORDER BY id`, ...ups.map((u) => u.id)) : [];
-  return ups.map((u) => ({
-    ...u, lat: undefined, lng: undefined, verify_note: u.verify_note ? JSON.parse(u.verify_note) : null,
-    photos: photos.filter((p) => p.update_id === u.id).map((p) => ({ id: p.id, url: mediaBase + p.file, taken_at: p.taken_at, shot_at: p.shot_at }))
-  }));
-}
-const siteFiles = (siteId) => all("SELECT p.file FROM photos p JOIN updates u ON u.id = p.update_id WHERE u.site_id = ? UNION SELECT receipt_file FROM ledger WHERE site_id = ? AND receipt_file IS NOT NULL", siteId, siteId).map((p) => p.file);
+const siteFiles = (siteId) => all(`SELECT p.file FROM photos p JOIN updates u ON u.id = p.update_id WHERE u.site_id = ? UNION SELECT a.file FROM audios a JOIN updates u ON u.id = a.update_id WHERE u.site_id = ?
+  UNION SELECT receipt_file FROM ledger WHERE site_id = ? AND receipt_file IS NOT NULL`, siteId, siteId, siteId).map((p) => p.file);
 // Position de référence du chantier. Les coordonnées ne sont montrées qu'à qui peut la confirmer (le client).
 const positionInfo = (s, withPoint = false) => (s.lat != null ? {
   set_at: s.position_set_at, set_by: s.position_set_by, confirmed_at: s.position_confirmed_at, confirmed_by: s.position_confirmed_by,
@@ -455,6 +518,16 @@ api.post("/me/password", wrap(async (req, res) => {
   res.json({ ok: true });
 }));
 
+// Ajouter ou changer son numéro : il faudra le confirmer par un code (POST /api/phone/send puis /api/phone/verify).
+api.post("/me/phone", (req, res) => {
+  const tel = phoneLib.normalize(req.body?.phone, req.body?.dial || req.artisan.country);
+  if (!tel) fail(400, "Numéro de téléphone illisible. Écrivez-le avec l'indicatif du pays, par exemple +229 01 97 00 00 00.");
+  const other = get("SELECT id FROM artisans WHERE phone = ?", tel);
+  if (other && other.id !== req.artisan.id) fail(409, "Ce numéro est déjà utilisé par un autre compte.");
+  if (tel !== req.artisan.phone) run("UPDATE artisans SET phone = ?, phone_verified_at = NULL WHERE id = ?", tel, req.artisan.id);
+  res.json(publicArtisan(get("SELECT * FROM artisans WHERE id = ?", req.artisan.id)));
+});
+
 // Se déconnecter partout (téléphone perdu, ordinateur partagé) : toutes les sessions sauf celle-ci.
 api.post("/me/logout-others", (req, res) => {
   const n = run("DELETE FROM sessions WHERE artisan_id = ? AND token <> ?", req.artisan.id, cookies(req).af_session).changes;
@@ -471,7 +544,7 @@ api.get("/me/export", (req, res) => {
     role: s.artisan_id === a.id ? (s.owner_id === a.id ? "proprietaire_gestionnaire" : "gestionnaire") : "proprietaire",
     client_link: `${BASE_URL}/c/${s.client_token}`,
     steps: all("SELECT * FROM steps WHERE site_id = ? ORDER BY position", s.id),
-    updates: updatesOf(s.id, BASE_URL + "/media/", 100000),
+    updates: team.updatesOf(s.id, BASE_URL + "/media/", { team: true, limitN: 100000 }),
     documents: all("SELECT * FROM documents WHERE site_id = ? ORDER BY doc_date", s.id),
     ledger: all("SELECT * FROM ledger WHERE site_id = ? ORDER BY entry_date, id", s.id).map((l) => ({ ...l, receipt_url: l.receipt_file ? BASE_URL + "/media/" + l.receipt_file : null })),
     visit_requests: all("SELECT * FROM visit_requests WHERE site_id = ? ORDER BY created_at", s.id),
@@ -529,6 +602,10 @@ api.get("/sites", (req, res) => {
 
 api.post("/sites", (req, res) => {
   if (req.artisan.account_type !== "pro") fail(403, "Seule une entreprise crée des chantiers ici. Les clients créent les leurs dans leur espace.");
+  // Limite de l'offre : les chantiers confiés par un client ne comptent pas (c'est le client qui paie).
+  const plan = billing.proPlan(req.artisan);
+  if (plan.sites != null && billing.ownSitesCount(req.artisan) >= plan.sites)
+    fail(402, plan.status === "free" ? "Sans abonnement, une entreprise suit un chantier à elle. Choisissez une offre pour en créer d'autres." : `Votre offre permet ${plan.sites} chantiers en cours. Passez à l'offre supérieure, ou marquez un chantier comme livré.`);
   const b = req.body || {};
   const steps = Array.isArray(b.steps) ? b.steps : [];
   if (!steps.length) fail(400, "Ajoutez au moins une étape.");
@@ -558,7 +635,9 @@ api.get("/sites/:id", (req, res) => {
     can_reset_position: !s.owner_id || s.owner_id === req.artisan.id,
     position: positionInfo(s),
     money: money.moneyOf(s, "/media/", sum.progress),
-    updates: updatesOf(s.id, "/media/"),
+    updates: team.updatesOf(s.id, "/media/", { team: true }),
+    team_count: get("SELECT COUNT(*) AS n FROM members WHERE site_id = ?", s.id).n,
+    deliveries: all("SELECT d.label, d.quantity, d.created_at, u.author_name FROM deliveries d LEFT JOIN updates u ON u.id = d.update_id WHERE d.site_id = ? ORDER BY d.created_at DESC LIMIT 100", s.id),
     documents: all("SELECT * FROM documents WHERE site_id = ? ORDER BY doc_date, id", s.id),
     reports: all("SELECT id, period_start, period_end, sent_at, emailed, opened_at FROM reports WHERE site_id = ? ORDER BY period_end DESC", s.id)
   });
@@ -621,6 +700,20 @@ api.post("/sites/:id/report", limit("report", 20, 60 * 60e3, (req) => "a" + req.
   res.status(201).json({ id, emailed: !!get("SELECT emailed FROM reports WHERE id = ?", id)?.emailed });
 }));
 
+// Rapport de la semaine en PDF (fond blanc), pour le gestionnaire et pour le lien privé du client.
+const sendPdf = async (res, site) => {
+  const buf = await require("./pdf").weeklyPdf(site);
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `inline; filename="archfield-${site.tracking_code || site.id}-${nowIso().slice(0, 10)}.pdf"`);
+  res.setHeader("Cache-Control", "private, no-store");
+  res.send(buf);
+};
+api.get("/sites/:id/rapport.pdf", limit("pdf", 60, 60 * 60e3, (req) => "a" + req.artisan.id), wrap(async (req, res) => {
+  const x = team.accessOf(req.artisan, req.params.id);
+  if (!x || (x.as === "member" && !x.perms.budget)) fail(404, "Chantier introuvable.");
+  await sendPdf(res, x.site);
+}));
+
 /* Étapes */
 api.post("/sites/:id/steps", (req, res) => {
   const s = ownSite(req, req.params.id);
@@ -657,24 +750,33 @@ api.delete("/steps/:id", (req, res) => {
   res.json({ ok: true });
 });
 
-/* Mises à jour avec photos */
-const EXT = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/heic": ".heic", "image/heif": ".heic" };
+/* Publications : photos, messages vocaux, rapport du jour, problème signalé */
+const IMG = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/heic": ".heic", "image/heif": ".heic" };
+// Enregistrements du navigateur (WebM/Opus sur Android et ordinateur, MP4/AAC sur iPhone) ou du dictaphone du téléphone.
+const AUD = { "audio/webm": ".webm", "audio/ogg": ".ogg", "audio/mp4": ".m4a", "audio/x-m4a": ".m4a", "audio/m4a": ".m4a", "audio/aac": ".aac", "audio/mpeg": ".mp3", "audio/mp3": ".mp3", "audio/wav": ".wav", "audio/x-wav": ".wav", "audio/3gpp": ".3gp" };
+const mimeOf = (f) => String(f.mimetype || "").split(";")[0].trim().toLowerCase();
 const upload = multer({
-  storage: multer.diskStorage({ destination: UPLOAD_DIR, filename: (req, f, cb) => cb(null, token(18) + (EXT[f.mimetype] || "")) }),
-  limits: { fileSize: 15 * 1024 * 1024, files: 10 },
-  fileFilter: (req, f, cb) => cb(EXT[f.mimetype] ? null : new HttpError(400, "Seules les photos JPEG, PNG, WebP ou HEIC (iPhone) sont acceptées."), !!EXT[f.mimetype])
+  storage: multer.diskStorage({ destination: UPLOAD_DIR, filename: (req, f, cb) => cb(null, token(18) + (IMG[mimeOf(f)] || AUD[mimeOf(f)] || "")) }),
+  limits: { fileSize: 15 * 1024 * 1024, files: 16 },
+  fileFilter: (req, f, cb) => {
+    if (f.fieldname === "audios") return cb(AUD[mimeOf(f)] ? null : new HttpError(400, "Ce message vocal n'est pas lisible. Enregistrez-le à nouveau."), !!AUD[mimeOf(f)]);
+    cb(IMG[mimeOf(f)] ? null : new HttpError(400, "Seules les photos JPEG, PNG, WebP ou HEIC (iPhone) sont acceptées."), !!IMG[mimeOf(f)]);
+  }
 });
 // Le type annoncé par le navigateur peut mentir : on lit les premiers octets du fichier pour vérifier que c'est
-// bien une image JPEG, PNG, WebP ou HEIC. Un fichier déguisé (page web, script…) est refusé et effacé.
+// bien une image (JPEG, PNG, WebP, HEIC) ou un son (WebM, Ogg, MP4/M4A, MP3, AAC, WAV). Un fichier déguisé est refusé.
 async function checkFiles(files) {
   for (const f of files) {
     const fh = await fs.promises.open(f.path, "r");
     const head = Buffer.alloc(16);
     try { await fh.read(head, 0, 16, 0); } finally { await fh.close(); }
     const ascii = (a, b) => head.subarray(a, b).toString("latin1");
-    const ok = (head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) || ascii(0, 8) === "\x89PNG\r\n\x1a\n"
-      || (ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP") || (ascii(4, 8) === "ftyp" && /^(heic|heix|hevc|hevx|mif1|msf1|heim|heis)$/.test(ascii(8, 12)));
-    if (!ok) throw new HttpError(400, `« ${f.originalname} » n'est pas une photo valide.`);
+    const ok = f.fieldname === "audios"
+      ? (head[0] === 0x1a && head[1] === 0x45 && head[2] === 0xdf && head[3] === 0xa3) || ascii(0, 4) === "OggS" || ascii(4, 8) === "ftyp" || ascii(0, 3) === "ID3"
+        || (head[0] === 0xff && (head[1] & 0xe0) === 0xe0) || (ascii(0, 4) === "RIFF" && ascii(8, 12) === "WAVE")
+      : (head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) || ascii(0, 8) === "\x89PNG\r\n\x1a\n"
+        || (ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP") || (ascii(4, 8) === "ftyp" && /^(heic|heix|hevc|hevx|mif1|msf1|heim|heis)$/.test(ascii(8, 12)));
+    if (!ok) throw new HttpError(400, f.fieldname === "audios" ? "Ce message vocal n'est pas lisible. Enregistrez-le à nouveau." : `« ${f.originalname} » n'est pas une photo valide.`);
   }
 }
 
@@ -705,38 +807,68 @@ async function notifyClient(site, artisan, text) {
   });
 }
 
-api.post("/sites/:id/updates", limit("upload", 60, 60 * 60e3, (req) => "a" + req.artisan.id), upload.array("photos", 10), wrap(async (req, res) => {
-  const files = req.files || [];
+const TOPICS = ["post", "rapport", "probleme"];
+const WEATHER = ["soleil", "nuageux", "pluie", "orage", "vent"];
+const PROBLEMS = ["accident", "panne", "retard", "materiel", "securite", "autre"];
+api.post("/sites/:id/updates", limit("upload", 60, 60 * 60e3, (req) => "a" + req.artisan.id), upload.fields([{ name: "photos", maxCount: 10 }, { name: "audios", maxCount: 6 }]), wrap(async (req, res) => {
+  const photosF = req.files?.photos || [], audiosF = req.files?.audios || [], files = [...photosF, ...audiosF];
   try {
-    const s = ownSite(req, req.params.id);
-    if (req.artisan.account_type === "proche" && !space.prochePublishAllowed(s)) fail(402, "Le propriétaire du chantier doit activer l'offre Plus pour que vous puissiez publier.");
-    const text = str(req.body.text, 500, "message");
-    const st = req.body.step_id ? get("SELECT * FROM steps WHERE id = ? AND site_id = ?", Number(req.body.step_id), s.id) : null;
-    if (req.body.step_id && !st) fail(400, "Étape inconnue pour ce chantier.");
+    const x = team.accessOf(req.artisan, req.params.id);
+    if (!x) fail(404, "Chantier introuvable.");
+    if (x.as === "owner") fail(403, "Ce chantier est géré par quelqu'un d'autre : c'est lui qui publie l'avancement.");
+    const s = x.site, p = x.perms, b = req.body;
+    if (req.artisan.account_type === "proche" && x.as === "manager" && !space.prochePublishAllowed(s)) fail(402, "Le propriétaire du chantier doit activer l'offre Plus pour que vous puissiez publier.");
+    // Ce que le gestionnaire autorise est ce que les autres peuvent faire.
+    const topic = TOPICS.includes(b.topic) ? b.topic : "post";
+    const allowed = topic === "rapport" ? p.rapport : topic === "probleme" ? p.probleme : (!photosF.length || p.photos) && (!audiosF.length || p.vocal) && (photosF.length || audiosF.length ? true : p.photos);
+    if (!allowed) fail(403, "Le gestionnaire du chantier ne vous a pas donné ce droit.");
+    const text = str(b.text, 2000, "message", false);
+    if (!text && !photosF.length && !audiosF.length) fail(400, "Ajoutez une phrase, une photo ou un message vocal.");
+    const st = b.step_id ? get("SELECT * FROM steps WHERE id = ? AND site_id = ?", Number(b.step_id), s.id) : null;
+    if (b.step_id && !st) fail(400, "Étape inconnue pour ce chantier.");
+    let data = null, deliveries = [];
+    if (topic === "rapport") {
+      data = { workers: Math.round(num(b.workers || 0, "ouvriers présents", 0, 2000)), weather: WEATHER.includes(b.weather) ? b.weather : null };
+      let list = [];
+      try { list = JSON.parse(b.deliveries || "[]"); } catch (e) { fail(400, "Livraisons illisibles."); }
+      if (!Array.isArray(list) || list.length > 20) fail(400, "20 livraisons au plus par rapport.");
+      deliveries = list.map((d) => ({ label: str(d?.label, 120, "livraison"), quantity: str(d?.quantity, 60, "quantité", false) }));
+    } else if (topic === "probleme") data = { category: PROBLEMS.includes(b.category) ? b.category : "autre" };
+    let durations = [];
+    try { durations = JSON.parse(b.durations || "[]"); } catch (e) {}
     await checkFiles(files);
-    await normalizePhotos(files);
-    const done = req.body.done === "1" || req.body.done === "true";
+    await normalizePhotos(photosF);
+    const done = x.as === "manager" && (b.done === "1" || b.done === "true");
     const now = nowIso();
     // Preuve : date de prise de vue des photos et position du téléphone, comparées à la position du chantier.
-    const meta = cleanMeta(req.body.meta, files.length);
-    const lat = Number(req.body.lat), lng = Number(req.body.lng);
-    const pos = req.body.lat !== undefined && req.body.lat !== "" ? { lat, lng, accuracy: Number(req.body.accuracy) } : null;
+    const meta = cleanMeta(b.meta, photosF.length);
+    const lat = Number(b.lat), lng = Number(b.lng);
+    const pos = b.lat !== undefined && b.lat !== "" ? { lat, lng, accuracy: Number(b.accuracy) } : null;
     const v = verify({ site: s, pos, photos: meta });
+    // Un problème, ou un message vocal seul, reste dans l'équipe jusqu'à ce que le gestionnaire le partage.
+    // Quand le client gère lui-même son chantier, il est le responsable : rien ne lui est caché.
+    const selfManaged = s.owner_id && s.owner_id === s.artisan_id;
+    const visibility = !selfManaged && (topic === "probleme" || (topic === "post" && !photosF.length && audiosF.length && x.as !== "manager")) ? "team" : "all";
     const id = tx(() => {
       if (st && !st.started_at) run("UPDATE steps SET started_at = ? WHERE id = ?", now, st.id);
       if (v.setOrigin) run("UPDATE sites SET lat = ?, lng = ?, position_set_at = ?, position_set_by = ?, position_confirmed_at = NULL, position_confirmed_by = NULL WHERE id = ?", lat, lng, now, req.artisan.contact_name, s.id);
-      const r = run("INSERT INTO updates (site_id, step_id, kind, text, created_at, lat, lng, accuracy, verify, verify_note) VALUES (?, ?, 'post', ?, ?, ?, ?, ?, ?, ?)",
-        s.id, st ? st.id : null, text, now, pos && v.note.position !== "unknown" ? lat : null, pos && v.note.position !== "unknown" ? lng : null, v.note.accuracy ?? null, v.status, JSON.stringify(v.note));
+      const r = run(`INSERT INTO updates (site_id, step_id, kind, text, created_at, lat, lng, accuracy, verify, verify_note, topic, visibility, author_id, author_name, data, checked_at, checked_by_name)
+        VALUES (?, ?, 'post', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        s.id, st ? st.id : null, text, now, pos && v.note.position !== "unknown" ? lat : null, pos && v.note.position !== "unknown" ? lng : null, v.note.accuracy ?? null,
+        photosF.length || pos ? v.status : null, photosF.length || pos ? JSON.stringify(v.note) : null, topic, visibility, req.artisan.id, req.artisan.contact_name,
+        data ? JSON.stringify(data) : null, x.as === "manager" ? now : null, x.as === "manager" ? req.artisan.contact_name : null);
       const uid = Number(r.lastInsertRowid);
-      files.forEach((f, i) => run("INSERT INTO photos (update_id, file, taken_at, shot_at, shot_lat, shot_lng) VALUES (?, ?, ?, ?, ?, ?)", uid, f.filename, now, meta[i].shot_at, meta[i].lat, meta[i].lng));
+      photosF.forEach((f, i) => run("INSERT INTO photos (update_id, file, taken_at, shot_at, shot_lat, shot_lng) VALUES (?, ?, ?, ?, ?, ?)", uid, f.filename, now, meta[i].shot_at, meta[i].lat, meta[i].lng));
+      audiosF.forEach((f, i) => run("INSERT INTO audios (update_id, file, duration, created_at) VALUES (?, ?, ?, ?)", uid, f.filename, Math.min(130, Math.max(0, Number(durations[i]) || 0)), now));
+      deliveries.forEach((d) => run("INSERT INTO deliveries (site_id, update_id, label, quantity, created_at) VALUES (?, ?, ?, ?, ?)", s.id, uid, d.label, d.quantity, now));
       if (done && st && !st.finished_at) {
         run("UPDATE steps SET finished_at = ? WHERE id = ?", now, st.id);
         run("INSERT INTO updates (site_id, step_id, kind, created_at) VALUES (?, ?, 'step_done', ?)", s.id, st.id, new Date(Date.now() + 1000).toISOString());
       }
       return uid;
     });
-    const notified = await notifyClient(s, req.artisan, text);
-    res.status(201).json({ id, photos: files.length, notified, verify: v.status, note: v.note });
+    const notified = visibility === "all" ? await notifyClient(s, get("SELECT * FROM artisans WHERE id = ?", s.artisan_id) || req.artisan, text || (topic === "rapport" ? "Rapport du jour" : "Nouvelles photos")) : false;
+    res.status(201).json({ id, photos: photosF.length, audios: audiosF.length, notified, verify: v.status, note: v.note, visibility });
   } catch (e) {
     removeFiles(files.map((f) => f.filename));
     throw e;
@@ -747,7 +879,7 @@ api.delete("/updates/:id", (req, res) => {
   const u = get("SELECT u.* FROM updates u JOIN sites si ON si.id = u.site_id WHERE u.id = ? AND si.artisan_id = ?", Number(req.params.id), req.artisan.id);
   if (!u) fail(404, "Mise à jour introuvable.");
   if (u.kind !== "post") fail(409, "Seules vos publications peuvent être supprimées.");
-  const files = all("SELECT file FROM photos WHERE update_id = ?", u.id).map((p) => p.file);
+  const files = all("SELECT file FROM photos WHERE update_id = ? UNION SELECT file FROM audios WHERE update_id = ?", u.id, u.id).map((p) => p.file);
   run("DELETE FROM updates WHERE id = ?", u.id);
   removeFiles(files);
   res.json({ ok: true });
@@ -788,6 +920,16 @@ api.get("/photos", (req, res) => {
     WHERE u.site_id = ? ORDER BY p.taken_at DESC, p.id DESC`, s.id).map((p) => ({ ...p, url: "/media/" + p.file })));
 });
 
+const teamApi = team.mount(app, api, { fail, str, num, wrap, limit, nowIso, token });
+// Invitation dans une équipe (code EQP-…) : lecture publique et acceptation, avant les invitations « entreprise » et « proche ».
+app.get("/api/invitations/:code", limit("invite-read", 60, 10 * 60e3), (req, res, next) => {
+  if (!/^EQP-/i.test(req.params.code)) return next();
+  const i = teamApi.findTeamInvite(req.params.code);
+  res.json({ code: i.code, kind: "membre", role: i.role, site: i.site_name, location: i.location, owner: i.owner_type === "pro" ? i.company : i.owner_name, invitee: i.invitee_name, contact: i.invitee_contact });
+});
+api.post("/invitations/:code/accept", (req, res, next) => (/^EQP-/i.test(req.params.code) ? res.json({ site_id: teamApi.acceptTeamInvite(req.params.code, req.artisan) }) : next()));
+billing.mount(app, api, { fail, wrap, limit });
+require("./admin").mount(app, api, { fail, str, isAdmin, nowIso, grant: billing.grant });
 const spaceApi = space.mount(app, api, { fail, str, num, wrap, limit, nowIso, token, sendMail });
 money.mount(app, api, { fail, str, num, wrap, limit, nowIso, upload, normalizePhotos, removeFiles, checkFiles });
 // Routes publiques sous /api : lien du client et lecture d'une invitation.
@@ -825,16 +967,17 @@ app.get("/api/c/:token", limit("client", 120, 60e3), (req, res) => {
     validate_block: who.block || null,
     position: positionInfo(s, !who.block),
     money: money.publicMoney(money.moneyOf(s, `/c/${s.client_token}/media/`, sum.progress)),
-    updates: updatesOf(s.id, `/c/${s.client_token}/media/`).map((u) => ({ ...u, seen_at: undefined })),
+    updates: team.updatesOf(s.id, `/c/${s.client_token}/media/`).map((u) => ({ ...u, seen_at: undefined, author_id: undefined, checked_by_name: undefined })),
     documents: all("SELECT kind, ref, label, amount, status, doc_date FROM documents WHERE site_id = ? ORDER BY doc_date, id", s.id),
     reports: all("SELECT id, period_start, period_end, sent_at, data FROM reports WHERE site_id = ? ORDER BY period_end DESC LIMIT 12", s.id).map((r) => ({ ...r, data: JSON.parse(r.data) }))
   };
   // Le client a ouvert son lien : publications vues, rapports lus.
-  run("UPDATE updates SET seen_at = ? WHERE site_id = ? AND seen_at IS NULL", now, s.id);
+  run("UPDATE updates SET seen_at = ? WHERE site_id = ? AND seen_at IS NULL AND visibility = 'all'", now, s.id);
   run("UPDATE reports SET opened_at = ? WHERE site_id = ? AND opened_at IS NULL", now, s.id);
   run("UPDATE sites SET last_client_visit_at = ? WHERE id = ?", now, s.id);
   res.json(out);
 });
+app.get("/api/c/:token/rapport.pdf", limit("pdf", 30, 60 * 60e3), wrap(async (req, res) => sendPdf(res, bySiteToken(req.params.token))));
 app.post("/api/c/:token/steps/:id/validate", limit("client-write", 30, 60e3), (req, res) => {
   const s = bySiteToken(req.params.token);
   const st = get("SELECT * FROM steps WHERE id = ? AND site_id = ?", Number(req.params.id), s.id);
@@ -867,26 +1010,32 @@ function sendPhoto(res, file) {
   res.setHeader("Cache-Control", "private, max-age=86400");
   res.sendFile(p);
 }
-const photoSite = (file) => {
+// Fichier → chantier, et visibilité de la publication (un problème interne n'est pas montré au client).
+const fileSite = (file) => {
   const f = path.basename(String(file));
-  return get("SELECT u.site_id FROM photos p JOIN updates u ON u.id = p.update_id WHERE p.file = ?", f) || get("SELECT site_id FROM ledger WHERE receipt_file = ?", f);
+  return get("SELECT u.site_id, u.visibility FROM photos p JOIN updates u ON u.id = p.update_id WHERE p.file = ?", f)
+    || get("SELECT u.site_id, u.visibility FROM audios x JOIN updates u ON u.id = x.update_id WHERE x.file = ?", f)
+    || get("SELECT site_id, 'all' AS visibility FROM ledger WHERE receipt_file = ?", f);
 };
 app.get("/media/:file", (req, res) => {
-  const a = sessionArtisan(req), ph = photoSite(req.params.file);
-  // Le gestionnaire du chantier, ou son propriétaire (client), voit les photos et les reçus.
-  if (!a || !ph || !get("SELECT 1 FROM sites WHERE id = ? AND (artisan_id = ? OR owner_id = ?)", ph.site_id, a.id, a.id)) return res.status(404).end();
+  const a = sessionArtisan(req), ph = fileSite(req.params.file);
+  // Le gestionnaire, l'équipe et le propriétaire (client) du chantier voient ses photos, vocaux et reçus.
+  const x = a && ph ? team.accessOf(a, ph.site_id) : null;
+  if (!x || (x.as === "owner" && ph.visibility !== "all")) return res.status(404).end();
   sendPhoto(res, path.basename(req.params.file));
 });
 app.get("/c/:token/media/:file", limit("client-media", 600, 60e3), (req, res) => {
-  const s = get("SELECT id FROM sites WHERE client_token = ?", req.params.token), ph = photoSite(req.params.file);
-  if (!s || !ph || ph.site_id !== s.id) return res.status(404).end();
+  const s = get("SELECT id FROM sites WHERE client_token = ?", req.params.token), ph = fileSite(req.params.file);
+  if (!s || !ph || ph.site_id !== s.id || ph.visibility !== "all") return res.status(404).end();
   sendPhoto(res, path.basename(req.params.file));
 });
 
 /* ---------- Pages ---------- */
 const page = (f) => (req, res) => res.sendFile(path.join(PUBLIC, f));
 app.get("/", page("index.html"));
-app.get(["/connexion", "/inscription", "/mot-de-passe-oublie", "/reinitialiser", "/invitation/:code"], page("auth.html"));
+app.get(["/connexion", "/inscription", "/inscription/confirmer", "/inscription/code", "/mot-de-passe-oublie", "/reinitialiser", "/invitation/:code"], page("auth.html"));
+app.get("/paiement-test", page("paiement-test.html"));
+app.get("/admin", page("admin.html"));
 app.get("/confidentialite", page("confidentialite.html"));
 app.get("/a-propos", page("a-propos.html"));
 app.get("/mentions-legales", page("mentions-legales.html"));
@@ -917,6 +1066,8 @@ app.use(express.static(PUBLIC, { index: false, maxAge: PROD ? "1h" : 0 }));
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) return res.status(400).json({ error: err.code === "LIMIT_FILE_SIZE" ? "Une photo dépasse 15 Mo." : err.code === "LIMIT_FILE_COUNT" || err.code === "LIMIT_UNEXPECTED_FILE" ? "10 photos au maximum par mise à jour." : "Envoi des photos refusé : " + err.message });
   if (err instanceof HttpError) return res.status(err.status).json({ error: err.message });
+  // Erreurs des modules (téléphone, paiement, équipe) : un statut HTTP et un message prêt à afficher.
+  if (Number.isInteger(err.status) && err.status >= 400 && err.status < 600 && err.message) return res.status(err.status).json({ error: err.message });
   if (err.type === "entity.parse.failed") return res.status(400).json({ error: "Requête illisible." });
   console.error(err);
   res.status(500).json({ error: "Erreur du serveur. Réessayez dans un instant." });
@@ -928,6 +1079,7 @@ function cleanup() {
   run("DELETE FROM sessions WHERE expires_at < ?", now);
   run("DELETE FROM password_resets WHERE expires_at < ?", now);
   run("DELETE FROM oauth_pending WHERE expires_at < ?", now);
+  run("DELETE FROM phone_codes WHERE expires_at < ?", new Date(Date.now() - DAY).toISOString());
 }
 
 // En développement : adresse à ouvrir sur un téléphone connecté au même Wi-Fi, avec un QR code à scanner.

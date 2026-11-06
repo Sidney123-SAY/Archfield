@@ -117,3 +117,16 @@
   .au-side { padding-top: 18px; }
   .au-head .prefs { gap: 6px; }
 }
+
+/* Téléphone ou e-mail, rester connecté, code à 6 chiffres */
+.au-check { display: flex; gap: 10px; align-items: center; font-size: .9rem; cursor: pointer; }
+.au-check input { width: 18px; height: 18px; accent-color: var(--orange); }
+.au-member { margin-top: 12px; }
+.au-channel { position: relative; display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; align-items: center; text-align: left; width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; background: var(--surface); color: var(--ink); }
+.au-channel:hover { border-color: var(--muted); }
+.au-channel.rec { border-color: color-mix(in srgb, var(--vert) 60%, var(--line)); }
+.au-channel b { font-size: 1rem; }
+.au-channel > span:last-child { grid-column: 2; color: var(--muted); font-size: .86rem; }
+.au-ch-ic { grid-row: span 2; width: 40px; height: 40px; border-radius: 8px; background: var(--vert-soft); color: var(--vert); display: grid; place-items: center; }
+.au-badge { position: absolute; top: -10px; left: 14px; background: var(--vert); color: #fff; font-size: .7rem; font-weight: 600; border-radius: 999px; padding: 2px 9px; }
+.otp { font-size: 1.6rem; letter-spacing: .5em; text-align: center; font-variant-numeric: tabular-nums; }

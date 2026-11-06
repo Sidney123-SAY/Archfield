@@ -1,7 +1,7 @@
 // Espace client : tous ses chantiers au même endroit, ajout par numéro de suivi, chantier confié à une entreprise ou à un proche.
 (function () {
   "use strict";
-  const { t, LOGO, ic, esc, prefs, themeToggle, installCard, installNudge, moneyPanel, versementForm, curLabel, upload, money, dShort, nf, plural, rel, api, toast, copy, healthChip, mapLink } = window.AF;
+  const { t, LOGO, ic, esc, prefs, themeToggle, installCard, installNudge, moneyPanel, versementForm, curLabel, upload, money, dShort, nf, plural, rel, api, toast, copy, healthChip, mapLink, billingCards, dialSelect, lang } = window.AF;
   const $ = (s) => document.querySelector(s);
   const app = $("#app");
   let me = null;
@@ -159,6 +159,20 @@
         <div class="row-acts">${s.can_take_back ? `<button type="button" class="btn ghost" data-take-back="${s.id}">${t("Reprendre la main")}</button>` : ""}${s.manager.type === "pro" ? `<button type="button" class="btn ghost" data-remove="${s.id}">${t("Retirer de mon espace")}</button>` : ""}</div>
       </section>`;
     }
+    // Chantier géré par le client lui-même : son équipe sur place (chef de chantier, tâcheron) publie pour lui.
+    let teamHtml = "";
+    if (s.self_managed) {
+      const tm = await api(`/api/sites/${s.id}/team`).catch(() => null);
+      if (tm) teamHtml = `<section class="card card-p sp-stack"><h2>${t("Votre équipe sur place")}</h2>
+        <p class="muted">${t("Chef de chantier, tâcheron : ils envoient le rapport du jour, les photos et les dépenses depuis leur téléphone. Vous approuvez chaque dépense.")}</p>
+        ${tm.members.length ? `<ul class="team">${tm.members.map((m) => `<li><div class="tm-h"><div><b>${esc(m.contact_name)}</b><span class="muted sm">${esc(m.phone || m.email || "")}</span></div><span class="chip idle">${m.role === "chef_chantier" ? t("Chef de chantier") : m.role === "chef_equipe" ? t("Chef d'équipe") : t("Personnalisé")}</span><button type="button" class="btn ghost" data-member-del="${m.id}">${t("Retirer")}</button></div></li>`).join("")}</ul>` : ""}
+        ${tm.invites.map((i) => { const url = inviteUrl(i.code); return `<div class="sp-invite"><p><b>${esc(i.invitee_name)}</b> · ${t("invitation en attente")}</p><div class="link"><code>${esc(url)}</code><button type="button" class="btn ghost" data-copy="${esc(url)}">${t("Copier")}</button></div><div class="row-acts"><a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/${/^\+/.test(i.invitee_contact) ? i.invitee_contact.replace(/\D/g, "") : ""}?text=${encodeURIComponent(t("Bonjour {who}, rejoignez le chantier « {site} » sur Archfield : {url}", { who: i.invitee_name.split(" ")[0], site: s.name, url }))}">${t("Envoyer par WhatsApp")}</a><button type="button" class="btn ghost" data-invite-del="${i.id}">${t("Annuler l'invitation")}</button></div></div>`; }).join("")}
+        ${plan.plan === "free" ? `<p class="muted sm">${t("Avec l'offre Plus.")} <a href="#offre">${t("Voir l'offre Plus")}</a></p>` : `<form class="form" id="team-add"><div class="row2"><div class="field"><label for="tm-name">${t("Nom")}</label><input id="tm-name" name="name" required maxlength="120"></div>
+          <div class="field"><label for="tm-contact">${t("Téléphone (WhatsApp) ou e-mail")}</label><input id="tm-contact" name="contact" required maxlength="200" placeholder="+229 01 97 00 00 00"></div></div>
+          <div class="seg" role="group" aria-label="${t("Rôle")}"><label><input type="radio" name="role" value="chef_chantier" checked><span>${t("Chef de chantier")}</span></label><label><input type="radio" name="role" value="chef_equipe"><span>${t("Chef d'équipe")}</span></label></div>
+          <div><button class="btn" type="submit">${t("Inviter")}</button></div></form>`}
+      </section>`;
+    }
     shell("chantier", `<div class="sp-narrow">
       <button type="button" class="back" data-go="mes-chantiers">${ic("left", 16)} ${t("Mes chantiers")}</button>
       <section class="card sitecard">
@@ -169,8 +183,9 @@
         ${s.last_update_at || !s.self_managed ? `<a class="bigbtn" href="/c/${esc(s.client_token)}">${ic("eye", 22)} ${t("Voir le suivi du chantier")}</a>` : ""}
       </section>
       ${manage}
+      ${teamHtml}
       <h2 class="section-t">${t("Argent du chantier")}</h2>
-      ${moneyPanel(s.money, { me: me.id, forClient: true })}
+      ${moneyPanel(s.money, { me: me.id, forClient: true, review: s.self_managed })}
       ${plan.plan === "free" ? `<section class="card card-p sp-alt"><h2>${t("Suivez chaque versement avec l'offre Plus")}</h2><p class="muted">${t("Notez ce que vous envoyez, comparez-le aux travaux réalisés et soyez alerté si vous payez trop tôt.")}</p><div><a class="btn primary" href="#offre">${t("Voir l'offre Plus")}</a></div></section>` : versementForm(curLabel(s.money.currency))}
       <section class="card card-p sp-stack"><h2>${t("Visite de contrôle")}</h2>
         <p class="muted">${t("Vous ne pouvez pas aller sur le chantier ? Une personne de confiance s'y rend, vérifie l'avancement et vous envoie un compte rendu avec photos. Nous vous rappelons avec un prix avant toute visite.")}</p>
@@ -185,6 +200,11 @@
           : t("Enregistrée le {date} par {who}. Vérifiez sur la carte que c'est bien votre chantier, puis confirmez : les publications faites sur place seront alors « vérifiées ».", { date: dShort(s.position.set_at), who: esc(s.position.set_by) })}</p>
         ${s.position ? `<div class="row-acts">${s.position.confirmed_at ? "" : `<a class="btn ghost" href="${mapLink(s.position)}" target="_blank" rel="noopener">${t("Voir sur la carte")}</a><button type="button" class="btn primary" data-confirm-position="${s.id}">${t("C'est bien mon chantier")}</button>`}<button type="button" class="btn ghost" data-reset-position="${s.id}">${t("Effacer la position")}</button></div>` : ""}</section>
     </div>`);
+    const ta = $("#team-add");
+    if (ta) ta.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try { const r = await api(`/api/sites/${s.id}/team`, { method: "POST", body: { name: ta.name.value, contact: ta.contact.value, role: new FormData(ta).get("role"), country: me.country } }); toast(r.added ? t("{who} fait maintenant partie de l'équipe.", { who: r.name }) : t("Invitation créée. Envoyez-lui le lien par WhatsApp.")); route(); } catch (x) { toast(x.message); }
+    });
     const vf = $("#add-versement");
     if (vf) vf.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -198,25 +218,31 @@
   }
 
   /* ---------- Mon offre ---------- */
-  function pageOffer() {
-    const c = me.client;
-    const card = (k, title, price, items) => `<article class="card card-p sp-plan ${c.plan === k ? "current" : ""}">
-      <div class="card-h" style="margin:0"><h2>${title}</h2>${c.plan === k ? `<span class="chip ok">${c.status === "trial" ? t("Essai en cours") : t("Votre offre")}</span>` : ""}</div>
-      <p class="sp-price">${price}</p><ul>${items.map((x) => `<li>${x}</li>`).join("")}</ul></article>`;
+  async function pageOffer() {
+    loading("offre");
+    const [b, sitesData] = await Promise.all([api("/api/billing"), api("/api/client/sites")]);
+    const c = me.client = sitesData.plan;
     shell("offre", `<div class="pagehead"><div><p class="sub">${planLine(c)}</p><h1>${t("Mon offre")}</h1></div></div>
-      <p class="muted" style="max-width:62ch">${t("Suivre des chantiers gérés par des entreprises est toujours gratuit. Vous payez seulement si vous confiez un chantier à un proche : il publie l'avancement sans rien payer.")}</p>
+      <p class="muted" style="max-width:62ch">${t("Suivre des chantiers gérés par des entreprises est toujours gratuit. L'offre Plus ajoute le suivi de votre argent, vos proches et votre équipe sur place, et les visites de contrôle.")}</p>
       <div class="sp-plans">
-        ${card("free", t("Gratuit"), t("0 €"), [t("Chantiers illimités"), t("Photos vérifiées, étapes, devis et rapports"), t("Ajout par numéro de suivi")])}
-        ${card("plus", "Plus", `${esc(c.prices.plus)} <small>${t("/ mois")}</small>`, [t("Tout le gratuit"), t("Suivi de l'argent : versements, dépenses avec reçus, alertes"), t("Jusqu'à 5 proches qui publient pour vous, sans rien payer"), t("Visites de contrôle sur demande")])}
+        <article class="card card-p sp-plan ${c.plan === "free" ? "current" : ""}"><div class="card-h" style="margin:0"><h3>${t("Gratuit")}</h3>${c.plan === "free" ? `<span class="chip ok">${t("Votre offre")}</span>` : ""}</div>
+          <p class="sp-price">${b.region === "eu" ? "0 €" : "0 $"}</p><ul><li>${t("Chantiers illimités")}</li><li>${t("Photos vérifiées, étapes, devis et rapports")}</li><li>${t("Ajout par numéro de suivi")}</li></ul></article>
       </div>
-      <section class="card card-p"><h2>${t("Proches")}</h2><p>${t("{used} sur {slots} utilisés.", { used: c.used, slots: c.slots })}</p>
-      <p class="muted" style="font-size:.84rem">${t("Le paiement en ligne (carte, Orange Money, MTN MoMo, Wave) arrive bientôt. D'ici là, nous activons l'offre sur demande.")}</p></section>`);
+      ${c.status === "trial" ? `<p class="okbox">${ic("check", 18)} ${plural(c.days_left, "Essai Plus en cours : encore {n} jour, sans carte bancaire.", "Essai Plus en cours : encore {n} jours, sans carte bancaire.")}</p>` : ""}
+      ${billingCards(b, { current: c.status === "paid" ? "plus" : null })}
+      ${c.status === "paid" && (b.card || b.mode === "test") ? `<div><button type="button" class="btn ghost" data-portal>${b.mode === "test" ? (b.cancel_at_end ? t("Reprendre l'abonnement") : t("Arrêter à la fin du mois")) : t("Gérer mon abonnement (carte, factures)")}</button></div>` : ""}
+      <section class="card card-p"><h2>${t("Proches et équipe")}</h2><p>${t("{used} sur {slots} utilisés.", { used: c.used, slots: c.slots })}</p></section>`);
   }
 
   /* ---------- Compte ---------- */
-  function pageAccount() {
-    shell("compte", `<div class="pagehead"><div><p class="sub">${esc(me.email)}${me.google ? " · " + t("connecté avec Google") : ""}</p><h1>${t("Compte")}</h1></div></div>
+  async function pageAccount() {
+    if (!window.AF_CONFIG) window.AF_CONFIG = await api("/api/config", { authRedirect: false }).catch(() => ({ dial: [] }));
+    shell("compte", `<div class="pagehead"><div><p class="sub">${esc([me.email, me.phone_pretty].filter(Boolean).join(" · "))}${me.google ? " · " + t("connecté avec Google") : ""}</p><h1>${t("Compte")}</h1></div></div>
       ${installCard()}
+      <form class="card card-p form" id="phone-form" style="max-width:560px"><h2>${t("Téléphone")}</h2>
+        ${me.phone ? `<p>${esc(me.phone_pretty)} ${me.phone_verified ? `<span class="chip ok">${t("Confirmé")}</span>` : `<span class="chip wait">${t("À confirmer")}</span> <a href="/inscription/confirmer">${t("Confirmer maintenant")}</a>`}</p>` : `<p class="muted" style="font-size:.86rem">${t("Pour vous connecter avec votre numéro et recevoir les codes par WhatsApp ou SMS.")}</p>`}
+        <div class="ident"><label for="ph-num" class="sr-only">${t("Numéro de téléphone")}</label>${dialSelect("ph-dial", (window.AF_CONFIG && window.AF_CONFIG.dial) || [], me.country || undefined)}<input id="ph-num" name="phone" type="tel" required maxlength="30" autocomplete="tel"></div>
+        <div><button class="btn" type="submit">${me.phone ? t("Changer de numéro") : t("Ajouter mon numéro")}</button></div></form>
       <section class="card card-p planbox"><h2>${t("Apparence et langue")}</h2><div>${prefs()}</div></section>
       <form class="card card-p form" id="profile" style="max-width:560px"><h2>${t("Vos informations")}</h2>
         <div class="row2"><div class="field"><label for="pf-contact">${t("Votre nom")}</label><input id="pf-contact" name="contact_name" required value="${esc(me.contact_name)}"></div>
@@ -236,6 +262,7 @@
         <div><button class="btn danger" type="submit">${t("Supprimer définitivement mon compte")}</button></div></form>
       <div><button type="button" class="btn ghost" data-logout>${t("Se déconnecter")}</button></div>`);
     const send = (id, fn) => $(id).addEventListener("submit", async (e) => { e.preventDefault(); try { await fn(Object.fromEntries(new FormData(e.target))); } catch (x) { toast(x.message); } });
+    send("#phone-form", async (b) => { me = await api("/api/me/phone", { method: "POST", body: { phone: b.phone, dial: b.dial } }); location.href = "/inscription/confirmer?retour=compte"; });
     send("#profile", async (b) => { me = { ...me, ...(await api("/api/me", { method: "PATCH", body: { company: b.contact_name, ...b } })) }; toast(t("Profil enregistré.")); route(); });
     send("#password", async (b) => { await api("/api/me/password", { method: "POST", body: b }); me = await api("/api/me"); toast(t("Mot de passe enregistré. Vos autres appareils sont déconnectés.")); route(); });
     send("#delete-account", async (b) => { await api("/api/me", { method: "DELETE", body: b }); location.href = "/"; });
@@ -280,6 +307,14 @@
         if (!b.dataset.armed) { b.dataset.armed = "1"; b.textContent = t("Confirmer : effacer la position"); setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = t("Effacer la position"); } }, 5000); return; }
         act(() => api(`/api/client/sites/${d.resetPosition}/position/reset`, { method: "POST" }), t("Position effacée. La prochaine publication sur place l'enregistrera."));
       }
+      else if (d.review) act(() => api(`/api/ledger/${d.review}/review`, { method: "POST", body: { decision: d.decision } }), d.decision === "approve" ? t("Dépense approuvée : elle compte dans le budget utilisé.") : t("Dépense refusée. Elle reste visible, barrée."));
+      else if (d.memberDel) {
+        if (!b.dataset.armed) { b.dataset.armed = "1"; b.textContent = t("Confirmer : retirer du chantier"); setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = t("Retirer"); } }, 5000); return; }
+        act(() => api(`/api/team/${d.memberDel}`, { method: "DELETE" }), t("Retiré du chantier : il n'y a plus accès."));
+      }
+      else if (d.inviteDel) act(() => api(`/api/team-invites/${d.inviteDel}`, { method: "DELETE" }), t("Invitation annulée."));
+      else if (d.pay) { b.disabled = true; try { const r = await api("/api/billing/checkout", { method: "POST", body: { plan: d.pay, lang } }); location.href = r.url; } catch (x) { toast(x.message); b.disabled = false; } }
+      else if (d.portal !== undefined) { try { const r = await api("/api/billing/portal", { method: "POST" }); if (r.url) location.href = r.url; else { toast(t("Abonnement mis à jour.")); route(); } } catch (x) { toast(x.message); } }
       else if (d.logoutOthers !== undefined) { try { const r = await api("/api/me/logout-others", { method: "POST" }); toast(plural(r.closed, "{n} autre appareil déconnecté.", "{n} autres appareils déconnectés.")); } catch (x) { toast(x.message); } }
       else if (d.logout !== undefined) { await api("/api/logout", { method: "POST" }); location.href = "/connexion"; }
     });

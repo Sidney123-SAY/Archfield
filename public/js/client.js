@@ -39,15 +39,16 @@
         <h2 class="section-t">${t("Devis et factures")}</h2><section class="card card-p">${docsTable(s.documents, cur)}</section>
         ${isClient ? "" : `<p class="muted" style="font-size:.84rem">${t("Pour noter vos propres versements et être alerté si vous payez plus vite que les travaux avancent, créez votre espace (2 mois offerts).")} <a href="/inscription">${t("Créer mon espace")}</a></p>`}`;
     } else {
-      body = s.reports.length ? s.reports.map((r) => {
+      body = `<section class="card card-p pdfbox">${ic("doc", 22)}<div><b>${t("Rapport de la semaine en PDF")}</b><span class="muted">${t("Sur fond blanc, à garder, imprimer ou transmettre.")}</span></div><a class="btn" href="/api/c/${encodeURIComponent(token)}/rapport.pdf" target="_blank" rel="noopener">${t("Ouvrir le PDF")}</a></section>` + (s.reports.length ? s.reports.map((r) => {
         const d = r.data;
         return `<section class="card card-p report">
           <div class="mail"><span>${t("Rapport du {date}", { date: dLong(r.sent_at) })}</span><span>${t("Semaine du {a} au {b}", { a: dShort(r.period_start), b: dShort(r.period_end) })}</span></div>
           <div class="figs"><div><b>${d.progress} %</b><span>${t("des travaux réalisés")}</span></div><div><b>${d.updates.length}</b><span>${d.updates.length > 1 ? t("mises à jour") : t("mise à jour")}</span></div><div><b>${d.photos}</b><span>${t("photos datées")}</span></div></div>
-          <ul>${d.updates.map((u) => `<li><span class="muted">${dShort(u.date)}</span> · ${esc(u.text)}</li>`).join("") || `<li>${t("Aucune mise à jour cette semaine.")}${d.reminded ? " " + t("{who} a reçu une relance par e-mail.", { who: esc(s.artisan.company) }) : ""}</li>`}</ul>
+          ${d.workers_avg != null || (d.deliveries && d.deliveries.length) ? `<p class="muted">${[d.workers_avg != null ? plural(d.workers_avg, "{n} ouvrier présent en moyenne", "{n} ouvriers présents en moyenne") : "", (d.deliveries || []).length ? t("Livraisons : {list}", { list: esc(d.deliveries.map((x) => [x.quantity, x.label].filter(Boolean).join(" ")).join(", ")) }) : ""].filter(Boolean).join(" · ")}</p>` : ""}
+          <ul>${d.updates.map((u) => `<li><span class="muted">${dShort(u.date)}</span> · ${esc(u.text || (u.topic === "rapport" ? t("Rapport du jour") : t("Photos")))}</li>`).join("") || `<li>${t("Aucune mise à jour cette semaine.")}${d.reminded ? " " + t("{who} a reçu une relance par e-mail.", { who: esc(s.artisan.company) }) : ""}</li>`}</ul>
           <p>${d.drift ? `<span class="chip warn">${t("Dérive")}</span> ${t("{step} : {n} de retard.", { step: esc(d.running.name), n: days(d.running.delay) })}` : `<span class="chip ok">${t("Dans les temps")}</span>`}${d.next ? " " + t("Étape suivante : {step}.", { step: `<b>${esc(d.next)}</b>` }) : ""}</p>
         </section>`;
-      }).join("") : `<section class="card empty"><h3>${t("Pas encore de rapport")}</h3><p>${t("Un rapport de la semaine arrive ici chaque lundi matin.")}</p></section>`;
+      }).join("") : `<section class="card empty"><h3>${t("Pas encore de rapport")}</h3><p>${t("Un rapport de la semaine arrive ici chaque lundi matin.")}</p></section>`);
     }
     app.innerHTML = `
       ${isClient ? `<a class="back" href="/app#mes-chantiers">${ic("left", 16)} ${t("Mes chantiers")}</a>` : ""}

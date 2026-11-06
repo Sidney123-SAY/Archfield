@@ -68,6 +68,18 @@
     moon: '<path d="M14.8 11.2A6.5 6.5 0 0 1 6.8 3.2a6.5 6.5 0 1 0 8 8z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>',
     screen: '<rect x="2" y="3" width="14" height="9.5" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M6.5 15.5h5M9 12.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
     apple: '<path d="M12.4 9.5c0-1.6 1.3-2.4 1.4-2.5-.8-1.1-2-1.3-2.4-1.3-1-.1-2 .6-2.5.6-.5 0-1.3-.6-2.2-.6-1.1 0-2.2.7-2.8 1.7-1.2 2.1-.3 5.2.9 6.9.6.8 1.2 1.7 2.1 1.7.8 0 1.2-.5 2.2-.5s1.3.5 2.2.5c.9 0 1.5-.8 2-1.7.6-.9.9-1.8.9-1.9 0 0-1.8-.7-1.8-2.9zM10.8 4.5c.5-.6.8-1.4.7-2.2-.7 0-1.5.5-2 1.1-.4.5-.8 1.3-.7 2.1.8.1 1.5-.4 2-1z" fill="currentColor"/>',
+    mic: '<rect x="6.5" y="2" width="5" height="9" rx="2.5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M4 8.5a5 5 0 0 0 10 0M9 13.5V16M6.5 16h5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>',
+    truck: '<path d="M1.8 4.5h9v8h-9zM10.8 7.5h3l2.4 2.6v2.4h-5.4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/><circle cx="5" cy="13.6" r="1.5" stroke="currentColor" stroke-width="1.4" fill="none"/><circle cx="13.2" cy="13.6" r="1.5" stroke="currentColor" stroke-width="1.4" fill="none"/>',
+    cloud: '<path d="M5 14h8.5a3 3 0 0 0 .2-6 4.5 4.5 0 0 0-8.6-1A3.5 3.5 0 0 0 5 14z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>',
+    rain: '<path d="M5 11h8.5a3 3 0 0 0 .2-6 4.5 4.5 0 0 0-8.6-1A3.5 3.5 0 0 0 5 11zM6 13l-1 2.5M9.5 13l-1 2.5M13 13l-1 2.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+    bolt: '<path d="M5 10.5h8.5a3 3 0 0 0 .2-6 4.5 4.5 0 0 0-8.6-1A3.5 3.5 0 0 0 5 10.5zM9.8 11.5 8 14.2h2.4L8.8 17" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+    wind: '<path d="M2 7h9a2.2 2.2 0 1 0-2.2-2.2M2 10.5h12.5a2 2 0 1 1-2 2M2 14h6" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>',
+    doc: '<path d="M4 2.5h6.5L14 6v9.5H4z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/><path d="M10.5 2.5V6H14M6.5 9.5h5M6.5 12h5" stroke="currentColor" stroke-width="1.4" fill="none"/>',
+    money: '<rect x="2" y="4.5" width="14" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="9" cy="9" r="2.2" stroke="currentColor" stroke-width="1.4" fill="none"/>',
+    stop: '<rect x="4.5" y="4.5" width="9" height="9" rx="1.5" fill="currentColor"/>',
+    trash: '<path d="M3.5 5h11M7 5V3.5h4V5M5 5l.8 10h6.4L13 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+    wifioff: '<path d="M2 6.5a10.5 10.5 0 0 1 14 0M4.5 9.3a6.8 6.8 0 0 1 9 0M7 12a3 3 0 0 1 4 0M2.5 2.5l13 13" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>',
+    shield: '<path d="M9 2 15 4.5V9c0 3.6-2.6 6-6 7-3.4-1-6-3.4-6-7V4.5z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>',
     google: '<path d="M16.5 9.2c0-.6-.1-1.2-.2-1.7H9v3.3h4.2a3.6 3.6 0 0 1-1.6 2.4v2h2.6c1.5-1.4 2.3-3.4 2.3-6z" fill="#4285F4"/><path d="M9 17c2.2 0 4-.7 5.3-1.9l-2.6-2c-.7.5-1.6.8-2.7.8-2.1 0-3.8-1.4-4.5-3.3H1.8v2.1A8 8 0 0 0 9 17z" fill="#34A853"/><path d="M4.5 10.6a4.8 4.8 0 0 1 0-3.2V5.3H1.8a8 8 0 0 0 0 7.4l2.7-2.1z" fill="#FBBC05"/><path d="M9 4.2c1.2 0 2.3.4 3.1 1.2l2.3-2.3A8 8 0 0 0 1.8 5.3l2.7 2.1C5.2 5.6 6.9 4.2 9 4.2z" fill="#EA4335"/>'
   };
   const ic = (n, s = 18, color = "currentColor") => `<svg width="${s}" height="${s}" viewBox="0 0 18 18" aria-hidden="true" style="color:${color}">${I[n]}</svg>`;
@@ -183,6 +195,8 @@
   const dLong = (d) => fmt(d, { weekday: "long", day: "numeric", month: "long" });
   const nf = (n) => new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 1 }).format(n);
   const money = (n, cur) => new Intl.NumberFormat(LOCALE, { style: "currency", currency: cur || "EUR", maximumFractionDigits: 0 }).format(n);
+  // Prix d'abonnement, en centimes : « 9,99 € » ou « 17 $US ».
+  const price = (cents, cur) => new Intl.NumberFormat(LOCALE, { style: "currency", currency: String(cur || "EUR").toUpperCase(), minimumFractionDigits: cents % 100 ? 2 : 0 }).format(cents / 100);
   const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
   const plural = (n, one, many) => t(n > 1 ? many : one, { n: nf(n) });
   function rel(d) {
@@ -323,7 +337,13 @@
   }
 
   // Entrées du journal. who = « vous » côté client, prénom du client côté artisan.
-  function journal(s, updates, { forClient, who } = {}) {
+  // manage : vue du gestionnaire (rapports à vérifier, problèmes à partager ou résoudre, publications à supprimer).
+  const WEATHER = { soleil: ["sun", "Soleil"], nuageux: ["cloud", "Nuageux"], pluie: ["rain", "Pluie"], orage: ["bolt", "Orage"], vent: ["wind", "Vent fort"] };
+  const PROBLEM = { accident: "Accident", panne: "Panne", retard: "Retard", materiel: "Matériel manquant", securite: "Sécurité", autre: "Autre" };
+  const dur = (s) => `${Math.floor((s || 0) / 60)}:${String(Math.round(s || 0) % 60).padStart(2, "0")}`;
+  const vocals = (list) => (list && list.length ? `<div class="vocals">${list.map((a) => `<div class="vocal">${ic("mic", 16)}<audio controls preload="none" src="${a.url}"></audio>${a.duration ? `<span class="muted">${dur(a.duration)}</span>` : ""}</div>`).join("")}</div>` : "");
+  const photoGrid = (u) => (u.photos.length ? `<div class="photos">${u.photos.map((p) => { const d = p.shot_at || p.taken_at; return `<a class="photo" href="${p.url}" target="_blank" rel="noopener"><img loading="lazy" alt="${t("Photo du chantier")}${u.step_name ? ", " + esc(u.step_name) : ""}" src="${p.url}"><span class="stamp">${dShort(d)} ${time(d)}</span></a>`; }).join("")}</div>` : "");
+  function journal(s, updates, { forClient, who, manage } = {}) {
     if (!updates.length) return `<div class="card empty"><h3>${t("Pas encore de mise à jour")}</h3><p>${forClient ? t("Les photos et messages de votre artisan apparaîtront ici.") : t("Publiez la première mise à jour : quelques photos et une phrase suffisent.")}</p></div>`;
     const stepById = Object.fromEntries(s.steps.map((x) => [x.id, x]));
     return updates.map((u) => {
@@ -336,12 +356,34 @@
       if (u.kind === "step_validated") return `<div class="card sys">${ic("check", 22, "var(--vert)")}<span>${forClient ? t("{step} validé par vous · {date}", { step, date: rel(u.created_at) }) : t("{step} validé par {who} · {date}", { step, who: esc(who), date: rel(u.created_at) })}</span></div>`;
       const proof = verifyBadge(u);
       const seen = u.seen_at ? (new Date(u.seen_at).toDateString() !== new Date().toDateString() ? t("Vu par {who} le {date} à {h}", { who: esc(who), date: dShort(u.seen_at), h: time(u.seen_at) }) : t("Vu par {who} à {h}", { who: esc(who), h: time(u.seen_at) })) : t("Pas encore vu par {who}", { who: esc(who) });
-      return `<article class="card entry">
-        <div class="eh"><span>${rel(u.created_at)}</span><span>${esc(u.step_name || "")}</span></div>
-        <p>${esc(u.text)}</p>
-        ${u.photos.length ? `<div class="photos">${u.photos.map((p) => { const d = p.shot_at || p.taken_at; return `<a class="photo" href="${p.url}" target="_blank" rel="noopener"><img loading="lazy" alt="${t("Photo du chantier")}${u.step_name ? ", " + esc(u.step_name) : ""}" src="${p.url}"><span class="stamp">${dShort(d)} ${time(d)}</span></a>`; }).join("")}</div>` : ""}
+      const topic = u.topic || "post", d = u.data || {};
+      const label = topic === "rapport" ? t("Rapport du jour") : topic === "probleme" ? t("Problème : {what}", { what: t(PROBLEM[d.category] || "Autre") }) : u.audios?.length && !u.photos.length ? t("Message vocal") : "";
+      const head = [label, u.author_name ? esc(u.author_name) : "", esc(u.step_name || "")].filter(Boolean).join(" · ");
+      const facts = topic === "rapport" ? `<ul class="facts">
+          ${d.workers != null ? `<li>${ic("users", 16)} ${plural(d.workers, "{n} ouvrier présent", "{n} ouvriers présents")}</li>` : ""}
+          ${d.weather && WEATHER[d.weather] ? `<li>${ic(WEATHER[d.weather][0], 16)} ${t(WEATHER[d.weather][1])}</li>` : ""}
+          ${(u.deliveries || []).map((x) => `<li>${ic("truck", 16)} ${t("Livré : {what}", { what: esc([x.quantity, x.label].filter(Boolean).join(" ")) })}</li>`).join("")}
+        </ul>` : "";
+      const teamOnly = u.visibility === "team" ? `<span class="chip idle">${ic("lock", 13)} ${t("Équipe seulement")}</span>` : "";
+      let actions = "";
+      if (manage) {
+        const bits = [];
+        if (topic === "rapport" && u.author_id && u.author_id !== manage.me) bits.push(u.checked_at ? `<span class="chip ok">${t("Vérifié par {who}", { who: esc(u.checked_by_name || "") })}</span>` : `<span class="chip wait">${t("À vérifier")}</span><button type="button" class="btn ghost" data-check="${u.id}">${t("Marquer vérifié")}</button>`);
+        if (topic === "probleme") bits.push(u.resolved_at ? `<span class="chip ok">${t("Résolu")}</span><button type="button" class="btn ghost" data-resolve="${u.id}">${t("Rouvrir")}</button>` : `<button type="button" class="btn ghost" data-resolve="${u.id}">${t("Marquer résolu")}</button>`);
+        if (u.visibility === "team") bits.push(`<button type="button" class="btn ghost" data-share="${u.id}">${t("Montrer au client")}</button>`);
+        else if (topic === "probleme" || (topic === "post" && u.audios?.length && !u.photos.length)) bits.push(`<button type="button" class="btn ghost" data-unshare="${u.id}">${t("Cacher au client")}</button>`);
+        actions = bits.length ? `<div class="e-acts">${bits.join("")}</div>` : "";
+      }
+      return `<article class="card entry ${topic === "probleme" ? "prob" + (u.resolved_at ? " solved" : "") : topic === "rapport" ? "rep" : ""}">
+        <div class="eh"><span>${rel(u.created_at)}</span><span>${head}</span></div>
+        ${teamOnly}
+        ${u.text ? `<p>${esc(u.text)}</p>` : ""}
+        ${vocals(u.audios)}
+        ${facts}
+        ${photoGrid(u)}
         ${proof}
-        ${forClient ? "" : `<div class="eh"><span class="vu ${u.seen_at ? "" : "no"}">${ic("eye", 17)} ${seen}</span><button type="button" class="del" data-del-update="${u.id}">${t("Supprimer")}</button></div>`}
+        ${actions}
+        ${forClient ? "" : `<div class="eh"><span class="vu ${u.seen_at ? "" : "no"}">${ic("eye", 17)} ${u.visibility === "team" ? t("Pas montré au client") : seen}</span>${manage ? `<button type="button" class="del" data-del-update="${u.id}">${t("Supprimer")}</button>` : ""}</div>`}
       </article>`;
     }).join("");
   }
@@ -372,13 +414,16 @@
   const CATEGORY = { materiaux: "Matériaux", main_oeuvre: "Main-d'œuvre", transport: "Transport", autre: "Autre" };
   const METHOD = { wave: "Wave", orange_money: "Orange Money", mtn_momo: "MTN MoMo", virement: "Virement", especes: "Espèces", autre: "Autre" };
   // Résumé (budget, versé, dépensé, avancement), alerte, échéancier et lignes. me : id du compte (bouton « Annuler »).
-  function moneyPanel(m, { me, forClient } = {}) {
+  function moneyPanel(m, { me, forClient, review } = {}) {
     const cur = m.currency, pct = (n) => (m.budget ? Math.min(100, Math.round((n / m.budget) * 100)) : 0);
-    const line = (e) => `<li class="ml ${e.kind} ${e.cancelled_at ? "cancelled" : ""}">
+    const line = (e) => `<li class="ml ${e.kind} ${e.cancelled_at || e.status === "refusee" ? "cancelled" : ""} ${e.status === "en_attente" ? "pending" : ""}">
         <span class="ml-ic">${ic(e.kind === "versement" ? "card" : "tool", 16)}</span>
         <div class="ml-main">
           <div class="ml-top"><b>${e.kind === "versement" ? t("Versement") + (e.category ? " · " + t(METHOD[e.category] || "Autre") : "") : esc(e.label) + " · " + t(CATEGORY[e.category] || "Autre")}</b><span class="ml-amt">${e.kind === "versement" ? "+" : "−"}${money(e.amount, cur)}</span></div>
           <span class="muted">${dShort(e.entry_date)} · ${t("noté par {who}", { who: esc(e.created_by_name) })}${e.kind === "versement" && e.label ? " · " + esc(e.label) : ""}</span>
+          ${e.status === "en_attente" && !e.cancelled_at ? `<span class="ml-pend">${ic("warn", 14)} ${t("En attente d'approbation")}</span>${review ? `<span class="ml-review"><button type="button" class="btn ok" data-review="${e.id}" data-decision="approve">${t("Approuver")}</button><button type="button" class="btn ghost" data-review="${e.id}" data-decision="refuse">${t("Refuser")}</button></span>` : ""}` : ""}
+          ${e.status === "refusee" ? `<span class="ml-cancel">${t("Refusée le {date} par {who}", { date: dShort(e.reviewed_at), who: esc(e.reviewed_by_name || "") })}${e.review_note ? " : " + esc(e.review_note) : ""}</span>` : ""}
+          ${e.status === "approuvee" && e.reviewed_at ? `<span class="muted">${t("Approuvée par {who}", { who: esc(e.reviewed_by_name || "") })}</span>` : ""}
           ${e.cancelled_at ? `<span class="ml-cancel">${t("Annulée le {date} par {who}", { date: dShort(e.cancelled_at), who: esc(e.cancelled_by_name) })}${e.cancel_reason ? " : " + esc(e.cancel_reason) : ""}</span>` : ""}
           ${e.receipt_url || (!e.cancelled_at && me && e.created_by === me) ? `<div class="ml-foot">${e.receipt_url ? `<a class="ml-receipt" href="${e.receipt_url}" target="_blank" rel="noopener"><img src="${e.receipt_url}" alt="${t("Reçu")}" loading="lazy"></a>` : "<span></span>"}${!e.cancelled_at && me && e.created_by === me ? `<button type="button" class="btn ghost ml-x" data-ledger-cancel="${e.id}">${t("Annuler")}</button>` : ""}</div>` : ""}
         </div>
@@ -393,6 +438,7 @@
       </div>
       <div class="m-bars" aria-hidden="true"><span class="lbl">${t("Versé")}</span><span class="bar"><i class="paid" style="width:${pct(m.paid)}%"></i></span><span class="lbl">${t("Réalisé")}</span><span class="bar"><i class="done" style="width:${m.progress}%"></i></span></div>
       ${m.alert ? `<div class="warnbox">${ic("warn", 18)} ${t("Attention : {paid} % du budget est déjà versé pour {done} % des travaux réalisés.", { paid: m.paid_pct, done: m.progress })} ${forClient ? t("Avant le prochain versement, demandez où en est le chantier.") : ""}</div>` : m.paid ? `<div class="okbox">${ic("check", 18)} ${t("Les versements suivent l'avancement des travaux.")}</div>` : ""}
+      ${m.pending_count ? `<p class="m-note warn-t">${ic("warn", 15)} ${plural(m.pending_count, "{n} dépense attend l'approbation du gestionnaire ({amount}).", "{n} dépenses attendent l'approbation du gestionnaire ({amount}).").replace("{amount}", money(m.pending, cur))}</p>` : ""}
       ${m.unjustified > 0 ? `<p class="muted m-note">${t("{n} versés ne sont pas encore justifiés par une dépense avec reçu.", { n: money(m.unjustified, cur) })}</p>` : ""}
       ${m.schedule.length ? `<h3>${t("Échéancier")}</h3><ul class="m-sched">${m.schedule.map((x) => `<li><span>${esc(x.name)}</span><b>${money(x.amount, cur)}</b>${x.due ? `<span class="chip ok">${t("Étape validée")}</span>` : `<span class="chip idle">${t("À la validation")}</span>`}</li>`).join("")}</ul>` : ""}
       <h3>${t("Versements")}</h3>${vers.length ? `<ul class="m-list">${vers.map(line).join("")}</ul>` : `<p class="muted">${t("Aucun versement noté.")}</p>`}
@@ -431,5 +477,107 @@
     </table></div>`;
   }
 
-  window.AF = { t, tr, lang, LANGS, translatePage, setLang, langSelect, themeToggle, prefs, setTheme, consent, cookieBanner, footerLinks, installCard, installNudge, exifOf, position, mapLink, verifyBadge, moneyPanel, depenseForm, versementForm, curLabel, LOGO, ic, esc, fmt, time, dShort, dLong, nf, money, cap, plural, rel, api, upload, shrink, toast, copy, STATUS_CHIP, healthChip, siteCard, journal, docsTable };
+  /* ---------- Offres et paiement (entreprise et client) ---------- */
+  const PLAN_NAME = { plus: "Plus", demarrage: "Démarrage", pme: "PME", pro: "Pro", free: "Gratuit" };
+  function billingCards(b, { current } = {}) {
+    const eu = b.region === "eu";
+    const line = (o) => o.audience === "client" || o.proches ? [t("Suivi de l'argent : versements, dépenses avec reçus, alertes"), t("Jusqu'à {n} proches ou personnes d'équipe", { n: o.proches }), t("Visites de contrôle sur demande")]
+      : [o.sites == null ? t("Chantiers illimités") : plural(o.sites, "{n} chantier à vous en cours", "{n} chantiers à vous en cours"), o.members == null ? t("Équipe illimitée") : plural(o.members, "{n} personne dans l'équipe", "{n} personnes dans l'équipe"), t("Rapport du jour, vocaux, dépenses à approuver"), t("Rapport PDF chaque semaine")];
+    return `<div class="sp-plans">${b.offers.map((o) => `<article class="card card-p sp-plan ${current === o.plan ? "current" : ""}">
+      <div class="card-h" style="margin:0"><h3>${t(PLAN_NAME[o.plan])}</h3>${current === o.plan ? `<span class="chip ok">${t("Votre offre")}</span>` : ""}</div>
+      <p class="sp-price">${price(o.amount, o.currency)} <small>${t("/ mois")}${eu ? " " + t("TTC") : ""}</small></p>
+      ${o.fcfa ? `<p class="muted sm">${t("Environ {n} FCFA, débités en dollars par votre carte", { n: nf(o.fcfa) })}</p>` : ""}
+      <ul>${line(o).map((x) => `<li>${x}</li>`).join("")}</ul>
+      ${b.mode === "off" ? "" : `<button type="button" class="btn ${current === o.plan ? "ghost" : "primary"}" data-pay="${o.plan}">${current === o.plan ? t("Prolonger") : t("Choisir {name}", { name: t(PLAN_NAME[o.plan]) })}</button>`}
+    </article>`).join("")}</div>
+    <p class="muted sm">${eu ? t("Prix en euros, TVA comprise. Paiement par carte bancaire, sans engagement : vous arrêtez quand vous voulez.") : t("Prix en dollars américains, comme la plupart des abonnements en ligne en Afrique. Votre banque convertit le montant ; des taxes locales peuvent s'ajouter. Sans engagement.")}
+    ${b.mode === "test" ? " " + t("Mode test : aucun paiement réel, rien n'est débité.") : b.mode === "off" ? " " + t("Le paiement par carte ouvre bientôt. D'ici là, écrivez-nous : nous activons l'offre après un paiement par Wave, Orange Money ou virement.") : ""}</p>`;
+  }
+
+  /* ---------- Indicatif téléphonique ---------- */
+  const TZ_COUNTRY = { "Africa/Porto-Novo": "BJ", "Africa/Dakar": "SN", "Africa/Abidjan": "CI", "Africa/Lome": "TG", "Africa/Ouagadougou": "BF", "Africa/Bamako": "ML", "Africa/Niamey": "NE", "Africa/Conakry": "GN", "Africa/Douala": "CM", "Africa/Libreville": "GA", "Africa/Brazzaville": "CG", "Africa/Kinshasa": "CD", "Africa/Lubumbashi": "CD", "Africa/Ndjamena": "TD", "Africa/Bangui": "CF", "Africa/Malabo": "GQ", "Africa/Casablanca": "MA", "Africa/Algiers": "DZ", "Africa/Tunis": "TN", "Africa/Nouakchott": "MR", "Africa/Accra": "GH", "Africa/Lagos": "NG", "Europe/Paris": "FR", "Europe/Brussels": "BE", "Europe/Zurich": "CH", "Europe/Luxembourg": "LU", "Europe/Berlin": "DE", "Europe/Rome": "IT", "Europe/Madrid": "ES", "Europe/London": "GB", "Europe/Amsterdam": "NL", "Europe/Lisbon": "PT", "America/Toronto": "CA", "America/Montreal": "CA", "America/Vancouver": "CA", "America/New_York": "US", "America/Chicago": "US", "America/Los_Angeles": "US", "America/Denver": "US" };
+  function guessDial() {
+    const saved = store.get("af-dial");
+    if (saved) return saved;
+    try { const z = Intl.DateTimeFormat().resolvedOptions().timeZone; if (TZ_COUNTRY[z]) return TZ_COUNTRY[z]; } catch (e) {}
+    const m = /-(\w\w)$/.exec(navigator.language || "");
+    return m ? m[1].toUpperCase() : "FR";
+  }
+  const dialSelect = (id, list, selected = guessDial()) => `<select id="${id}" class="dial" name="dial" aria-label="${t("Pays de l'indicatif")}">${list.map((d) => `<option value="${d.country}" ${d.country === selected ? "selected" : ""}>${d.country} +${d.code}</option>`).join("")}</select>`;
+  document.addEventListener("change", (e) => { if (e.target.matches("select.dial")) store.set("af-dial", e.target.value); });
+  // Le champ « Téléphone ou e-mail » : l'indicatif apparaît dès qu'on tape un numéro sans « + ».
+  const looksPhone = (v) => /^\+?[\d\s.()\-/]{2,}$/.test(String(v || "").trim());
+
+  /* ---------- Envois en attente de réseau (chantier sans couverture) ---------- */
+  // Publication, rapport, dépense, problème ou message vocal : gardé sur le téléphone (IndexedDB) et envoyé dès que
+  // le réseau revient. Rien n'est présenté comme « envoyé » avant la réponse du serveur.
+  const idb = () => new Promise((resolve, reject) => {
+    const r = indexedDB.open("archfield", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("outbox", { keyPath: "id", autoIncrement: true });
+    r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);
+  });
+  const ostore = async (mode, fn) => { const db = await idb(); return new Promise((resolve, reject) => { const q = fn(db.transaction("outbox", mode).objectStore("outbox")); q.onsuccess = () => resolve(q.result); q.onerror = () => reject(q.error); }); };
+  // Ancien format (publication du composer) → formulaire.
+  function itemForm(it) {
+    const form = new FormData();
+    if (it.url) {
+      for (const [k, v] of Object.entries(it.fields || {})) form.append(k, v);
+      for (const f of it.files || []) form.append(f.field, f.blob, f.name);
+      return { url: it.url, form };
+    }
+    form.append("text", it.text); form.append("step_id", it.stepId || ""); form.append("done", it.done ? "1" : "0");
+    form.append("meta", JSON.stringify(it.photos.map((p) => p.meta)));
+    if (it.pos) { form.append("lat", it.pos.lat); form.append("lng", it.pos.lng); form.append("accuracy", it.pos.accuracy); }
+    it.photos.forEach((p) => form.append("photos", p.file, p.name));
+    return { url: `/api/sites/${it.siteId}/updates`, form };
+  }
+  let flushing = false;
+  const outbox = {
+    all: () => ostore("readonly", (o) => o.getAll()).catch(() => []),
+    add: (item) => ostore("readwrite", (o) => o.add({ ...item, at: item.at || new Date().toISOString() })),
+    del: (id) => ostore("readwrite", (o) => o.delete(id)).catch(() => {}),
+    async count() { return (await outbox.all()).length; },
+    // Envoie tout ce qui attend. Renvoie { sent, left, refused }.
+    async flush() {
+      if (flushing) return { sent: 0, left: await outbox.count(), refused: [] };
+      flushing = true;
+      let sent = 0; const refused = [];
+      try {
+        for (const it of await outbox.all()) {
+          const { url, form } = itemForm(it);
+          try { await upload(url, form); await outbox.del(it.id); sent++; }
+          catch (e) { if (e.offline) break; await outbox.del(it.id); refused.push(e.message); }
+        }
+      } finally { flushing = false; }
+      return { sent, left: await outbox.count(), refused };
+    }
+  };
+
+  /* ---------- Message vocal : 2 minutes au plus ---------- */
+  const VOICE_MAX = 120;
+  const canRecord = () => !!(window.isSecureContext && navigator.mediaDevices?.getUserMedia && window.MediaRecorder);
+  // Enregistreur : start() demande le micro ; onTick(secondes) ; onDone({ blob, name, duration }) à l'arrêt.
+  function recorder({ onTick, onDone, onError }) {
+    let rec = null, stream = null, chunks = [], t0 = 0, timer = null;
+    const type = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"].find((x) => window.MediaRecorder?.isTypeSupported?.(x)) || "";
+    const ext = /mp4/.test(type) ? ".m4a" : /ogg/.test(type) ? ".ogg" : ".webm";
+    const stopAll = () => { clearInterval(timer); stream?.getTracks().forEach((tr) => tr.stop()); stream = null; };
+    return {
+      async start() {
+        try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+        catch (e) { onError?.(t("Micro refusé. Autorisez le micro pour ce site dans les réglages du navigateur.")); return false; }
+        chunks = []; rec = new MediaRecorder(stream, type ? { mimeType: type, audioBitsPerSecond: 32000 } : undefined);
+        rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+        rec.onstop = () => { const duration = Math.min(VOICE_MAX, (Date.now() - t0) / 1000); stopAll(); const blob = new Blob(chunks, { type: rec.mimeType || type || "audio/webm" }); if (blob.size) onDone?.({ blob, name: "vocal" + ext, duration }); };
+        rec.start(1000); t0 = Date.now();
+        timer = setInterval(() => { const sec = (Date.now() - t0) / 1000; onTick?.(sec); if (sec >= VOICE_MAX) this.stop(); }, 250);
+        return true;
+      },
+      stop() { if (rec && rec.state !== "inactive") rec.stop(); else stopAll(); },
+      cancel() { if (rec) rec.onstop = () => stopAll(); this.stop(); }
+    };
+  }
+  const durText = dur;
+
+  window.AF = { t, tr, lang, LANGS, translatePage, setLang, langSelect, themeToggle, prefs, setTheme, consent, cookieBanner, footerLinks, installCard, installNudge, exifOf, position, mapLink, verifyBadge, moneyPanel, depenseForm, versementForm, curLabel, LOGO, ic, esc, fmt, time, dShort, dLong, nf, money, cap, plural, rel, api, upload, shrink, toast, copy, STATUS_CHIP, healthChip, siteCard, journal, docsTable, price, billingCards, PLAN_NAME, guessDial, dialSelect, looksPhone, outbox, recorder, canRecord, VOICE_MAX, durText, vocals, PROBLEM, WEATHER, store };
 })();

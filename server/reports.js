@@ -13,18 +13,26 @@ function lastMonday(now = Date.now()) {
 
 function buildReport(site, start, end, now = Date.now()) {
   const s = siteWithSummary(site, now);
+  const range = [site.id, start.toISOString(), end.toISOString()];
+  // Seulement ce que le client peut voir : les problèmes internes à l'équipe restent dehors.
   const posts = all(
-    `SELECT u.id, u.text, u.created_at, st.name AS step FROM updates u LEFT JOIN steps st ON st.id = u.step_id
-     WHERE u.site_id = ? AND u.kind = 'post' AND u.created_at >= ? AND u.created_at < ? ORDER BY u.created_at`,
-    site.id, start.toISOString(), end.toISOString());
+    `SELECT u.id, u.text, u.created_at, u.topic, u.data, u.author_name, st.name AS step FROM updates u LEFT JOIN steps st ON st.id = u.step_id
+     WHERE u.site_id = ? AND u.kind = 'post' AND u.visibility = 'all' AND u.created_at >= ? AND u.created_at < ? ORDER BY u.created_at`, ...range);
   const photos = get(
     `SELECT COUNT(*) AS n FROM photos p JOIN updates u ON u.id = p.update_id
-     WHERE u.site_id = ? AND u.created_at >= ? AND u.created_at < ?`, site.id, start.toISOString(), end.toISOString()).n;
+     WHERE u.site_id = ? AND u.visibility = 'all' AND u.created_at >= ? AND u.created_at < ?`, ...range).n;
+  const workers = posts.filter((p) => p.topic === "rapport" && p.data).map((p) => JSON.parse(p.data).workers).filter((n) => Number.isFinite(n));
+  const deliveries = all(`SELECT d.label, d.quantity, d.created_at FROM deliveries d JOIN updates u ON u.id = d.update_id WHERE d.site_id = ? AND u.visibility = 'all' AND d.created_at >= ? AND d.created_at < ? ORDER BY d.created_at`, ...range);
+  const spent = get(`SELECT COALESCE(SUM(amount), 0) AS n FROM ledger WHERE site_id = ? AND kind = 'depense' AND status = 'approuvee' AND cancelled_at IS NULL AND entry_date >= ? AND entry_date < ?`, site.id, start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)).n;
   const next = s.steps.find((x) => x.status === "a_venir");
   return {
     progress: s.progress,
-    updates: posts.map((p) => ({ date: p.created_at, step: p.step, text: p.text })),
+    updates: posts.map((p) => ({ date: p.created_at, step: p.step, text: p.text, topic: p.topic, author: p.author_name, workers: p.data ? JSON.parse(p.data).workers ?? null : null })),
     photos,
+    reports: posts.filter((p) => p.topic === "rapport").length,
+    workers_avg: workers.length ? Math.round(workers.reduce((a, n) => a + n, 0) / workers.length) : null,
+    deliveries: deliveries.map((d) => ({ label: d.label, quantity: d.quantity, date: d.created_at })),
+    spent,
     drift: s.drift,
     running: s.running ? { name: s.running.name, actual: s.running.actual_days, planned: s.running.planned_days, delay: s.delay } : null,
     next: next ? next.name : null,
@@ -42,9 +50,11 @@ function reportText(site, artisan, data) {
   if (data.running) lines.push(`Étape en cours : ${data.running.name} (${data.running.actual} j pour ${data.running.planned} prévus)`);
   if (data.drift) lines.push(`Attention : cette étape a pris du retard.`);
   if (data.toValidate) lines.push(`${data.toValidate} étape(s) attendent votre validation.`);
-  data.updates.forEach((u) => lines.push(`- ${u.date.slice(0, 10)} · ${u.text}`));
+  if (data.workers_avg != null) lines.push(`Ouvriers présents en moyenne : ${data.workers_avg}`);
+  if (data.deliveries?.length) lines.push(`Livraisons : ${data.deliveries.map((d) => [d.quantity, d.label].filter(Boolean).join(" ")).join(", ")}`);
+  data.updates.forEach((u) => lines.push(`- ${u.date.slice(0, 10)} · ${u.text || (u.topic === "rapport" ? "Rapport du jour" : "Photos")}`));
   if (!data.updates.length) lines.push(data.reminded ? `Aucune mise à jour cette semaine. ${artisan.company} a reçu une relance par e-mail.` : "Aucune mise à jour cette semaine.");
-  lines.push("", `Voir les photos et valider les étapes : ${BASE_URL}/c/${site.client_token}`);
+  lines.push("", `Voir les photos et valider les étapes : ${BASE_URL}/c/${site.client_token}`, `Le rapport en PDF : ${BASE_URL}/api/c/${site.client_token}/rapport.pdf`);
   return lines.join("\n");
 }
 

@@ -149,9 +149,10 @@
     <div class="lp-wrap lp-band-in">
       <div>
         <p class="lp-label lp-label-light" data-i18n>Entreprises du BTP</p>
-        <h2 class="lp-h2" data-i18n>Vos clients voient le travail. Ils paient à temps.</h2>
-        <p class="lp-p" data-i18n>Archfield est gratuit pour les entreprises. Publiez en trente secondes depuis le chantier, envoyez le lien par WhatsApp, et laissez le rapport du lundi faire le reste. Un client qui voit avancer sa maison vous recommande.</p>
-        <a class="lp-arrow-link lp-on-dark" href="/inscription" data-i18n>Inscrire mon entreprise</a>
+        <h2 class="lp-h2" data-i18n>Tous vos chantiers, depuis votre téléphone, comme si vous y étiez.</h2>
+        <p class="lp-p" data-i18n>Chaque jour, votre chef de chantier envoie le rapport en deux minutes : travaux faits (écrits ou en message vocal), ouvriers présents, livraisons, météo, photos. Il déclare les dépenses avec la photo du reçu ; vous les approuvez. Vous voyez d'un coup d'œil les rapports à vérifier et les chantiers à surveiller.</p>
+        <ul class="lp-band-list"><li data-i18n>Équipe et droits par chantier : chef de chantier, chef d'équipe</li><li data-i18n>Fonctionne sans réseau, avec de gros boutons</li><li data-i18n>Rapport PDF chaque semaine pour vos clients</li></ul>
+        <a class="lp-arrow-link lp-on-dark" href="/inscription" data-i18n>Essayer deux mois, sans carte</a>
       </div>
       <div class="lp-band-shot">
         <img class="shot" data-shot="dashboard" data-dark alt="Tableau de bord de l'entreprise" data-i18n-alt src="/img/dashboard-fr-dark.jpg" width="2040" height="1290" loading="lazy">
@@ -159,33 +160,61 @@
     </div>
   </section>
 
-  <!-- Tarifs -->
+  <!-- Tarifs : en euros TTC en Europe, en dollars ailleurs (prix lus dans /api/config, voir server/plans.js) -->
   <section class="lp-section" id="tarifs">
     <div class="lp-wrap">
-      <div class="lp-head"><h2 class="lp-h2" data-i18n>Tarifs</h2><p class="lp-p" data-i18n>Celui qui publie ne paie rien. Celui qui fait construire choisit.</p></div>
-      <div class="lp-plans">
-        <div class="lp-plan">
-          <p class="lp-plan-k" data-i18n>Entreprises et proches</p>
-          <p class="lp-plan-price">0 €</p>
-          <p class="lp-plan-note" data-i18n>Pour ceux qui publient l'avancement.</p>
-          <ul><li data-i18n>Chantiers et clients illimités</li><li data-i18n>Photos vérifiées, étapes, dépenses avec reçus</li><li data-i18n>Rapport du lundi automatique</li></ul>
-          <a class="lp-btn lp-btn-line" href="/inscription" data-i18n>Inscrire mon entreprise</a>
-        </div>
+      <div class="lp-head"><h2 class="lp-h2" data-i18n>Tarifs</h2><p class="lp-p" data-i18n>L'entreprise paie pour piloter ses chantiers. Le client paie pour protéger son argent. Deux mois offerts, sans carte bancaire.</p>
+        <div class="lp-region" role="group" aria-label="Région de facturation" data-i18n-label><button type="button" data-region="eu" aria-pressed="true" data-i18n>Europe (€, TVA comprise)</button><button type="button" data-region="world" aria-pressed="false" data-i18n>Afrique et ailleurs ($)</button></div></div>
+      <h3 class="lp-plans-t" data-i18n>Pour celui qui fait construire</h3>
+      <div class="lp-plans lp-plans-2">
         <div class="lp-plan">
           <p class="lp-plan-k" data-i18n>Client</p>
-          <p class="lp-plan-price">0 €</p>
+          <p class="lp-plan-price" data-zero>0 €</p>
           <p class="lp-plan-note" data-i18n>Pour suivre un chantier confié à une entreprise.</p>
           <ul><li data-i18n>Tous vos chantiers au même endroit</li><li data-i18n>Photos vérifiées, étapes, devis et rapports</li><li data-i18n>Ajout par numéro de suivi</li></ul>
           <a class="lp-btn lp-btn-line" href="/inscription" data-i18n>Créer mon espace</a>
         </div>
         <div class="lp-plan lp-plan-main">
           <p class="lp-plan-k" data-i18n>Client Plus</p>
-          <p class="lp-plan-price">9,99 € <small data-i18n>par mois</small></p>
-          <p class="lp-plan-note">5 000 FCFA <span data-i18n>par mois · deux mois offerts</span></p>
-          <ul><li data-i18n>Suivi de l'argent : versements, dépenses, alertes</li><li data-i18n>Jusqu'à 5 proches qui publient pour vous</li><li data-i18n>Visites de contrôle sur demande</li></ul>
+          <p class="lp-plan-price"><span data-price="plus">9,99 €</span> <small data-i18n>par mois</small></p>
+          <p class="lp-plan-note" data-price-note="plus"></p>
+          <ul><li data-i18n>Suivi de l'argent : versements, dépenses, alertes</li><li data-i18n>Jusqu'à 5 proches ou personnes d'équipe qui publient pour vous</li><li data-i18n>Visites de contrôle sur demande</li></ul>
           <a class="lp-btn lp-btn-dark" href="/inscription" data-i18n>Essayer deux mois</a>
         </div>
       </div>
+      <h3 class="lp-plans-t" data-i18n>Pour les entreprises du BTP</h3>
+      <div class="lp-plans">
+        <div class="lp-plan">
+          <p class="lp-plan-k" data-i18n>Démarrage</p>
+          <p class="lp-plan-price"><span data-price="demarrage">15 €</span> <small data-i18n>par mois</small></p>
+          <p class="lp-plan-note" data-price-note="demarrage"></p>
+          <ul><li data-i18n>3 chantiers à vous en cours</li><li data-i18n>3 personnes dans l'équipe</li><li data-i18n>Rapport du jour, vocaux, dépenses à approuver</li></ul>
+          <a class="lp-btn lp-btn-line" href="/inscription" data-i18n>Essayer deux mois</a>
+        </div>
+        <div class="lp-plan lp-plan-main">
+          <p class="lp-plan-k" data-i18n>PME</p>
+          <p class="lp-plan-price"><span data-price="pme">39 €</span> <small data-i18n>par mois</small></p>
+          <p class="lp-plan-note" data-price-note="pme"></p>
+          <ul><li data-i18n>10 chantiers à vous en cours</li><li data-i18n>15 personnes dans l'équipe</li><li data-i18n>Tableau du dirigeant et rapport PDF chaque semaine</li></ul>
+          <a class="lp-btn lp-btn-dark" href="/inscription" data-i18n>Essayer deux mois</a>
+        </div>
+        <div class="lp-plan">
+          <p class="lp-plan-k" data-i18n>Pro</p>
+          <p class="lp-plan-price"><span data-price="pro">79 €</span> <small data-i18n>par mois</small></p>
+          <p class="lp-plan-note" data-price-note="pro"></p>
+          <ul><li data-i18n>Chantiers et équipe illimités</li><li data-i18n>Pour les entreprises et bureaux d'études multi-chantiers</li><li data-i18n>Aide par WhatsApp</li></ul>
+          <a class="lp-btn lp-btn-line" href="/inscription" data-i18n>Essayer deux mois</a>
+        </div>
+      </div>
+      <p class="lp-p lp-small lp-plans-foot" data-i18n>Un chantier que votre client vous confie reste gratuit pour vous : c'est lui qui paie. Paiement par carte bancaire, sans engagement. Wave, Orange Money ou virement sur demande.</p>
+    </div>
+  </section>
+
+  <!-- Photos de vrais chantiers, ajoutées depuis l'espace d'administration (masquée tant qu'il n'y en a pas) -->
+  <section class="lp-section lp-ruled" id="terrain" hidden>
+    <div class="lp-wrap">
+      <div class="lp-head"><h2 class="lp-h2" data-i18n>Sur de vrais chantiers</h2><p class="lp-p" data-i18n>Des photos envoyées avec Archfield, datées et prises sur place.</p></div>
+      <div class="lp-gallery" id="lp-gallery"></div>
     </div>
   </section>
 
@@ -204,6 +233,8 @@
         <details><summary data-i18n>Puis-je confier mon chantier à un membre de ma famille ?</summary><p data-i18n>Oui. Créez le chantier dans votre espace et invitez votre proche : il publie l'avancement et note les dépenses depuis son téléphone, sans rien payer. Il vous faut l'offre Plus (jusqu'à 5 proches).</p></details>
         <details><summary data-i18n>Y a-t-il une application mobile ?</summary><p data-i18n>Oui. Ouvrez Archfield sur votre téléphone, puis « Ajouter à l'écran d'accueil » (sur iPhone, depuis le bouton Partager de Safari). L'application s'installe en quelques secondes, sans passer par un store, et s'ouvre en plein écran.</p></details>
         <details><summary data-i18n>Qui peut voir les photos et les montants ?</summary><p data-i18n>Seulement les personnes du chantier : celui qui le gère, son propriétaire et ceux qui ont son lien privé. Rien n'est jamais public, et le lien peut être changé à tout moment.</p></details>
+        <details><summary data-i18n>Mon chef de chantier n'est pas à l'aise avec le téléphone. Comment fait-il ?</summary><p data-i18n>Il a son propre écran, très simple : une grande action « Faire le rapport du jour », puis Photos, Dépense, Problème, Message vocal. Il peut tout dire en message vocal (2 minutes au plus chacun), sans rien écrire. Vous choisissez ce qu'il a le droit de faire.</p></details>
+        <details><summary data-i18n>Comment payer l'abonnement ?</summary><p data-i18n>Par carte bancaire (Visa, Mastercard), sans engagement. En Europe, le prix est en euros, TVA comprise. En Afrique et ailleurs, il est en dollars, comme la plupart des abonnements en ligne : votre banque fait la conversion. Vous préférez Wave, Orange Money ou un virement ? Écrivez-nous, nous activons l'offre à la réception.</p></details>
         <details><summary data-i18n>Faut-il un numéro d'entreprise ?</summary><p data-i18n>En France, le SIRET est demandé à l'inscription. En Afrique de l'Ouest et centrale, le NINEA, le RCCM ou le NIU est facultatif.</p></details>
       </div>
     </div>

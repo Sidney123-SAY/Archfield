@@ -34,9 +34,10 @@
       <form id="login" class="au-panel" data-api="/api/login" hidden>
         <h1 class="au-title" data-i18n>Se connecter</h1>
         <p class="au-sub"><span data-i18n>Vous n'avez pas de compte ?</span> <a href="/inscription" class="au-link" id="to-signup"><span data-i18n>S'inscrire</span> ›</a></p>
-        <div class="google-zone" hidden><a class="btn au-google" href="/auth/google" data-provider="google"><span class="g-ic"></span><span data-i18n>Continuer avec Google</span></a><a class="btn au-apple" href="/auth/apple" data-provider="apple"><span class="a-ic"></span><span data-i18n>Continuer avec Apple</span></a><p class="au-or"><span data-i18n>ou se connecter par e-mail</span></p></div>
-        <div class="au-field"><label for="li-email" data-i18n>E-mail</label><input id="li-email" name="email" type="email" autocomplete="email" required></div>
+        <div class="google-zone" hidden><a class="btn au-google" href="/auth/google" data-provider="google"><span class="g-ic"></span><span data-i18n>Continuer avec Google</span></a><a class="btn au-apple" href="/auth/apple" data-provider="apple"><span class="a-ic"></span><span data-i18n>Continuer avec Apple</span></a><p class="au-or"><span data-i18n>ou avec votre numéro ou votre e-mail</span></p></div>
+        <div class="au-field"><label for="li-ident" data-i18n>Téléphone ou adresse e-mail</label><div class="ident"><select class="dial" id="li-dial" name="dial" hidden aria-label="Pays de l'indicatif" data-i18n-label></select><input id="li-ident" name="ident" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="Ex. 01 97 00 00 00 ou nom@entreprise.com" data-i18n-ph required></div></div>
         <div class="au-field"><label for="li-password" data-i18n>Mot de passe</label><div class="au-pw"><input id="li-password" name="password" type="password" autocomplete="current-password" required><button type="button" class="au-eye" data-eye aria-label="Afficher le mot de passe" data-i18n-label></button></div></div>
+        <label class="au-check"><input type="checkbox" name="remember" checked><span data-i18n>Rester connecté sur cet appareil</span></label>
         <div class="error-box" hidden></div>
         <button class="btn primary au-submit" type="submit" data-i18n>Se connecter</button>
         <a class="au-forgot" href="/mot-de-passe-oublie" data-i18n>Mot de passe oublié ?</a>
@@ -64,8 +65,9 @@
           <h1 class="au-title" data-i18n>Commençons simplement : vous êtes…</h1>
           <div class="au-roles">
             <label class="au-role"><input type="radio" name="account_type" value="client"><span class="au-role-ic" data-ic="home"></span><b data-i18n>Je fais construire ou rénover</b><span data-i18n>Je suis mes chantiers, même de loin. Gratuit.</span></label>
-            <label class="au-role"><input type="radio" name="account_type" value="pro"><span class="au-role-ic" data-ic="tool"></span><b data-i18n>Je suis artisan ou entreprise du BTP</b><span data-i18n>Je publie l'avancement à mes clients. 2 mois offerts.</span></label>
+            <label class="au-role"><input type="radio" name="account_type" value="pro"><span class="au-role-ic" data-ic="tool"></span><b data-i18n>Je dirige une entreprise du BTP</b><span data-i18n>Je suis tous mes chantiers et mon équipe. 2 mois offerts.</span></label>
           </div>
+          <p class="hint au-member" data-i18n>Vous êtes chef de chantier ou chef d'équipe ? Demandez le lien d'invitation à votre responsable : il vous ajoute à son chantier.</p>
         </div>
 
         <div class="au-step" data-step="name">
@@ -91,8 +93,8 @@
 
         <div class="au-step" data-step="account">
           <h1 class="au-title" data-i18n>Dernière étape : votre accès</h1>
-          <div class="google-zone" hidden><a class="btn au-google" href="/auth/google" data-provider="google"><span class="g-ic"></span><span data-i18n>Continuer avec Google</span></a><a class="btn au-apple" href="/auth/apple" data-provider="apple"><span class="a-ic"></span><span data-i18n>Continuer avec Apple</span></a><p class="au-or"><span data-i18n>ou avec votre e-mail</span></p></div>
-          <div class="au-field"><label for="su-email" data-i18n>E-mail</label><input id="su-email" name="email" type="email" autocomplete="email"></div>
+          <div class="google-zone" hidden><a class="btn au-google" href="/auth/google" data-provider="google"><span class="g-ic"></span><span data-i18n>Continuer avec Google</span></a><a class="btn au-apple" href="/auth/apple" data-provider="apple"><span class="a-ic"></span><span data-i18n>Continuer avec Apple</span></a><p class="au-or"><span data-i18n>ou avec votre numéro ou votre e-mail</span></p></div>
+          <div class="au-field"><label for="su-ident" data-i18n>Téléphone ou adresse e-mail</label><div class="ident"><select class="dial" id="su-dial" name="dial" hidden aria-label="Pays de l'indicatif" data-i18n-label></select><input id="su-ident" name="ident" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="Ex. 01 97 00 00 00 ou nom@entreprise.com" data-i18n-ph></div><span class="hint" data-i18n>Avec un numéro, vous recevez un code de confirmation par WhatsApp ou par SMS.</span></div>
           <div class="au-field"><label for="su-password" data-i18n>Mot de passe</label><div class="au-pw"><input id="su-password" name="password" type="password" minlength="8" autocomplete="new-password"><button type="button" class="au-eye" data-eye aria-label="Afficher le mot de passe" data-i18n-label></button></div><span class="hint" data-i18n>8 caractères au moins.</span></div>
           <p class="hint muted" data-i18n>En créant un compte, vous acceptez la <a href="/confidentialite">politique de confidentialité</a>.</p>
         </div>
@@ -104,11 +106,11 @@
 
       <form id="forgot" class="au-panel" data-api="/api/password/forgot" hidden>
         <h1 class="au-title" data-i18n>Mot de passe oublié</h1>
-        <p class="au-sub" data-i18n>Indiquez l'e-mail de votre compte. Vous recevrez un lien valable une heure pour choisir un nouveau mot de passe.</p>
-        <div class="au-field"><label for="fg-email" data-i18n>E-mail</label><input id="fg-email" name="email" type="email" autocomplete="email" required></div>
+        <p class="au-sub" data-i18n>Indiquez le numéro ou l'e-mail de votre compte. Par téléphone, vous recevez un code par WhatsApp ou par SMS ; par e-mail, un lien valable une heure.</p>
+        <div class="au-field"><label for="fg-ident" data-i18n>Téléphone ou adresse e-mail</label><div class="ident"><select class="dial" id="fg-dial" name="dial" hidden aria-label="Pays de l'indicatif" data-i18n-label></select><input id="fg-ident" name="ident" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" required></div></div>
         <div class="error-box" hidden></div>
         <div class="okbox" hidden data-i18n>Si un compte existe avec cet e-mail, le lien vient de partir. Pensez à regarder dans les courriers indésirables.</div>
-        <button class="btn primary au-submit" type="submit" data-i18n>Recevoir le lien</button>
+        <button class="btn primary au-submit" type="submit" data-i18n>Continuer</button>
         <p class="au-sub"><a href="/connexion" class="au-link" data-i18n>Retour à la connexion</a></p>
       </form>
 
@@ -118,6 +120,27 @@
         <div class="error-box" hidden></div>
         <button class="btn primary au-submit" type="submit" data-i18n>Enregistrer et me connecter</button>
         <p class="au-sub"><a href="/mot-de-passe-oublie" class="au-link" data-i18n>Demander un nouveau lien</a></p>
+      </form>
+
+      <!-- Confirmer son numéro : code à 6 chiffres par WhatsApp (recommandé) ou par SMS -->
+      <section id="confirm" class="au-panel" hidden>
+        <h1 class="au-title" data-i18n>Confirmer votre numéro</h1>
+        <p class="au-sub"><span data-i18n>Nous allons envoyer un code à 6 chiffres au</span> <b id="cf-phone"></b>. <span data-i18n>Comment voulez-vous le recevoir ?</span></p>
+        <button type="button" class="au-channel rec" data-channel="whatsapp"><span class="au-badge" data-i18n>Recommandé</span><span class="au-ch-ic" data-ic="phone"></span><b data-i18n>Recevoir par WhatsApp</b><span data-i18n>Fonctionne avec le wifi ou les données mobiles.</span></button>
+        <button type="button" class="au-channel" data-channel="sms"><span class="au-ch-ic" data-ic="list"></span><b data-i18n>Recevoir par SMS</b><span data-i18n>Si WhatsApp n'est pas installé sur ce numéro.</span></button>
+        <div class="error-box" hidden></div>
+        <p class="au-sub"><a href="/app#compte" class="au-link" id="cf-change" data-i18n>Modifier le numéro</a></p>
+      </section>
+      <form id="code" class="au-panel" hidden novalidate>
+        <h1 class="au-title" data-i18n>Saisir le code</h1>
+        <p class="au-sub" id="cd-sub"></p>
+        <div class="okbox" id="cd-test" hidden></div>
+        <div class="au-field"><label for="cd-code" data-i18n>Code à 6 chiffres</label><input id="cd-code" name="code" class="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required></div>
+        <div class="au-field" id="cd-pw" hidden><label for="cd-password" data-i18n>Nouveau mot de passe</label><div class="au-pw"><input id="cd-password" name="password" type="password" minlength="8" autocomplete="new-password"><button type="button" class="au-eye" data-eye aria-label="Afficher le mot de passe" data-i18n-label></button></div><span class="hint" data-i18n>8 caractères au moins.</span></div>
+        <div class="error-box" hidden></div>
+        <button class="btn primary au-submit" type="submit" id="cd-submit" data-i18n>Confirmer mon numéro</button>
+        <p class="au-sub" id="cd-wait" aria-live="polite"></p>
+        <p class="au-sub"><button type="button" class="au-link linkbtn" id="cd-other"></button></p>
       </form>
     </div>
 

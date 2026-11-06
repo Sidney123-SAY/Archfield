@@ -1,7 +1,7 @@
 // Connexion, inscription question par question (client, entreprise ou proche invité), invitation, mot de passe oublié.
 (function () {
   "use strict";
-  const { t, ic, api, esc } = window.AF;
+  const { t, ic, api, esc, dialSelect, looksPhone, guessDial, toast } = window.AF;
   const $ = (s) => document.querySelector(s);
   const params = new URLSearchParams(location.search);
   const path = location.pathname;
@@ -25,7 +25,7 @@
   document.querySelectorAll(".a-ic").forEach((el) => { el.innerHTML = ic("apple", 20); });
   // Comme chez Finary : « Se connecter » reste grisé tant que l'e-mail et le mot de passe ne sont pas remplis.
   const loginForm = $("#login"), loginBtn = loginForm.querySelector("[type=submit]");
-  const syncLogin = () => { loginBtn.disabled = !($("#li-email").value.trim() && $("#li-password").value); };
+  const syncLogin = () => { loginBtn.disabled = !($("#li-ident").value.trim() && $("#li-password").value); };
   loginForm.addEventListener("input", syncLogin);
   setTimeout(syncLogin, 300); // après le remplissage automatique du navigateur
   document.querySelectorAll("[data-eye]").forEach((b) => {
@@ -67,6 +67,11 @@
     $("#su-back").hidden = stepIndex === 0;
     $("#su-next").textContent = stepIndex === list.length - 1 ? (role() === "client" ? t("Créer mon espace") : t("Créer mon compte")) : t("Suivant");
     showError($("#signup"), "");
+    // Indicatif proposé : le pays choisi plus tôt (entreprise ou lieu de vie), s'il est dans la liste.
+    if (cur === "account") {
+      const c = $("#su-country")?.value || $("#su-home")?.value, dial = $("#su-dial");
+      if (c && dial && [...dial.options].some((o) => o.value === c)) dial.value = c;
+    }
     const first = document.querySelector(`.au-step[data-step="${cur}"] input:not([type=radio]), .au-step[data-step="${cur}"] select`);
     if (first && window.matchMedia("(min-width: 761px)").matches) first.focus();
   }
@@ -81,7 +86,8 @@
       if (!v("company")) return t("Indiquez le nom de votre entreprise.");
     }
     if (cur === "account") {
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v("email"))) return t("Indiquez une adresse e-mail valide.");
+      const id = v("ident");
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(id) && !(looksPhone(id) && id.replace(/\D/g, "").length >= 8)) return t("Indiquez un numéro de téléphone ou une adresse e-mail valide.");
       if (v("password").length < 8) return t("Le mot de passe doit faire au moins 8 caractères.");
     }
     return "";
@@ -89,14 +95,19 @@
   async function submitSignup() {
     const f = $("#signup"), d = Object.fromEntries(new FormData(f));
     const r = role();
-    const body = { account_type: r, contact_name: d.contact_name, email: d.email, password: d.password };
+    const body = { account_type: r, contact_name: d.contact_name, ident: d.ident, dial: d.dial || guessDial(), password: d.password };
     if (r === "pro") Object.assign(body, { country: d.country, company_id: d.company_id, company: d.company, city: d.city });
     if (r === "client") Object.assign(body, { country: countries.some((c) => c.code === d.home_country) ? d.home_country : "", city: d.home_city });
     if (invite) body.invite_code = invite.code;
     if (googleToken) body.google_token = googleToken;
     const btn = $("#su-next");
     btn.disabled = true;
-    try { await api("/api/signup", { method: "POST", body, authRedirect: false }); store.set("af-invite", null); location.href = "/app"; }
+    try {
+      const res = await api("/api/signup", { method: "POST", body, authRedirect: false });
+      store.set("af-invite", null);
+      if (res.confirm_phone) { history.pushState(null, "", "/inscription/confirmer"); return openConfirm(); }
+      location.href = "/app";
+    }
     catch (e) { showError(f, e.message); btn.disabled = false; }
   }
   $("#signup").addEventListener("submit", (e) => {
@@ -146,6 +157,9 @@
     if (c.google || c.apple || c.demo) document.querySelectorAll(".google-zone").forEach((el) => { el.hidden = false; });
     if (c.demo) $("#demo").hidden = false;
     countries = c.countries || [];
+    dials = c.dial || [];
+    document.querySelectorAll("select.dial").forEach((sel) => { sel.outerHTML = dialSelect(sel.id, dials).replace("<select", `<select ${sel.hidden ? "hidden" : ""}`); });
+    document.querySelectorAll(".ident input").forEach(syncDial);
     const opts = (r) => countries.filter((x) => x.region === r).map((x) => `<option value="${x.code}">${esc(t(x.name))}</option>`).join("");
     const choose = `<option value="" disabled selected>${t("Choisir…")}</option>`;
     const africa = `<optgroup label="${t("Afrique de l'Ouest")}">${opts("ao")}</optgroup><optgroup label="${t("Afrique centrale")}">${opts("ac")}</optgroup>`;
@@ -159,16 +173,96 @@
     }
   }).catch(() => {});
 
+  /* ---------- Téléphone ou e-mail dans le même champ ---------- */
+  let dials = [];
+  // L'indicatif apparaît à gauche dès qu'on tape un numéro sans « + » (01 97…), et disparaît pour un e-mail.
+  function syncDial(input) {
+    const sel = input.parentElement.querySelector("select.dial");
+    if (sel) sel.hidden = !(looksPhone(input.value) && !input.value.trim().startsWith("+") && !input.value.trim().startsWith("00"));
+  }
+  document.addEventListener("input", (e) => { if (e.target.matches(".ident input")) syncDial(e.target); });
+
+  /* ---------- Confirmer son numéro, saisir le code ---------- */
+  let codeMode = "verify", resetPhone = null, channel = "whatsapp", waitTimer = null;
+  async function openConfirm() {
+    document.title = t("Confirmer votre numéro") + " · Archfield";
+    show("confirm");
+    try {
+      const me = await api("/api/me", { authRedirect: false });
+      if (me.phone_verified) return finishVerified();
+      $("#cf-phone").textContent = me.phone_pretty || "";
+      $("#cf-change").hidden = !!(me.email === null && me.account_type === "membre");
+    } catch (e) { location.href = "/connexion"; }
+  }
+  const showErr = (panel, msg) => { const box = $(`#${panel} .error-box`); box.textContent = msg || ""; box.hidden = !msg; };
+  async function sendCode(ch) {
+    channel = ch;
+    showErr("confirm", "");
+    try {
+      const r = await api("/api/phone/send", { method: "POST", body: { channel: ch }, authRedirect: false });
+      if (r.verified) return finishVerified();
+      openCode(r.phone, r.wait, r.test_code);
+    } catch (e) { if (!$("#confirm").hidden) showErr("confirm", e.message); else showErr("code", e.message); }
+  }
+  function openCode(phonePretty, wait, testCode) {
+    history.pushState(null, "", codeMode === "verify" ? "/inscription/code" : "/mot-de-passe-oublie");
+    document.title = t("Saisir le code") + " · Archfield";
+    show("code");
+    $("#cd-sub").textContent = channel === "sms" ? t("Code envoyé par SMS au {phone}.", { phone: phonePretty }) : t("Code envoyé par WhatsApp au {phone}.", { phone: phonePretty });
+    $("#cd-test").hidden = !testCode;
+    $("#cd-test").textContent = testCode ? t("Mode test (aucun SMS envoyé) : votre code est {code}", { code: testCode }) : "";
+    $("#cd-pw").hidden = codeMode !== "reset";
+    $("#cd-submit").textContent = codeMode === "reset" ? t("Enregistrer et me connecter") : t("Confirmer mon numéro");
+    $("#cd-other").textContent = channel === "sms" ? t("Recevoir plutôt par WhatsApp") : t("Recevoir plutôt par SMS");
+    $("#cd-code").value = ""; showErr("code", "");
+    $("#cd-code").focus();
+    let left = wait || 45;
+    clearInterval(waitTimer);
+    const tick = () => { $("#cd-wait").textContent = left > 0 ? t("Vous pourrez demander un nouveau code dans {s}.", { s: `0:${String(left).padStart(2, "0")}` }) : ""; $("#cd-other").disabled = left > 0; left--; if (left < 0) clearInterval(waitTimer); };
+    tick(); waitTimer = setInterval(tick, 1000);
+  }
+  async function finishVerified() {
+    const back = params.get("retour");
+    if (back === "compte") { location.href = "/app#compte"; return; }
+    done();
+  }
+  document.querySelectorAll("[data-channel]").forEach((b) => b.addEventListener("click", () => sendCode(b.dataset.channel)));
+  $("#cd-other").addEventListener("click", async () => {
+    const ch = channel === "sms" ? "whatsapp" : "sms";
+    if (codeMode === "verify") return sendCode(ch);
+    try { channel = ch; const r = await api("/api/password/forgot", { method: "POST", body: { ident: resetPhone, channel: ch }, authRedirect: false }); openCode(r.phone_pretty, r.wait, r.test_code); } catch (e) { showErr("code", e.message); }
+  });
+  $("#cd-code").addEventListener("input", (e) => {
+    e.target.value = e.target.value.replace(/\D/g, "").slice(0, 6);
+    if (e.target.value.length === 6 && codeMode === "verify") $("#code").requestSubmit();
+  });
+  $("#code").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const code = $("#cd-code").value, btn = $("#cd-submit");
+    if (code.length !== 6) return showErr("code", t("Le code contient 6 chiffres."));
+    btn.disabled = true; showErr("code", "");
+    try {
+      if (codeMode === "reset") { await api("/api/password/reset-code", { method: "POST", body: { phone: resetPhone, code, password: $("#cd-password").value }, authRedirect: false }); location.href = "/app"; return; }
+      await api("/api/phone/verify", { method: "POST", body: { code }, authRedirect: false });
+      toast(t("Numéro confirmé."));
+      finishVerified();
+    } catch (x) { showErr("code", x.message); btn.disabled = false; }
+  });
+
   /* ---------- Connexion, mot de passe ---------- */
   document.querySelectorAll("form[data-api]:not(#signup)").forEach((f) => f.addEventListener("submit", async (e) => {
     e.preventDefault();
     const btn = f.querySelector("[type=submit]"), ok = f.querySelector(".okbox");
     const body = Object.fromEntries(new FormData(f));
     if (f.id === "reset") body.token = resetToken || "";
+    if (f.id === "login") body.remember = !!f.querySelector('[name="remember"]').checked;
+    if ((f.id === "login" || f.id === "forgot") && !body.dial) body.dial = guessDial();
     btn.disabled = true; showError(f, "");
     try {
-      await api(f.dataset.api, { method: "POST", body, authRedirect: false });
+      const r = await api(f.dataset.api, { method: "POST", body, authRedirect: false });
+      if (f.id === "forgot" && r.method === "code") { codeMode = "reset"; resetPhone = r.phone; channel = "whatsapp"; btn.disabled = false; return openCode(r.phone_pretty, r.wait, r.test_code); }
       if (f.id === "forgot") { ok.hidden = false; btn.disabled = false; return; }
+      if (r && r.confirm_phone) { history.pushState(null, "", "/inscription/confirmer"); return openConfirm(); }
       done();
     } catch (x) { showError(f, x.message); btn.disabled = false; }
   }));
@@ -188,6 +282,7 @@
       try {
         invite = await api("/api/invitations/" + encodeURIComponent(pendingCode), { authRedirect: false });
         store.set("af-invite", invite.code);
+        if (invite.contact && !$("#su-ident").value) $("#su-ident").value = invite.contact;
       } catch (e) {
         store.set("af-invite", null);
         if (m) { $("#query-error").textContent = e.message; $("#query-error").hidden = false; show("login"); return; }
@@ -196,7 +291,11 @@
     if (m && invite) {
       document.title = t("Invitation") + " · Archfield";
       $("#inv-title").textContent = t("{owner} vous confie le chantier « {site} »", { owner: invite.owner, site: invite.site });
-      $("#inv-text").textContent = invite.kind === "proche"
+      const ROLE = { chef_chantier: "chef de chantier", chef_equipe: "chef d'équipe", perso: "membre de l'équipe" };
+      if (invite.kind === "membre") $("#inv-title").textContent = t("{owner} vous invite sur le chantier « {site} »", { owner: invite.owner, site: invite.site });
+      $("#inv-text").textContent = invite.kind === "membre"
+        ? t("Vous serez {role} : vous envoyez le rapport du jour, les photos et les dépenses depuis votre téléphone, même sans réseau. C'est gratuit pour vous.", { role: t(ROLE[invite.role] || "membre de l'équipe") })
+        : invite.kind === "proche"
         ? t("Vous serez sur place : vous publiez l'avancement depuis votre téléphone (photos et une phrase), {owner} le suit à distance. C'est gratuit pour vous.", { owner: invite.owner })
         : t("Votre entreprise publie l'avancement, {owner} le suit à distance. Connectez-vous avec votre compte entreprise, ou créez-le gratuitement.", { owner: invite.owner });
       $("#inv-code").textContent = invite.code;
@@ -205,6 +304,7 @@
       return show("invite");
     }
     if (path === "/inscription") return openSignup();
+    if (path === "/inscription/confirmer" || path === "/inscription/code") return openConfirm();
     if (path === "/mot-de-passe-oublie") { document.title = t("Mot de passe oublié") + " · Archfield"; return show("forgot"); }
     if (path === "/reinitialiser") {
       document.title = t("Nouveau mot de passe") + " · Archfield";

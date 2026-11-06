@@ -5,7 +5,7 @@ const path = require("node:path");
 const root = path.join(__dirname, "..");
 const keys = new Set();
 const unq = (s) => s.replace(/\\"/g, '"').replace(/\\n/g, "\n");
-for (const f of ["ui.js", "app.js", "client.js", "auth.js", "space.js"]) {
+for (const f of ["ui.js", "app.js", "client.js", "auth.js", "space.js", "terrain.js", "admin.js", "pay.js", "home.js"]) {
   const src = fs.readFileSync(path.join(root, "public/js", f), "utf8");
   for (const m of src.matchAll(/\bt\(\s*"((?:[^"\\]|\\.)*)"/g)) keys.add(unq(m[1]));
   for (const m of src.matchAll(/\bplural\([^,]+,\s*"((?:[^"\\]|\\.)*)",\s*"((?:[^"\\]|\\.)*)"/g)) { keys.add(unq(m[1])); keys.add(unq(m[2])); }

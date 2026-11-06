@@ -66,6 +66,38 @@
     sync();
   }
 
+  // Tarifs : euros TTC en Europe, dollars ailleurs. La région est devinée d'après le fuseau horaire, et se change d'un clic.
+  const regionBtns = [...document.querySelectorAll("[data-region]")];
+  if (regionBtns.length) {
+    const { price, t, nf, store } = window.AF;
+    let plans = null;
+    const guess = () => { try { return /^Europe\//.test(Intl.DateTimeFormat().resolvedOptions().timeZone) ? "eu" : "world"; } catch (e) { return "eu"; } };
+    const usdXof = 600;
+    const paint = (region) => {
+      regionBtns.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.region === region)));
+      document.querySelectorAll("[data-zero]").forEach((el) => { el.textContent = region === "eu" ? "0 €" : "0 $"; });
+      if (!plans) return;
+      document.querySelectorAll("[data-price]").forEach((el) => { const p = plans[el.dataset.price]; if (p) el.textContent = price(region === "eu" ? p.eur : p.usd, region === "eu" ? "eur" : "usd"); });
+      document.querySelectorAll("[data-price-note]").forEach((el) => {
+        const p = plans[el.dataset.priceNote];
+        if (p) el.textContent = region === "eu" ? t("TVA comprise · deux mois offerts") : t("Environ {n} FCFA · deux mois offerts", { n: nf(Math.round((p.usd / 100) * usdXof / 100) * 100) });
+      });
+    };
+    let region = store.get("af-region") || guess();
+    regionBtns.forEach((b) => b.addEventListener("click", () => { region = b.dataset.region; store.set("af-region", region); paint(region); }));
+    paint(region);
+    api("/api/config", { authRedirect: false }).then((c) => { plans = c.plans; paint(region); }).catch(() => {});
+  }
+
+  // Photos de vrais chantiers (ajoutées par l'équipe dans l'espace d'administration).
+  const gallery = document.getElementById("lp-gallery");
+  if (gallery) api("/api/site-images", { authRedirect: false }).then((list) => {
+    if (!list.length) return;
+    const { esc } = window.AF;
+    gallery.innerHTML = list.map((x) => `<figure><img src="${x.url}" alt="${esc(x.caption)}" loading="lazy"><figcaption>${esc(x.caption)}</figcaption></figure>`).join("");
+    document.getElementById("terrain").hidden = false;
+  }).catch(() => {});
+
   // Les sections apparaissent en douceur quand elles arrivent à l'écran ; elles restent visibles sans JavaScript.
   if ("IntersectionObserver" in window && !still) {
     const io = new IntersectionObserver((entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.remove("pending"); io.unobserve(e.target); } }), { rootMargin: "0px 0px -8% 0px" });

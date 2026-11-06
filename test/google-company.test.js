@@ -70,7 +70,8 @@ test("inscription : SIRET obligatoire et vérifié en France, facultatif en Afri
   assert.equal(cm.status, 201);
   const cmMe = await (await req("/api/me", { headers: { Cookie: cookieOf(cm, "af_session") } })).json();
   assert.equal(cmMe.currency, "XAF");
-  assert.equal(cmMe.access.status, "free", "gratuit pour les entreprises");
+  assert.equal(cmMe.access.status, "trial", "deux mois d'essai pour les entreprises");
+  assert.equal(cmMe.access.plan, "pme");
   const client = await post({ email: "ga@example.com", password: "chantier-2026", contact_name: "Léa", account_type: "client", country: "GA" });
   assert.equal((await (await req("/api/me", { headers: { Cookie: cookieOf(client, "af_session") } })).json()).currency, "XAF");
   assert.equal((await req("/api/entreprise/12345678901234")).status, 400);
@@ -119,8 +120,9 @@ test("Google ne rattache pas un compte dont l'e-mail n'est pas prouvé", async (
   assert.equal((await googleRound()).headers.get("location"), "/app");
 });
 
-test("démo : connexion en un clic, message clair si les données ne sont pas chargées", async () => {
+test("démo : désactivée par défaut (comptes fictifs retirés)", async () => {
   const r = await req("/api/demo-login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ account: "af" }) });
   assert.equal(r.status, 404);
-  assert.match((await r.json()).error, /npm run seed/);
+  assert.match((await r.json()).error, /pas disponible/);
+  assert.equal((await (await req("/api/config")).json()).demo, false);
 });

@@ -1,7 +1,7 @@
 // Application artisan : tableau de bord, chantiers, journal, photos, clients, compte.
 (function () {
   "use strict";
-  const { t, LOGO, ic, esc, prefs, themeToggle, installCard, installNudge, exifOf, position, moneyPanel, depenseForm, versementForm, curLabel, money, fmt, dShort, nf, cap, plural, rel, api, upload, shrink, toast, copy, STATUS_CHIP, healthChip, siteCard, journal, docsTable } = window.AF;
+  const { t, LOGO, ic, esc, prefs, themeToggle, installCard, installNudge, exifOf, position, moneyPanel, depenseForm, versementForm, curLabel, money, fmt, dShort, nf, cap, plural, rel, api, upload, shrink, toast, copy, STATUS_CHIP, healthChip, siteCard, journal, docsTable, outbox, dialSelect, lang } = window.AF;
   const $ = (s, el) => (el || document).querySelector(s);
   const app = $("#app");
 
@@ -19,7 +19,11 @@
   const NAV = [["tableau-de-bord", "Tableau de bord", "dash"], ["chantiers", "Chantiers", "home"], ["journal", "Journal", "list"], ["clients", "Clients", "users"], ["compte", "Compte", "user"]];
   const TABS = [["chantiers", "Chantiers", "home"], ["journal", "Journal", "list"], ["photos", "Photos", "photo"], ["compte", "Compte", "user"]];
   const isPro = () => me.account_type === "pro";
-  const planLabel = () => (me.account_type === "proche" ? t("Accès offert par {who}", { who: esc((me.sponsors || []).join(", ") || "—") }) : t("Gratuit pour les entreprises"));
+  const planLabel = () => {
+    if (me.account_type === "proche") return t("Accès offert par {who}", { who: esc((me.sponsors || []).join(", ") || "—") });
+    const a = me.access || {};
+    return a.status === "trial" ? plural(a.days_left, "Essai : encore {n} jour", "Essai : encore {n} jours") : a.status === "paid" ? t("Offre {plan}", { plan: t(window.AF.PLAN_NAME[a.plan] || "") }) : t("Sans abonnement");
+  };
   const waLink = (phoneNumber, text) => `https://wa.me/${(phoneNumber || "").replace(/[^\d]/g, "")}?text=${encodeURIComponent(text)}`;
   const initials = (n) => n.split(/\s+/).map((x) => x[0]).join("").slice(0, 2).toUpperCase();
 
@@ -29,7 +33,7 @@
     app.innerHTML = `<div class="shell">
       <aside class="side">
         <a class="logo" href="#tableau-de-bord">${LOGO(24)} Archfield</a>
-        <nav aria-label="${t("Menu")}">${NAV.map(([k, l, i]) => `<button type="button" data-go="${k}" ${sideOn(k) ? 'aria-current="page"' : ""}>${ic(i, 17)} ${t(l)}</button>`).join("")}</nav>
+        <nav aria-label="${t("Menu")}">${NAV.map(([k, l, i]) => `<button type="button" data-go="${k}" ${sideOn(k) ? 'aria-current="page"' : ""}>${ic(i, 17)} ${t(l)}</button>`).join("")}${me.admin ? `<a class="navlink" href="/admin">${ic("shield", 17)} ${t("Administration")}</a>` : ""}</nav>
         <div class="who">
           <div class="side-prefs">${prefs()}</div>
           <div class="plan-card"><b>${esc(me.company)}</b><span>${planLabel()}</span></div>
@@ -46,34 +50,59 @@
   const loading = (section) => shell(section, `<p class="loading">${t("Chargement…")}</p>`);
   const errorBox = (section, e) => shell(section, `<div class="error-box">${esc(e.message)}</div>`);
 
-  /* ---------- Tableau de bord ---------- */
+  /* ---------- Tableau de bord du dirigeant ---------- */
+  // En cinq secondes, ce qui demande une action : 4 chiffres, chantiers (avancement et budget côte à côte),
+  // « À traiter aujourd'hui » et activité récente (idée reprise de SuiviBat).
+  const totals = (o) => Object.entries(o || {}).map(([c, n]) => money(n, c)).join(" + ") || money(0, me.currency);
+  const siteState = (s) => s.drift ? `<span class="chip warn">${ic("warn", 13)} ${t("En retard")}</span>` : s.watch.length ? `<span class="chip wait">${ic("eye", 13)} ${t("À surveiller")}</span>` : s.toValidate ? `<span class="chip wait">${t("À valider")}</span>` : `<span class="chip ok">${t("En cours")}</span>`;
+  const bars = (s) => `<span class="dbars"><span class="dbar"><small>${t("Avancement")}</small><span class="t"><span style="width:${s.progress}%"></span></span><b class="num">${s.progress} %</b></span>
+    <span class="dbar budget ${s.watch.includes("budget") ? "over" : ""}"><small>${t("Budget utilisé")}</small><span class="t"><span style="width:${Math.min(100, s.budget_pct || 0)}%"></span></span><b class="num">${s.budget_pct == null ? "—" : s.budget_pct + " %"}</b></span></span>`;
+  const waTo = (phoneNumber, text) => `https://wa.me/${String(phoneNumber || "").replace(/[^\d]/g, "")}?text=${encodeURIComponent(text)}`;
+  function todoItem(x) {
+    if (x.kind === "reports") return `<li>${ic("doc", 20)}<div><b>${plural(x.n, "{n} rapport du jour à vérifier", "{n} rapports du jour à vérifier")}</b><span>${esc(x.site)}${x.who ? " · " + esc(x.who) : ""}</span></div><button type="button" class="btn ghost" data-open-site="${x.site_id}" data-tab="journal">${t("Vérifier")}</button></li>`;
+    if (x.kind === "expenses") return `<li>${ic("money", 20)}<div><b>${plural(x.n, "{n} dépense en attente d'approbation", "{n} dépenses en attente d'approbation")}</b><span>${esc(x.site)} · ${money(x.amount, x.currency)}</span></div><button type="button" class="btn ghost" data-open-site="${x.site_id}" data-tab="argent">${t("Examiner")}</button></li>`;
+    if (x.kind === "problem") return `<li class="hot">${ic("warn", 20)}<div><b>${t("Problème : {what}", { what: t(window.AF.PROBLEM[x.category] || "Autre") })}</b><span>${esc(x.site)}${x.who ? " · " + esc(x.who) : ""}${x.text ? " · " + esc(x.text.slice(0, 80)) : ""}</span></div><button type="button" class="btn ghost" data-open-site="${x.site_id}" data-tab="journal">${t("Voir")}</button></li>`;
+    if (x.kind === "silence") return `<li class="hot">${ic("cal", 20)}<div><b>${t("{site} : aucun rapport depuis {n} jours", { site: esc(x.site), n: x.days })}</b><span>${x.chef ? esc(x.chef.name) : t("Personne dans l'équipe")}</span></div>${x.chef && x.chef.phone ? `<a class="btn ghost" target="_blank" rel="noopener" href="${waTo(x.chef.phone, t("Bonjour {who}, pouvez-vous envoyer le rapport du jour du chantier « {site} » sur Archfield ?", { who: x.chef.name.split(" ")[0], site: x.site }))}">${t("Relancer")}</a>` : `<button type="button" class="btn ghost" data-open-site="${x.site_id}" data-tab="equipe">${t("Équipe")}</button>`}</li>`;
+    return `<li>${ic("warn", 20)}<div><b>${t("{site} : budget en avance sur les travaux", { site: esc(x.site) })}</b><span>${t("{b} % du budget utilisé pour {p} % d'avancement", { b: x.budget_pct, p: x.progress })}</span></div><button type="button" class="btn ghost" data-open-site="${x.site_id}" data-tab="argent">${t("Voir")}</button></li>`;
+  }
+  function activityItem(a) {
+    const who = a.who ? `<b>${esc(a.who)}</b>` : `<b>${esc(me.contact_name)}</b>`;
+    const txt = a.type === "rapport" ? t("{who} a transmis le rapport du jour", { who }) : a.type === "probleme" ? t("{who} a signalé un problème", { who })
+      : a.type === "post" ? (a.photos ? t("{who} a ajouté {n} photos", { who, n: a.photos }) : t("{who} a envoyé un message", { who }))
+      : a.type === "step_done" ? t("Étape terminée : {step}", { step: esc(a.step || "") }) : a.type === "step_validated" ? t("Étape validée par le client : {step}", { step: esc(a.step || "") })
+      : a.type === "depense" ? t("{who} a déclaré une dépense de {amount}", { who, amount: money(a.amount, a.currency) }) : t("{who} a noté un versement de {amount}", { who, amount: money(a.amount, a.currency) });
+    return `<li><span>${txt} · ${esc(a.site)}</span><small>${rel(a.at)}</small></li>`;
+  }
   async function pageDashboard() {
     loading("tableau-de-bord");
-    const d = await api("/api/dashboard");
-    const sub = `${esc(me.company)}${me.city ? " · " + esc(me.city) : ""}`;
-    if (!d.sites.length && d.reliability.delivered === 0) {
-      return shell("tableau-de-bord", `<div class="pagehead"><div><p class="sub">${sub}</p><h1>${t("Tableau de bord")}</h1></div></div>
+    const d = await api("/api/boss");
+    const hello = `<p class="sub">${cap(fmt(Date.now(), { weekday: "long", day: "numeric", month: "long" }))} · ${esc(me.company)}</p><h1>${t("Bonjour, {name}", { name: esc(me.contact_name.split(" ")[0]) })}</h1>`;
+    if (!d.sites.length) {
+      return shell("tableau-de-bord", `<div class="pagehead"><div>${hello}</div></div>
         ${!isPro() ? noSiteForProche() : ""}<section class="card empty" ${isPro() ? "" : "hidden"}><h2>${t("Créez votre premier chantier")}</h2><p>${t("Ajoutez le client et les étapes prévues. Archfield vous donne un lien privé à envoyer au client par WhatsApp ou par e-mail, sans compte à créer.")}</p><a class="btn primary" href="#nouveau-chantier">${ic("plus", 16)} ${t("Nouveau chantier")}</a></section>`);
     }
-    const ecart = (s) => (s.running ? (s.delay > 0 ? "+" : "") + days(Math.max(0, s.delay)) : "—");
     const k = d.kpis;
     shell("tableau-de-bord", `
-      <div class="pagehead"><div><p class="sub">${sub}</p><h1>${t("Tableau de bord")}</h1></div>
-        <div class="acts"><span class="pill">${ic("cal", 15)} ${cap(fmt(Date.now(), { month: "long", year: "numeric" }))}</span>${isPro() ? `<a class="btn primary" href="#nouveau-chantier">${ic("plus", 15)} ${t("Nouveau chantier")}</a>` : ""}</div></div>
+      <div class="pagehead"><div>${hello}</div>
+        <div class="acts">${outboxCount ? "" : `<span class="pill ok">${ic("check", 15)} ${t("À jour · {h}", { h: window.AF.time(Date.now()) })}</span>`}${isPro() ? `<a class="btn primary" href="#nouveau-chantier">${ic("plus", 15)} ${t("Créer un chantier")}</a>` : ""}</div></div>
       <div class="kpis">
-        <div class="card kpi"><span class="k">${t("Chantiers actifs")}</span><span class="v">${k.active}</span><span class="s">${t("{n} en démarrage", { n: k.starting })}</span></div>
-        <div class="card kpi"><span class="k">${t("Alertes de dérive")}</span><span class="v ${k.alerts ? "warn" : ""}">${k.alerts}</span><span class="s">${t("Étapes à plus de 20 % du prévu")}</span></div>
-        <div class="card kpi"><span class="k">${t("Retard moyen")}</span><span class="v">+${days(k.avgDelay)}</span><span class="s">${t("Par étape en cours")}</span></div>
-        <div class="card kpi"><span class="k">${t("Rapports lus par les clients")}</span><span class="v">${k.reportsRead == null ? "—" : k.reportsRead + " %"}</span><span class="s">${t("Sur les 4 dernières semaines")}</span></div>
+        <div class="card kpi"><span class="k">${ic("home", 15)} ${t("Chantiers en cours")}</span><span class="v">${k.active}</span><span class="s">${k.shared ? plural(k.shared, "dont {n} partagé avec vous", "dont {n} partagés avec vous") : t("gérés par vous")}</span></div>
+        <div class="card kpi ${k.reports ? "attn" : ""}"><span class="k">${ic("doc", 15)} ${t("Rapports à vérifier")}</span><span class="v">${k.reports}</span><span class="s">${plural(k.reports_today, "{n} reçu aujourd'hui", "{n} reçus aujourd'hui")}</span></div>
+        <div class="card kpi ${k.expenses ? "attn" : ""}"><span class="k">${ic("money", 15)} ${t("Dépenses en attente")}</span><span class="v">${k.expenses}</span><span class="s">${t("{amount} déclarés", { amount: totals(k.expenses_total) })}</span></div>
+        <div class="card kpi ${k.watch ? "hot" : ""}"><span class="k">${ic("warn", 15)} ${t("Chantiers à surveiller")}</span><span class="v">${k.watch}</span><span class="s">${t("retard ou budget en avance")}</span></div>
       </div>
-      ${d.alerts.map((a) => `<div class="banner">${ic("warn", 18)}<div><b>${t("{site} : {step} dérape", { site: esc(a.site) + (a.location ? " — " + esc(a.location.split(",")[0]) : ""), step: esc(a.step.toLowerCase()) })}</b><br>${t("{actual} jours au lieu de {planned} prévus, soit {pct} % de plus. Prévenez {who} avant le rapport de lundi.", { actual: nf(a.actual), planned: nf(a.planned), pct: a.overPct, who: esc(a.client_short) })}</div><button type="button" class="btn" data-publish="${a.site_id}">${t("Prévenir")}</button></div>`).join("")}
-      <section class="card card-p"><div class="card-h"><h2>${t("Chantiers en cours")}</h2></div>
-        ${d.sites.length ? `<div class="tbl-wrap tbl-desk"><table><thead><tr><th>${t("Chantier")}</th><th>${t("Client")}</th><th>${t("Avancement")}</th><th>${t("Étape en cours")}</th><th>${t("Écart")}</th><th>${t("Statut")}</th></tr></thead><tbody>
-        ${d.sites.map((s) => `<tr class="click" data-site="${s.id}"><td><b>${esc(siteLabel(s))}</b></td><td>${esc(s.client_name)}</td><td><span class="mini"><span class="t"><span style="width:${s.progress}%"></span></span><span class="num">${s.progress} %</span></span></td><td>${s.running ? esc(s.running.name) : s.toValidate ? t("À valider") : "—"}</td><td class="num">${ecart(s)}</td><td>${healthChip(s)}</td></tr>`).join("")}
-        </tbody></table></div>
-        <div class="mcards">${d.sites.map((s) => `<button type="button" class="mcard" data-site="${s.id}"><span class="l1"><b>${esc(siteLabel(s))}</b>${healthChip(s)}</span><span class="track"><span style="width:${s.progress}%"></span></span><span class="l2">${esc(s.client_name)} · ${s.progress} % · ${s.running ? esc(s.running.name) + " (" + ecart(s) + ")" : "—"}</span></button>`).join("")}</div>`
-        : `<p class="muted">${t("Aucun chantier en cours.")} <a href="#nouveau-chantier">${t("Créer un chantier")}</a></p>`}
-      </section>`);
+      <div class="boss">
+        <section class="card card-p"><div class="card-h"><h2>${t("Vos chantiers")}</h2><a href="#chantiers">${t("Voir tous les chantiers")}</a></div>
+          <div class="tbl-wrap tbl-desk"><table class="boss-t"><thead><tr><th>${t("Chantier")}</th><th>${t("Avancement et budget")}</th><th>${t("Statut et dernier rapport")}</th></tr></thead><tbody>
+          ${d.sites.map((s) => `<tr class="click" data-site="${s.id}"><td><b>${esc(s.name)}</b><span class="muted sm">${esc([s.location.split(",")[0], s.chef?.name].filter(Boolean).join(" · "))}</span><span class="muted sm">${t("Budget {b}", { b: s.budget ? money(s.budget, s.currency) : "—" })}</span>${s.shared_by ? `<span class="chip idle sm">${t("Partagé par {who}", { who: esc(s.shared_by) })}</span>` : ""}</td><td>${bars(s)}</td><td>${siteState(s)}<span class="muted sm">${s.last_report_at ? rel(s.last_report_at) : t("Pas encore de rapport")}</span></td></tr>`).join("")}
+          </tbody></table></div>
+          <div class="mcards">${d.sites.map((s) => `<button type="button" class="mcard" data-site="${s.id}"><span class="l1"><b>${esc(s.name)}</b>${siteState(s)}</span>${bars(s)}<span class="l2">${esc(s.location.split(",")[0])} · ${s.last_report_at ? rel(s.last_report_at) : t("Pas encore de rapport")}</span></button>`).join("")}</div>
+        </section>
+        <div class="boss-side">
+          <section class="card card-p"><h2>${t("À traiter aujourd'hui")}</h2>${d.todo.length ? `<ul class="todo">${d.todo.map(todoItem).join("")}</ul>` : `<p class="okbox">${ic("check", 18)} ${t("Rien à traiter. Tout est à jour.")}</p>`}</section>
+          <section class="card card-p"><h2>${t("Activité récente")}</h2>${d.activity.length ? `<ul class="activity">${d.activity.map(activityItem).join("")}</ul>` : `<p class="muted">${t("Rien pour l'instant.")}</p>`}</section>
+        </div>
+      </div>`);
   }
 
   /* ---------- Liste des chantiers ---------- */
@@ -155,6 +184,61 @@
     });
   }
 
+  /* ---------- Équipe d'un chantier ---------- */
+  // Modèles de droits proposés à la création (Chef de chantier, Chef d'équipe), ajustables case par case.
+  const PERMS = [["rapport", "Faire le rapport du jour", "Travaux, ouvriers présents, livraisons, météo"], ["photos", "Prendre des photos", "Avec la date et l'heure"], ["depenses", "Déclarer des dépenses", "Montant et photo du reçu, en attente de votre approbation"], ["probleme", "Signaler un problème", "Accident, panne, retard"], ["vocal", "Envoyer des messages vocaux", "2 minutes au plus chacun"], ["budget", "Voir le budget du chantier", "Montants et avancement"]];
+  const ROLE_NAMES = { chef_chantier: "Chef de chantier", chef_equipe: "Chef d'équipe", perso: "Personnalisé" };
+  const permBoxes = (perms, prefix) => `<div class="perms">${PERMS.map(([k, l, h]) => `<label class="perm"><input type="checkbox" name="${prefix}${k}" data-perm="${k}" ${perms[k] ? "checked" : ""}><span><b>${t(l)}</b><small>${t(h)}</small></span></label>`).join("")}</div>`;
+  let teamCache = null;
+  async function teamTab(s) {
+    teamCache = await api(`/api/sites/${s.id}/team`);
+    const { members, invites, roles } = teamCache;
+    const inviteUrl = (code) => `${location.origin}/invitation/${code}`;
+    return `<section class="card card-p"><h2>${t("Qui travaille sur ce chantier ?")}</h2>
+        <p class="muted" style="font-size:.86rem">${t("Chacun voit seulement ce que vous l'autorisez à faire. Un bouton non autorisé n'apparaît pas chez lui.")}</p>
+        ${members.length ? `<ul class="team">${members.map((m) => `<li><div class="tm-h"><span class="avatar sm">${esc(m.contact_name.split(/\s+/).map((x) => x[0]).join("").slice(0, 2).toUpperCase())}</span><div><b>${esc(m.contact_name)}</b><span class="muted sm">${esc([m.phone, m.email].filter(Boolean).join(" · "))}</span></div><span class="chip idle">${t(ROLE_NAMES[m.role] || "Personnalisé")}</span></div>
+          <details><summary>${t("Modifier ses droits")}</summary><form class="form" data-member-form="${m.id}">${permBoxes(m.perms, "")}<div class="row-acts"><button class="btn" type="submit">${t("Enregistrer")}</button><button type="button" class="btn danger" data-member-del="${m.id}">${t("Retirer du chantier")}</button></div></form></details></li>`).join("")}</ul>` : `<p class="muted">${t("Personne pour l'instant. Invitez votre chef de chantier : il fera le rapport du jour depuis son téléphone.")}</p>`}
+      </section>
+      ${invites.length ? `<section class="card card-p"><h2>${t("Invitations en attente")}</h2><ul class="team">${invites.map((i) => {
+        const url = inviteUrl(i.code), msg = t("Bonjour {who}, rejoignez le chantier « {site} » sur Archfield : {url}", { who: i.invitee_name.split(" ")[0], site: s.name, url });
+        return `<li><div class="tm-h"><div><b>${esc(i.invitee_name)}</b><span class="muted sm">${esc(i.invitee_contact || "")} · ${t(ROLE_NAMES[i.role] || "Personnalisé")}</span></div></div>
+          <div class="link"><code>${esc(url)}</code><button type="button" class="btn ghost" data-copy-text="${esc(url)}">${t("Copier")}</button></div>
+          <div class="row-acts">${/^\+/.test(i.invitee_contact) ? `<a class="btn wa" target="_blank" rel="noopener" href="${waLink(i.invitee_contact, msg)}">${t("Envoyer par WhatsApp")}</a>` : `<a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(msg)}">${t("Envoyer par WhatsApp")}</a>`}<button type="button" class="btn ghost" data-invite-del="${i.id}">${t("Annuler l'invitation")}</button></div></li>`;
+      }).join("")}</ul></section>` : ""}
+      <form class="card card-p form" id="team-add"><h2>${t("Inviter une personne")}</h2>
+        <div class="row2"><div class="field"><label for="tm-name">${t("Nom")}</label><input id="tm-name" name="name" required maxlength="120" placeholder="Adjovi Hounkpè"></div>
+        <div class="field"><label for="tm-contact">${t("Téléphone (WhatsApp) ou e-mail")}</label><input id="tm-contact" name="contact" required maxlength="200" placeholder="+229 01 97 00 00 00" autocomplete="off"><span class="hint">${t("Avec l'indicatif du pays. S'il a déjà un compte, il est ajouté tout de suite.")}</span></div></div>
+        <div class="field"><span class="fl">${t("Que peut-il faire sur ce chantier ?")}</span>
+          <div class="seg" role="group" aria-label="${t("Partir d'un modèle")}">${Object.keys(roles).map((r, i) => `<label><input type="radio" name="role" value="${r}" ${i === 0 ? "checked" : ""}><span>${t(ROLE_NAMES[r])}</span></label>`).join("")}<label><input type="radio" name="role" value="perso"><span>${t("Personnalisé")}</span></label></div>
+          ${permBoxes(roles.chef_chantier, "")}<span class="hint">${t("Vous pourrez tout changer plus tard.")}</span></div>
+        <div class="error-box" hidden></div>
+        <div><button class="btn primary" type="submit">${t("Inviter")}</button></div></form>`;
+  }
+  function bindTeam(s) {
+    const f = $("#team-add");
+    if (!f) return;
+    const boxes = () => [...f.querySelectorAll("[data-perm]")];
+    f.addEventListener("change", (e) => {
+      if (e.target.name === "role" && teamCache.roles[e.target.value]) boxes().forEach((b) => { b.checked = !!teamCache.roles[e.target.value][b.dataset.perm]; });
+      else if (e.target.dataset.perm) f.querySelector('input[name="role"][value="perso"]').checked = true;
+    });
+    f.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const perms = Object.fromEntries(boxes().map((b) => [b.dataset.perm, b.checked]));
+      const body = { name: f.name.value, contact: f.contact.value, role: new FormData(f).get("role"), perms, country: me.country };
+      try {
+        const r = await api(`/api/sites/${s.id}/team`, { method: "POST", body });
+        toast(r.added ? t("{who} fait maintenant partie de l'équipe.", { who: r.name }) : t("Invitation créée. Envoyez-lui le lien par WhatsApp."));
+        route();
+      } catch (x) { const box = f.querySelector(".error-box"); box.textContent = x.message; box.hidden = false; }
+    });
+    app.querySelectorAll("[data-member-form]").forEach((mf) => mf.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const perms = Object.fromEntries([...mf.querySelectorAll("[data-perm]")].map((b) => [b.dataset.perm, b.checked]));
+      act(() => api(`/api/team/${mf.dataset.memberForm}`, { method: "PATCH", body: { role: "perso", perms } }), t("Droits enregistrés."));
+    }));
+  }
+
   /* ---------- Fiche chantier ---------- */
   async function pageSite(id) {
     loading("chantier");
@@ -162,10 +246,12 @@
     try { s = await api("/api/sites/" + id); } catch (e) { return errorBox("chantier", e); }
     lastSiteId = s.id;
     try { localStorage.setItem("af-last-site", String(s.id)); } catch (e) {}
-    const tabs = [["journal", "Journal"], ["etapes", "Étapes", s.toValidate], ["argent", "Argent", s.money.alert ? "!" : 0], ["partage", "Lien et rapports"]];
+    const unchecked = s.updates.filter((u) => u.topic === "rapport" && !u.checked_at && u.author_id !== me.id).length;
+    const tabs = [["journal", "Journal", unchecked], ["etapes", "Étapes", s.toValidate], ["argent", "Argent", s.money.alert ? "!" : s.money.pending_count], ...(me.account_type === "proche" ? [] : [["equipe", "Équipe", 0]]), ["partage", "Lien et rapports"]];
     const scur = curLabel(s.currency);
     let body = "";
-    if (siteTab === "journal") body = `<h2 class="section-t">${t("Journal du chantier")}</h2>${journal(s, s.updates, { who: s.client_short })}`;
+    if (siteTab === "journal") body = `<div class="card-h"><h2 class="section-t" style="margin:0">${t("Journal du chantier")}</h2>${unchecked ? `<button type="button" class="btn ghost" data-check-all="${s.id}">${plural(unchecked, "Marquer {n} rapport vérifié", "Marquer les {n} rapports vérifiés")}</button>` : ""}</div>${journal(s, s.updates, { who: s.client_short, manage: { me: me.id } })}`;
+    else if (siteTab === "equipe") body = await teamTab(s);
     else if (siteTab === "etapes") {
       const running = s.steps.some((x) => x.status === "en_cours");
       body = `<section class="card card-p"><ul class="manage">${s.steps.map((st, i) => {
@@ -182,7 +268,8 @@
       }).join("")}</ul>
       ${s.status === "active" ? `<form class="inline-add" id="add-step"><input name="name" required maxlength="80" placeholder="${t("Nouvelle étape")}" aria-label="${t("Nom de la nouvelle étape")}"><input name="days" type="number" min="0.5" step="0.5" required placeholder="${t("Jours")}" aria-label="${t("Jours prévus")}"><button class="btn" type="submit">${t("Ajouter")}</button></form>` : ""}</section>`;
     } else if (siteTab === "argent") {
-      body = `${moneyPanel(s.money, { me: me.id })}
+      body = `${moneyPanel(s.money, { me: me.id, review: true })}
+        ${s.deliveries.length ? `<h2 class="section-t">${t("Livraisons reçues")}</h2><section class="card card-p"><ul class="m-sched">${s.deliveries.map((d) => `<li><span>${ic("truck", 15)} ${esc([d.quantity, d.label].filter(Boolean).join(" "))}</span><span class="muted">${dShort(d.created_at)}${d.author_name ? " · " + esc(d.author_name) : ""}</span></li>`).join("")}</ul></section>` : ""}
         ${depenseForm(scur)}
         ${s.owner ? "" : versementForm(scur, { received: true })}
         <h2 class="section-t">${t("Devis et factures")}</h2>
@@ -208,7 +295,7 @@
           <div class="link"><code>${esc(url)}</code><button type="button" class="btn ghost" data-copy-link="${esc(s.client_token)}">${t("Copier")}</button></div>
           <div class="row-acts"><a class="btn wa" href="${waLink(s.client_phone, t("Bonjour {who}, suivez l'avancement de votre chantier ici : {url}", { who: s.client_short, url }))}" target="_blank" rel="noopener">${t("Envoyer par WhatsApp")}</a><a class="btn ghost" href="/c/${esc(s.client_token)}" target="_blank" rel="noopener">${t("Voir la page du client")}</a><button type="button" class="btn ghost" data-new-link>${t("Changer de lien")}</button></div>
           <p class="muted" style="font-size:.78rem">${t("Dernière visite du client : {when}.", { when: s.last_client_visit_at ? rel(s.last_client_visit_at).toLowerCase() : t("pas encore") })}</p></section>
-        <section class="card card-p share"><div class="card-h" style="margin:0"><h2>${t("Rapports du lundi")}</h2><button type="button" class="btn" data-send-report>${t("Envoyer un rapport maintenant")}</button></div>
+        <section class="card card-p share"><div class="card-h" style="margin:0"><h2>${t("Rapports du lundi")}</h2><span class="row-acts"><a class="btn ghost" href="/api/sites/${s.id}/rapport.pdf" target="_blank" rel="noopener">${ic("doc", 15)} ${t("Rapport de la semaine (PDF)")}</a><button type="button" class="btn" data-send-report>${t("Envoyer un rapport maintenant")}</button></span></div>
           <p class="muted" style="font-size:.86rem">${s.client_email ? t("Un rapport part automatiquement chaque lundi matin à {email}. Il est toujours visible sur le lien privé.", { email: esc(s.client_email) }) : t("Un rapport part automatiquement chaque lundi matin. Ajoutez l'e-mail du client pour qu'il le reçoive aussi par e-mail. Il est toujours visible sur le lien privé.")}</p>
           ${s.reports.length ? `<div class="tbl-wrap"><table><thead><tr><th>${t("Semaine")}</th><th>${t("Envoyé")}</th><th>${t("Lu par le client")}</th></tr></thead><tbody>${s.reports.map((r) => `<tr><td>${t("{a} au {b}", { a: dShort(r.period_start), b: dShort(r.period_end) })}</td><td>${rel(r.sent_at)}${r.emailed ? " · " + t("e-mail") : ""}</td><td>${r.opened_at ? `<span class="chip ok">${t("Lu {when}", { when: rel(r.opened_at).toLowerCase() })}</span>` : `<span class="chip idle">${t("Pas encore")}</span>`}</td></tr>`).join("")}</tbody></table></div>` : `<p class="muted">${t("Aucun rapport envoyé pour l'instant.")}</p>`}</section>
         <form class="card card-p form" id="edit-client"><h2>${t("Client")}</h2>
@@ -227,6 +314,7 @@
       <div class="tabs" role="tablist">${tabs.map(([k, l, n]) => `<button type="button" role="tab" data-site-tab="${k}" aria-selected="${siteTab === k}">${t(l)}${n ? `<span class="n">${n}</span>` : ""}</button>`).join("")}</div>
       ${body}</div>`);
 
+    if (siteTab === "equipe") bindTeam(s);
     const addStep = $("#add-step");
     if (addStep) addStep.addEventListener("submit", (e) => { e.preventDefault(); const f = new FormData(addStep); act(() => api(`/api/sites/${s.id}/steps`, { method: "POST", body: { name: f.get("name"), planned_days: Number(f.get("days")) } }), t("Étape ajoutée.")); });
     const addDoc = $("#add-doc");
@@ -290,14 +378,28 @@
   }
 
   /* ---------- Compte et abonnement ---------- */
+  // Téléphone du compte : ajouté ou changé ici, confirmé par un code (WhatsApp ou SMS).
+  const phoneCard = async () => {
+    const cfg = window.AF_CONFIG || (window.AF_CONFIG = await api("/api/config", { authRedirect: false }).catch(() => ({ dial: [] })));
+    return `<form class="card card-p form" id="phone-form" style="max-width:560px"><h2>${t("Téléphone")}</h2>
+      ${me.phone ? `<p>${esc(me.phone_pretty)} ${me.phone_verified ? `<span class="chip ok">${t("Confirmé")}</span>` : `<span class="chip wait">${t("À confirmer")}</span> <a href="/inscription/confirmer">${t("Confirmer maintenant")}</a>`}</p>` : `<p class="muted" style="font-size:.86rem">${t("Pour vous connecter avec votre numéro et recevoir les codes par WhatsApp ou SMS.")}</p>`}
+      <div class="ident"><label for="ph-num" class="sr-only">${t("Numéro de téléphone")}</label>${dialSelect("ph-dial", cfg.dial || [], me.country || undefined)}<input id="ph-num" name="phone" type="tel" required maxlength="30" placeholder="01 97 00 00 00" autocomplete="tel"></div>
+      <div><button class="btn" type="submit">${me.phone ? t("Changer de numéro") : t("Ajouter mon numéro")}</button></div></form>`;
+  };
   async function pageAccount() {
-    shell("compte", `<div class="pagehead"><div><p class="sub">${esc(me.email)}${me.google ? " · " + t("connecté avec Google") : ""}</p><h1>${isPro() ? t("Abonnement et compte") : t("Compte")}</h1></div></div>
+    loading("compte");
+    const b = isPro() ? await api("/api/billing") : null;
+    const c = b && b.current;
+    const usage = c ? `<p class="muted sm">${t("Chantiers à vous en cours : {u} sur {l}", { u: c.used_sites, l: c.sites == null ? t("illimité") : c.sites })} · ${t("Équipe : {u} sur {l}", { u: c.used_members, l: c.members == null ? t("illimité") : c.members })}</p>` : "";
+    const state = !c ? "" : c.status === "trial" ? t("Essai PME : encore {n} jours, sans carte bancaire.", { n: c.days_left }) : c.status === "paid" ? (b.cancel_at_end ? t("{plan} jusqu'au {date}, puis l'abonnement s'arrête.", { plan: t(window.AF.PLAN_NAME[c.plan]), date: dShort(c.until) }) : t("{plan} jusqu'au {date}, renouvelé chaque mois.", { plan: t(window.AF.PLAN_NAME[c.plan]), date: dShort(c.until) })) : t("Sans abonnement : un chantier à vous, sans équipe. Les chantiers que vos clients vous confient restent gratuits pour vous.");
+    shell("compte", `<div class="pagehead"><div><p class="sub">${esc([me.email, me.phone_pretty].filter(Boolean).join(" · "))}${me.google ? " · " + t("connecté avec Google") : ""}</p><h1>${isPro() ? t("Abonnement et compte") : t("Compte")}</h1></div></div>
       ${isPro() ? "" : `<section class="card card-p planbox"><h2>${t("Votre accès")}</h2><p>${t("Votre accès est offert par {who}. Vous publiez l'avancement des chantiers qu'on vous confie, sans rien payer.", { who: esc((me.sponsors || []).join(", ") || "—") })}</p></section>`}
-      <section class="card card-p planbox" ${isPro() ? "" : "hidden"}>
-        <div class="card-h" style="margin:0"><h2>Archfield</h2><span class="chip ok">${t("Gratuit")}</span></div>
-        <p>${t("Archfield est gratuit pour les entreprises : chantiers et clients illimités. Plus vos clients voient le chantier avancer et l'argent bien utilisé, plus ils vous font confiance et vous recommandent.")}</p>
-        <ul><li>${t("Un lien privé par client, sans compte")}</li><li>${t("Photos vérifiées : date et lieu de prise de vue")}</li><li>${t("Devis, versements et dépenses au même endroit")}</li><li>${t("Rapport automatique chaque lundi")}</li></ul>
-      </section>
+      ${isPro() ? `<section class="card card-p planbox" id="abonnement"><div class="card-h" style="margin:0"><h2>${t("Votre offre")}</h2><span class="chip ${c.status === "free" ? "idle" : "ok"}">${t(window.AF.PLAN_NAME[c.plan] || "Gratuit")}</span></div>
+        <p>${state}</p>${usage}
+        ${c.status === "paid" && (b.card || b.mode === "test") ? `<div><button type="button" class="btn ghost" data-portal>${b.mode === "test" ? (b.cancel_at_end ? t("Reprendre l'abonnement") : t("Arrêter à la fin du mois")) : t("Gérer mon abonnement (carte, factures)")}</button></div>` : ""}
+        ${window.AF.billingCards(b, { current: c.status === "paid" ? c.plan : null })}
+      </section>` : ""}
+      ${await phoneCard()}
       ${installCard()}
       <section class="card card-p planbox"><h2>${t("Apparence et langue")}</h2><p class="muted" style="font-size:.86rem">${t("Soleil : thème clair. Lune : thème sombre. Écran : suit le réglage de votre téléphone ou de votre ordinateur.")}</p><div>${prefs()}</div></section>
       <form class="card card-p form" id="profile" style="max-width:560px"><h2>${isPro() ? t("Votre entreprise") : t("Vos informations")}</h2>
@@ -322,6 +424,10 @@
         <div class="field"><label for="del-password">${me.has_password ? t("Votre mot de passe, pour confirmer") : t("Votre adresse e-mail, pour confirmer")}</label><input id="del-password" name="password" type="${me.has_password ? "password" : "email"}" required autocomplete="${me.has_password ? "current-password" : "off"}"></div>
         <div><button class="btn danger" type="submit">${t("Supprimer définitivement mon compte")}</button></div></form>
       <div><button type="button" class="btn ghost" data-logout>${t("Se déconnecter")}</button></div>`);
+    $("#phone-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try { me = await api("/api/me/phone", { method: "POST", body: { phone: $("#ph-num").value, dial: $("#ph-dial").value } }); location.href = "/inscription/confirmer?retour=compte"; } catch (err) { toast(err.message); }
+    });
     $("#profile").addEventListener("submit", async (e) => {
       e.preventDefault();
       try { me = await api("/api/me", { method: "PATCH", body: Object.fromEntries(new FormData(e.target)) }); toast(t("Profil enregistré.")); route(); } catch (err) { toast(err.message); }
@@ -338,16 +444,7 @@
 
   /* ---------- Publications en attente de réseau (chantier sans couverture) ---------- */
   // Sans réseau, la publication (texte, photos, position) est gardée sur le téléphone et part dès que le réseau revient.
-  const idb = () => new Promise((resolve, reject) => {
-    const r = indexedDB.open("archfield", 1);
-    r.onupgradeneeded = () => r.result.createObjectStore("outbox", { keyPath: "id", autoIncrement: true });
-    r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);
-  });
-  const store = async (mode, fn) => { const db = await idb(); return new Promise((resolve, reject) => { const q = fn(db.transaction("outbox", mode).objectStore("outbox")); q.onsuccess = () => resolve(q.result); q.onerror = () => reject(q.error); }); };
-  const outboxAll = () => store("readonly", (o) => o.getAll()).catch(() => []);
-  const outboxAdd = (item) => store("readwrite", (o) => o.add(item));
-  const outboxDel = (id) => store("readwrite", (o) => o.delete(id)).catch(() => {});
-  let outboxCount = 0, flushing = false;
+  let outboxCount = 0;
   const outboxBar = () => (outboxCount ? `<div class="outbox">${ic("warn", 18)}<span>${plural(outboxCount, "{n} publication attend le réseau pour partir.", "{n} publications attendent le réseau pour partir.")}</span><button type="button" class="btn ghost" data-outbox-retry>${t("Réessayer")}</button></div>` : "");
   function updateForm(it) {
     const form = new FormData();
@@ -358,22 +455,15 @@
     return form;
   }
   async function flushOutbox(manual) {
-    if (flushing) return;
-    flushing = true;
-    let sent = 0;
-    try {
-      for (const it of await outboxAll()) {
-        try { await upload(`/api/sites/${it.siteId}/updates`, updateForm(it)); await outboxDel(it.id); sent++; }
-        catch (e) { if (e.offline) break; await outboxDel(it.id); toast(t("Une publication en attente a été refusée : {msg}", { msg: e.message })); }
-      }
-    } finally { flushing = false; }
     const before = outboxCount;
-    outboxCount = (await outboxAll()).length;
-    if (sent) toast(plural(sent, "{n} publication en attente est partie.", "{n} publications en attente sont parties."));
+    const r = await outbox.flush();
+    outboxCount = r.left;
+    r.refused.forEach((m) => toast(t("Une publication en attente a été refusée : {msg}", { msg: m })));
+    if (r.sent) toast(plural(r.sent, "{n} publication en attente est partie.", "{n} publications en attente sont parties."));
     else if (manual && outboxCount) toast(t("Toujours pas de réseau. Nouvel essai automatique dès qu'il revient."));
-    if (sent || before !== outboxCount) route();
+    if (r.sent || before !== outboxCount) route();
   }
-  window.addEventListener("online", () => flushOutbox());
+  window.addEventListener("online", () => { if (me && me.account_type !== "client" && me.account_type !== "membre") flushOutbox(); });
 
   /* ---------- Nouvelle mise à jour ---------- */
   // Photos prises sur place (appareil photo) ou choisies dans la galerie. La date de prise de vue et la position
@@ -452,8 +542,8 @@
         } catch (err) {
           if (!err.offline) { st.textContent = err.message; btn.disabled = false; return; }
           // Pas de réseau : la publication attend sur le téléphone.
-          try { await outboxAdd(item); } catch (x) { st.textContent = err.message; btn.disabled = false; return; }
-          outboxCount = (await outboxAll()).length;
+          try { await outbox.add({ ...item, label: t("Mise à jour") }); } catch (x) { st.textContent = err.message; btn.disabled = false; return; }
+          outboxCount = await outbox.count();
           finish(t("Enregistrée, sans réseau"), `<p class="muted">${t("Votre publication est gardée sur ce téléphone. Elle partira toute seule dès que le réseau revient, avec la date et le lieu des photos.")}</p>`);
         }
       });
@@ -483,16 +573,31 @@
       await (pages[h] || pageDashboard)();
     } catch (e) { errorBox(h, e); }
   }
-  window.addEventListener("hashchange", () => { if (!me || me.account_type === "client") return; if (!$("#composer").hidden && !$("#cmp-done-title")) closeComposer(); if (!/^#chantier-/.test(location.hash)) siteTab = "journal"; route().then(() => window.scrollTo(0, 0)); });
+  const otherSpace = () => !me || me.account_type === "client" || me.account_type === "membre";
+  window.addEventListener("hashchange", () => { if (otherSpace()) return; if (!$("#composer").hidden && !$("#cmp-done-title")) closeComposer(); if (!/^#chantier-/.test(location.hash)) siteTab = "journal"; route().then(() => window.scrollTo(0, 0)); });
 
   let pendingNewLink = false;
   document.addEventListener("click", async (e) => {
-    if (!me || me.account_type === "client") return;
+    if (otherSpace()) return;
     const b = e.target.closest("button, tr[data-site]");
     if (!b) return;
     const d = b.dataset;
     if (d.go) { if (location.hash === "#" + d.go) route(); else location.hash = d.go; }
+    else if (d.openSite) { siteTab = d.tab || "journal"; if (location.hash === "#chantier-" + d.openSite) route(); else location.hash = "chantier-" + d.openSite; }
     else if (d.site) location.hash = "chantier-" + d.site;
+    else if (d.check) act(() => api(`/api/updates/${d.check}/check`, { method: "POST" }), t("Rapport vérifié."));
+    else if (d.checkAll) act(() => api(`/api/sites/${d.checkAll}/check-all`, { method: "POST" }), t("Rapports vérifiés."));
+    else if (d.share) act(() => api(`/api/updates/${d.share}/share`, { method: "POST", body: { share: true } }), t("Le client le voit maintenant sur son suivi."));
+    else if (d.unshare) act(() => api(`/api/updates/${d.unshare}/share`, { method: "POST", body: { share: false } }), t("Caché au client. L'équipe le voit toujours."));
+    else if (d.resolve) act(() => api(`/api/updates/${d.resolve}/resolve`, { method: "POST" }), t("Problème mis à jour."));
+    else if (d.review) act(() => api(`/api/ledger/${d.review}/review`, { method: "POST", body: { decision: d.decision } }), d.decision === "approve" ? t("Dépense approuvée : elle compte dans le budget utilisé.") : t("Dépense refusée. Elle reste visible, barrée."));
+    else if (d.memberDel) {
+      if (!b.dataset.armed) { b.dataset.armed = "1"; b.textContent = t("Confirmer : retirer du chantier"); setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = t("Retirer du chantier"); } }, 5000); return; }
+      act(() => api(`/api/team/${d.memberDel}`, { method: "DELETE" }), t("Retiré du chantier : il n'y a plus accès."));
+    }
+    else if (d.inviteDel) act(() => api(`/api/team-invites/${d.inviteDel}`, { method: "DELETE" }), t("Invitation annulée."));
+    else if (d.pay) { b.disabled = true; try { const r = await api("/api/billing/checkout", { method: "POST", body: { plan: d.pay, lang } }); location.href = r.url; } catch (err) { toast(err.message); b.disabled = false; } }
+    else if (d.portal !== undefined) { try { const r = await api("/api/billing/portal", { method: "POST" }); if (r.url) location.href = r.url; else { toast(t("Abonnement mis à jour.")); me = await api("/api/me"); route(); } } catch (err) { toast(err.message); } }
     else if (d.publish !== undefined) openComposer(d.publish);
     else if (d.siteTab) { siteTab = d.siteTab; route(); }
     else if (d.pick) { lastSiteId = Number(d.pick); route(); }
@@ -547,8 +652,13 @@
     let code = null;
     try { code = sessionStorage.getItem("af-invite"); sessionStorage.removeItem("af-invite"); } catch (e) {}
     if (code) { try { await api(`/api/invitations/${code}/accept`, { method: "POST" }); me = await api("/api/me"); toast(t("Invitation acceptée : le chantier est dans votre liste.")); } catch (e) { toast(e.message); } }
+    // Inscrit avec son numéro : il le confirme d'abord (code par WhatsApp ou SMS).
+    if (me.phone && !me.phone_verified && !me.email && location.hash !== "#compte") { location.href = "/inscription/confirmer"; return; }
+    const q = new URLSearchParams(location.search);
+    if (q.get("paiement")) { toast(q.get("paiement") === "ok" ? t("Paiement reçu : votre offre est active. Merci !") : t("Paiement annulé : rien n'a été débité.")); history.replaceState(null, "", location.pathname + location.hash); }
     if (me.account_type === "client") return window.AFSpace.start(me);
-    outboxCount = (await outboxAll()).length;
+    if (me.account_type === "membre") return window.AFTerrain.start(me);
+    outboxCount = await outbox.count();
     route();
     if (outboxCount && navigator.onLine) flushOutbox();
   })();

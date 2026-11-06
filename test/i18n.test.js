@@ -5,7 +5,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 
-const IGNORE = new Set(["sun", "moon", "screen", "nouveau-chantier", "location", "BE", "US", "mes-chantiers"]);
+const IGNORE = new Set(["sun", "moon", "screen", "nouveau-chantier", "location", "BE", "US", "mes-chantiers", "doc", "cam", "money", "warn", "mic", "logo-foot"]);
 
 test("toutes les phrases de l'interface ont une traduction anglaise", () => {
   const ctx = { window: {} };
