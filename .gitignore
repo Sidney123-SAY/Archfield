@@ -8,4 +8,4 @@ backups/
 .version-precedente
 data-test/
 .env.test
-video/
+/video/
