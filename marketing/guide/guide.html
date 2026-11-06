@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Premier chantier au pays · le guide Archfield</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap">
+<style>
+/* Guide offert aux personnes qui commentent « CHANTIER ». Imprimé en PDF A4 par tools/guide.js. */
+@page { size: A4; margin: 0; }
+:root { --navy: #14263D; --paper: #F4F2EE; --ink: #14263D; --muted: #5D6570; --line: #E4E0D8; --orange: #C2410C; --peche: #F0A27A; --vert: #26774B; --vert-soft: #E2F1E7; --ambre: #D99A2B;
+  --serif: "Source Serif 4", Georgia, serif; --sans: "Geist", "Segoe UI", sans-serif; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font: 400 11.5pt/1.5 var(--sans); color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.pg { width: 210mm; height: 297mm; padding: 22mm 20mm 18mm; position: relative; overflow: hidden; page-break-after: always; background: #fff; }
+.pg:last-child { page-break-after: auto; }
+.foot { position: absolute; left: 20mm; right: 20mm; bottom: 10mm; display: flex; justify-content: space-between; font: 500 8.5pt var(--sans); color: var(--muted); }
+h1 { font: 500 40pt/1.02 var(--serif); letter-spacing: -.02em; }
+h2 { font: 500 24pt/1.1 var(--serif); letter-spacing: -.015em; margin-bottom: 6mm; }
+h3 { font: 600 14pt/1.25 var(--serif); margin-bottom: 1.5mm; }
+.k { font: 700 9pt/1 var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--orange); margin-bottom: 4mm; }
+p + p { margin-top: 3mm; }
+.muted { color: var(--muted); }
+/* Couverture */
+.cover { background: var(--navy); color: #fff; display: flex; flex-direction: column; }
+.cover .k { color: var(--peche); }
+.cover h1 { font-size: 46pt; margin-top: 8mm; }
+.cover h1 em { color: var(--peche); font-style: normal; }
+.cover .sub { font: 400 15pt/1.4 var(--serif); font-style: italic; color: #C9D2DD; margin-top: 8mm; max-width: 135mm; }
+.cover .fx { margin-top: auto; }
+.cover .brand { display: flex; align-items: center; gap: 3mm; font: 600 16pt var(--serif); margin-top: 10mm; }
+.cover .foot { color: #8FA0B5; }
+/* Vérifications */
+.chk { display: grid; grid-template-columns: 14mm 1fr; gap: 0 5mm; padding: 5mm 0; border-top: 1px solid var(--line); }
+.chk:first-of-type { border-top: 0; }
+.chk .n { font: 500 26pt/1 var(--serif); color: var(--orange); }
+.chk ul { margin: 2mm 0 0 4.5mm; }
+.chk li { margin-top: 1mm; }
+.tip { margin-top: 2.5mm; background: var(--paper); border-radius: 3mm; padding: 3mm 4mm; font-size: 10.5pt; }
+.tip b { color: var(--vert); }
+/* Échéancier */
+table { width: 100%; border-collapse: collapse; margin: 3mm 0 3mm; font-size: 11pt; }
+th, td { text-align: left; padding: 3mm 3mm; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 700 9pt var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+td.pct { font: 600 13pt var(--sans); color: var(--orange); white-space: nowrap; }
+.alert { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin-top: 3mm; }
+.alert div { border: 1.5px solid #F3C9B5; background: #FDF3EE; border-radius: 3mm; padding: 3.5mm 4mm; font-size: 10.5pt; }
+.alert b { display: block; color: var(--orange); margin-bottom: 1mm; }
+/* Archfield */
+.af { background: var(--paper); }
+.feat { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; margin-top: 6mm; }
+.feat div { background: #fff; border-radius: 4mm; padding: 5mm; }
+.feat b { display: block; font: 600 13pt var(--serif); margin-bottom: 1.5mm; }
+.offer { margin-top: 8mm; background: var(--navy); color: #fff; border-radius: 5mm; padding: 8mm; }
+.offer h2 { margin-bottom: 3mm; }
+.offer h2 em { color: var(--peche); font-style: normal; }
+.offer p { color: #C9D2DD; }
+.offer .url { display: inline-block; margin-top: 5mm; background: var(--orange); color: #fff; border-radius: 99px; padding: 3mm 7mm; font: 700 13pt var(--sans); }
+.legal { margin-top: 6mm; font-size: 8.5pt; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<section class="pg cover">
+  <p class="k">Guide offert · Archfield</p>
+  <h1>Premier chantier<br>au pays : <em>le guide pour se lancer</em> sans se faire avoir</h1>
+  <p class="sub">Vous vivez en Europe, vous avez le travail, l'envie, parfois déjà le terrain. Voici les 7 vérifications à faire avant d'envoyer le premier euro.</p>
+  <div class="fx">{{FACADE}}</div>
+  <div class="brand"><svg width="34" height="34" viewBox="0 0 32 32"><path d="M7 27V15a9 9 0 0 1 18 0v12" fill="none" stroke="#C2410C" stroke-width="4"/><g fill="#fff"><rect x="11" y="21" width="2.6" height="6"/><rect x="14.7" y="18" width="2.6" height="9"/><rect x="18.4" y="15" width="2.6" height="12"/><rect x="3" y="27" width="26" height="2.4" rx="1"/></g></svg>Archfield</div>
+  <div class="foot"><span>Osez construire au pays.</span><span>Édition 2026</span></div>
+</section>
+
+<section class="pg">
+  <p class="k">Avant de commencer</p>
+  <h2>Construire de loin, c'est possible. À une condition : ne rien payer sans preuve.</h2>
+  <p>Beaucoup de projets de maison au pays échouent pour les mêmes raisons : un terrain mal sécurisé, un devis flou, de l'argent envoyé d'avance, et des nouvelles qui arrivent seulement quand il faut encore payer. Rien de tout cela n'est une fatalité.</p>
+  <p>Ce guide tient en une idée : <b>chaque paiement doit correspondre à un travail que vous pouvez vérifier</b>. Les 7 vérifications qui suivent s'appliquent que vous construisiez à Cotonou, Abidjan, Dakar, Lomé, Douala ou ailleurs.</p>
+
+  <div class="chk" style="margin-top:8mm"><span class="n">1</span><div><h3>Sécurisez le terrain avant tout</h3>
+    <p>Pas de fondations sur un terrain dont la propriété n'est pas claire. Demandez le titre officiel du pays (par exemple le certificat de propriété foncière au Bénin, l'arrêté de concession définitive en Côte d'Ivoire, le titre foncier au Sénégal, au Togo ou au Cameroun) et faites-le vérifier auprès de l'administration foncière et par un notaire.</p>
+    <p class="tip"><b>Le bon réflexe :</b> ne payez jamais un terrain « sur photo », et ne laissez personne signer à votre place sans une procuration écrite et limitée.</p></div></div>
+
+  <div class="chk"><span class="n">2</span><div><h3>Ayez des plans et un permis de construire</h3>
+    <p>Des plans dessinés par un architecte ou un technicien, et un permis de construire demandé à la mairie. Les plans servent aussi à vérifier les travaux : on compare ce qui est construit à ce qui est dessiné.</p></div></div>
+
+  <div class="chk"><span class="n">3</span><div><h3>Exigez un devis détaillé, poste par poste</h3>
+    <p>Un bon devis donne les quantités et les prix : sacs de ciment, fer, agglos, sable, gravier, main-d'œuvre, par étape. Demandez deux ou trois devis pour comparer.</p>
+    <p class="tip"><b>Le bon réflexe :</b> un devis « forfait » sans quantités ne permet pas de vérifier. C'est lui qui ouvre la porte aux « il faut encore… ».</p></div></div>
+  <div class="foot"><span>Premier chantier au pays · Archfield</span><span>2</span></div>
+</section>
+
+<section class="pg">
+  <div class="chk"><span class="n">4</span><div><h3>Signez un contrat écrit</h3>
+    <p>Avec l'entreprise ou le chef de chantier : les étapes, les délais, le prix de chaque étape, qui achète les matériaux, ce qui se passe en cas de retard. Même court, un contrat signé vaut mieux qu'un accord oral.</p></div></div>
+
+  <div class="chk"><span class="n">5</span><div><h3>Payez par étapes, jamais tout d'avance</h3>
+    <p>Chaque versement correspond à une étape terminée et vérifiée (voir l'échéancier page suivante). Payez par un moyen qui laisse une trace (virement, mobile money) et gardez chaque reçu.</p>
+    <p class="tip"><b>Le bon réflexe :</b> pas d'argent liquide confié à un intermédiaire, pas de paiement à une autre personne que celle du contrat.</p></div></div>
+
+  <div class="chk"><span class="n">6</span><div><h3>Demandez des preuves datées, chaque semaine</h3>
+    <p>Des photos et des vidéos <b>datées et localisées</b>, prises sur le chantier, pas des photos envoyées sans date. Des reçus pour chaque achat de matériaux. Comparez les quantités livrées aux quantités du devis.</p>
+    <p class="tip"><b>Le bon réflexe :</b> demandez un appel vidéo depuis le chantier aux étapes importantes. Un chantier qui avance n'a rien à cacher.</p></div></div>
+
+  <div class="chk"><span class="n">7</span><div><h3>Faites vérifier les étapes clés sur place</h3>
+    <p>Une personne de confiance, ou un professionnel indépendant (technicien, bureau de contrôle), passe aux moments qui comptent. Le plus important : <b>contrôler le ferraillage avant de couler le béton</b> des fondations, des poteaux et de la dalle. Une fois le béton coulé, on ne voit plus rien.</p></div></div>
+  <div class="foot"><span>Premier chantier au pays · Archfield</span><span>3</span></div>
+</section>
+
+<section class="pg">
+  <p class="k">À garder sous la main</p>
+  <h2>Un exemple d'échéancier par étape</h2>
+  <p class="muted">À adapter à votre devis et à votre contrat. Le principe compte plus que les chiffres : on paie l'étape suivante quand la précédente est vérifiée.</p>
+  <table>
+    <tr><th>Étape</th><th>Ce que vous vérifiez avant de payer la suite</th><th>Part</th></tr>
+    <tr><td>Fondations</td><td>Implantation conforme aux plans, ferraillage contrôlé avant le coulage, photos datées</td><td class="pct">≈ 20 %</td></tr>
+    <tr><td>Élévation des murs</td><td>Hauteur atteinte, ouvertures aux bons endroits, chaînages, reçus du ciment et du fer</td><td class="pct">≈ 25 %</td></tr>
+    <tr><td>Dalle ou plancher</td><td>Ferraillage contrôlé avant le coulage, vidéo du coulage</td><td class="pct">≈ 20 %</td></tr>
+    <tr><td>Toiture</td><td>Charpente et couverture posées, photos depuis l'intérieur et l'extérieur</td><td class="pct">≈ 15 %</td></tr>
+    <tr><td>Finitions</td><td>Électricité, plomberie, enduits, menuiseries, visite finale</td><td class="pct">≈ 20 %</td></tr>
+  </table>
+
+  <h2 style="margin-top:9mm">Les signaux d'alerte</h2>
+  <div class="alert">
+    <div><b>L'urgence</b>« Il faut l'argent aujourd'hui, sinon le prix monte. » Une vraie urgence se prouve avec un devis ou une facture.</div>
+    <div><b>Les photos sans date</b>Floues, anciennes, prises de loin, ou toujours sous le même angle.</div>
+    <div><b>Les montants ronds</b>« Encore 500 000 » sans détail des quantités ni reçu.</div>
+    <div><b>Le refus de montrer</b>Pas d'appel vidéo, pas de visite possible, toujours « la semaine prochaine ».</div>
+    <div><b>Un autre bénéficiaire</b>On vous demande de payer une personne qui n'est pas dans le contrat.</div>
+    <div><b>Les étapes qui sautent</b>On demande l'argent de la toiture alors que les murs ne sont pas vérifiés.</div>
+  </div>
+  <div class="foot"><span>Premier chantier au pays · Archfield</span><span>4</span></div>
+</section>
+
+<section class="pg af">
+  <p class="k">Pour aller plus loin</p>
+  <h2>Archfield fait ces vérifications avec vous, depuis votre téléphone.</h2>
+  <p>Votre chef de chantier ou votre entreprise publie sur Archfield. Vous suivez tout depuis l'Europe, comme si vous y étiez.</p>
+  <div class="feat">
+    <div><b>Photos vérifiées</b>Chaque photo est datée et localisée sur le chantier. Fini les photos floues sans date.</div>
+    <div><b>Un rapport chaque jour</b>Ouvriers présents, livraisons reçues, message vocal du chef de chantier.</div>
+    <div><b>Validez, puis payez</b>Chaque étape a son budget. Vous validez l'étape avant de verser la suite.</div>
+    <div><b>Dépenses avec reçu</b>Chaque achat de matériaux arrive avec sa photo de reçu, à approuver ou refuser.</div>
+  </div>
+  <div class="offer">
+    <h2>Votre cadeau : <em>2 mois offerts</em></h2>
+    <p>Créez votre espace, invitez votre chef de chantier, et suivez votre premier chantier pendant deux mois sans payer. Sans engagement.</p>
+    <span class="url">{{URL}}</span>
+  </div>
+  <p class="legal">Ce guide donne des conseils généraux. Il ne remplace pas l'avis d'un notaire, d'un avocat ou d'un professionnel du bâtiment de votre pays. Les règles foncières et d'urbanisme changent d'un pays à l'autre : renseignez-vous auprès des administrations compétentes.</p>
+  <div class="foot"><span>Premier chantier au pays · Archfield</span><span>5</span></div>
+</section>
+
+</body>
+</html>

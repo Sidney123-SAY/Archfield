@@ -19,7 +19,11 @@
     "video": "node tools/video.js",
     "voix": "python3 tools/video/voix.py",
     "kit": "node tools/kit.js",
-    "video:vertical": "node tools/video-vertical.js"
+    "video:vertical": "node tools/video-vertical.js",
+    "pub": "node tools/pub.js",
+    "pub:son": "python3 tools/video/pub-son.py",
+    "pub:storyboard": "STORYBOARD=1 node tools/pub.js",
+    "guide": "node tools/guide.js"
   },
   "engines": {
     "node": ">=22.13"
