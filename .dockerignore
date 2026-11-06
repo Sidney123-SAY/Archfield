@@ -11,3 +11,6 @@ marketing
 tools
 *.zip
 *.bundle
+data-test
+.env.test
+video

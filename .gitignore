@@ -6,3 +6,6 @@ archfield.bundle
 captures/
 backups/
 .version-precedente
+data-test/
+.env.test
+video/out/

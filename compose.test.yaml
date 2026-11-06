@@ -1,0 +1,23 @@
+# Archfield en mode test, sur votre propre ordinateur (machine virtuelle Ubuntu) : l'application, et un tunnel
+# Cloudflare qui lui donne une adresse publique en HTTPS (https://….trycloudflare.com), gratuite et sans compte.
+# Le HTTPS est indispensable sur téléphone pour la localisation, l'appareil photo et le micro.
+# Lancer : bash deploy/test-local.sh      Guide : deploy/TEST-LOCAL.md
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env.test
+    environment:
+      DATA_DIR: /data
+      PORT: "3000"
+      TRUST_PROXY: "1"
+    ports:
+      - "3000:3000"            # aussi ouvrable sur le Wi-Fi de la maison : http://<adresse de la machine>:3000
+    volumes:
+      - ./data-test:/data      # base de données, photos et vocaux du test
+  tunnel:
+    image: cloudflare/cloudflared:2026.10.0
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://app:3000
+    depends_on:
+      - app
