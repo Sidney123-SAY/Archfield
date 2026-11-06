@@ -1,6 +1,6 @@
 // Publicité Meta 9:16 : tools/video/pub.html rendu image par image (30 images/s), puis assemblé en MP4 (H.264) avec la voix et les bruitages.
-// Usage : npm run pub                      → video/out/archfield-pub-9x16-a.mp4   (accroche A)
-//         HOOK=b npm run pub               → accroche B (HOOK=c : accroche C)
+// Usage : npm run pub                      → video/out/archfield-pub-9x16-c.mp4   (accroche C, la principale)
+//         HOOK=a npm run pub               → accroche A (HOOK=b : accroche B), pour les tests A/B
 //         STORYBOARD=1 npm run pub         → images clés seulement (marketing/pub/storyboard/)
 // Voix : tools/video/pub-voix/*.wav (Speko · ElevenLabs). Lancez d'abord npm run pub:son (bande son). Il faut ffmpeg et Playwright.
 const fs = require("node:fs");
@@ -13,7 +13,7 @@ const VOIX = path.join(__dirname, "video", "pub-voix");
 const OUT = path.join(ROOT, "video", "out");
 const FRAMES = path.join(OUT, "frames-pub");
 const FPS = Number(process.env.FPS) || 30;
-const HOOK = (process.env.HOOK || "a").toLowerCase();
+const HOOK = (process.env.HOOK || "c").toLowerCase(); // C : accroche principale
 const dur = (f) => Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", f]).toString());
 // Le plan 1 dure le temps de la phrase d'accroche : les accroches B et C décalent la suite de la vidéo.
 const SHIFT = dur(path.join(__dirname, "video", "pub-voix", `hook-${HOOK}.wav`)) - dur(path.join(__dirname, "video", "pub-voix", "hook-a.wav"));
@@ -35,7 +35,7 @@ async function page() {
 (async () => {
   const { browser, pg } = await page();
   if (process.env.STORYBOARD) {
-    const dir = path.join(ROOT, "marketing", "pub", "storyboard" + (HOOK === "a" ? "" : "-" + HOOK));
+    const dir = path.join(ROOT, "marketing", "pub", "storyboard" + (HOOK === "c" ? "" : "-" + HOOK));
     fs.rmSync(dir, { recursive: true, force: true });
     fs.mkdirSync(dir, { recursive: true });
     const sc = await pg.evaluate(() => window.SCENES());

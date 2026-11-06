@@ -1,5 +1,5 @@
 """Bande son de la pub 9:16 : voix (Speko · ElevenLabs), vocal du chef filtré comme un téléphone, bruitages et fond musical discret.
-Usage : npm run pub:son (HOOK=b ou HOOK=c pour les autres accroches)   →   video/out/pub-mix-a.wav (et pub-mix-a-sans-musique.wav).
+Usage : npm run pub:son (HOOK=a ou HOOK=b pour les accroches de test)   →   video/out/pub-mix-c.wav (et pub-mix-c-sans-musique.wav).
 Les voix sont dans tools/video/pub-voix/. Le calendrier ci-dessous suit les scènes de tools/video/pub.html."""
 import os, wave, sys, subprocess, numpy as np
 from pathlib import Path
@@ -7,7 +7,7 @@ SR = 48000
 V = Path(__file__).resolve().parent / "pub-voix"
 O = Path(__file__).resolve().parents[2] / "video" / "out"
 O.mkdir(parents=True, exist_ok=True)
-HOOK = os.environ.get("HOOK", "a").lower()
+HOOK = os.environ.get("HOOK", "c").lower()  # C : accroche principale
 def dur(f): w = wave.open(str(V / f)); return w.getnframes() / w.getframerate()
 # Début des scènes pour l'accroche A ; les accroches B et C décalent tout ce qui suit le plan 1.
 SCENES = [0, 4.6, 9.2, 13.2, 17.1, 20.9]
@@ -104,3 +104,23 @@ for a, b in (("pub-mix-brut.wav", f"pub-mix-{HOOK}.wav"), ("pub-mix-sans-musique
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(O / a), "-af", "loudnorm=I=-14:TP=-1.5:LRA=11", "-ar", str(SR), str(O / b)], check=True)
     (O / a).unlink()
 print("ok", O / f"pub-mix-{HOOK}.wav")
+
+# Sous-titres (fichier .srt à importer dans le gestionnaire de publicités), calés sur la voix.
+HOOK_TXT = {"a": "Encore quinze mille euros pour le ciment et le fer…\nMais ce ciment, vous l'avez vu ?",
+            "b": "« Les murs avancent bien. »…\nVraiment ?",
+            "c": "Votre maison au pays…\nvous la voyez comment ?"}
+LINES = [(f"hook-{HOOK}.wav", 0, None, HOOK_TXT[HOOK]),
+         ("v2.wav", 0, None, "Quand on construit au pays depuis l'Europe,\non paie… et on croit sur parole."),
+         ("v3.wav", 0, None, "Avec Archfield, chaque photo de votre chantier\nest datée et localisée."),
+         ("v4.wav", 0, None, "Votre chef de chantier envoie son rapport\nchaque jour, même sans réseau."),
+         ("v5.wav", 0, None, "Vous validez l'étape…\npuis vous payez. Pas avant."),
+         ("v6.wav", 0, 3.3, "Archfield.\nVotre chantier, comme si vous y étiez."),
+         ("v6.wav", 3.85, None, "Commentez « chantier » : on vous envoie\nnotre guide, et deux mois offerts.")]
+def ts(x): ms = int(round(x * 1000)); return f"{ms // 3600000:02d}:{ms // 60000 % 60:02d}:{ms // 1000 % 60:02d},{ms % 1000:03d}"
+srt = []
+for i, (f, a, b, txt) in enumerate(LINES, 1):
+    at = voice[f]; end = at + (b if b is not None else dur(f) - 0.1)
+    srt.append(f"{i}\n{ts(at + a)} --> {ts(end)}\n{txt}\n")
+out = Path(__file__).resolve().parents[2] / "marketing" / "pub" / f"archfield-pub-9x16-{HOOK}.fr.srt"
+out.write_text("\n".join(srt), encoding="utf-8")
+print("sous-titres", out)

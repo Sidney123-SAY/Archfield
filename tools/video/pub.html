@@ -22,6 +22,8 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
 .dark .hl .acc { color: var(--peche); }
 .light .hl .acc { color: var(--orange); }
 .hl .w { display: inline-block; white-space: pre; }
+.hl .ul { position: relative; display: inline-block; }
+.hl .ul::after { content: ""; position: absolute; left: 0; bottom: -6px; height: 10px; width: var(--ul, 0%); background: var(--orange); border-radius: 5px; }
 .kick { font: 700 30px/1 var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--orange); }
 .dark .kick { color: var(--peche); }
 svg { display: block; overflow: visible; }
@@ -66,6 +68,10 @@ svg { display: block; overflow: visible; }
 .chip { position: absolute; display: inline-flex; align-items: center; gap: 14px; border-radius: 999px; padding: 18px 28px; font: 700 38px var(--sans); white-space: nowrap; box-shadow: 0 14px 30px rgba(20,38,61,.16); }
 .chip.g { background: var(--vert); color: #fff; }
 .chip.w { background: #fff; color: var(--ink); }
+#a4 .dest { position: absolute; left: 790px; top: 520px; width: 200px; height: 200px; }
+#a4 .dest .av { width: 200px; height: 200px; border-radius: 50%; overflow: hidden; background: #14263D; border: 8px solid #fff; box-shadow: 0 16px 34px rgba(20,38,61,.22); }
+#a4 .dest .av svg { width: 100%; height: 100%; }
+#a4 .dest .badge { position: absolute; right: 6px; top: 6px; width: 44px; height: 44px; border-radius: 50%; background: var(--orange); border: 6px solid #fff; }
 #a4 .rep { left: 70px; top: 950px; width: 940px; padding: 24px 32px 22px; }
 .rep .top { display: flex; align-items: center; gap: 14px; font: 700 30px var(--sans); }
 .rep .top .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--orange); }
@@ -88,7 +94,17 @@ svg { display: block; overflow: visible; }
 .stg .st { font: 700 30px var(--sans); color: var(--vert); white-space: nowrap; }
 .stg.off { color: #A3A8AE; }
 .btn { position: relative; margin-top: 26px; border-radius: 26px; padding: 30px; text-align: center; font: 800 44px var(--sans); display: flex; justify-content: center; align-items: center; gap: 18px; overflow: hidden; }
-.vbtn { position: absolute; right: 0; top: 50%; transform: translateY(-50%); background: var(--ink); color: #fff; border-radius: 18px; padding: 16px 24px; font: 700 30px var(--sans); white-space: nowrap; }
+.chart { padding: 30px 36px 34px !important; }
+.leg { display: flex; gap: 34px; font: 600 28px var(--sans); color: var(--muted); padding-bottom: 6px; }
+.leg i { display: inline-block; width: 24px; height: 24px; border-radius: 7px; margin-right: 12px; vertical-align: -4px; }
+.row { position: relative; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px 20px; padding: 18px 0; border-bottom: 2px solid var(--line); font: 700 38px var(--sans); }
+.row.off { color: #A3A8AE; border-bottom: 0; }
+.row .st { font: 700 30px var(--sans); color: var(--vert); white-space: nowrap; }
+.row .bars { grid-column: 1 / -1; display: grid; gap: 8px; }
+.b { display: block; height: 18px; border-radius: 9px; background: var(--paper); overflow: hidden; }
+.b i { display: block; height: 100%; width: 0; border-radius: 9px; }
+.b.r i { background: var(--vert); } .b.v i { background: var(--peche); }
+.vbtn { position: absolute; right: 0; top: 16px; background: var(--ink); color: #fff; border-radius: 18px; padding: 16px 24px; font: 700 30px var(--sans); white-space: nowrap; }
 .ripple { position: absolute; border-radius: 50%; background: rgba(255,255,255,.5); width: 40px; height: 40px; pointer-events: none; }
 
 .net { display: inline-flex; align-items: center; gap: 10px; margin-left: auto; border-radius: 999px; padding: 8px 18px; font: 700 26px var(--sans); white-space: nowrap; }
@@ -245,8 +261,11 @@ svg { display: block; overflow: visible; }
       <g id="sw" stroke="#C2410C" stroke-width="5" fill="none" stroke-linecap="round"><path d="M168 340 q-16 24 0 48"/><path d="M146 324 q-26 40 0 80"/><path d="M124 308 q-36 56 0 112"/></g>
     </svg>
   </div>
-  <span class="chip w" style="left:640px;top:640px" data-in="1.0" data-fx="pop"><svg width="40" height="40" viewBox="0 0 24 24"><path d="M5 15a7 7 0 0 1 14 0" fill="#D99A2B"/><rect x="3.5" y="14.5" width="17" height="3" rx="1.5" fill="#B97F1C"/></svg>12 ouvriers</span>
-  <span class="chip g" style="left:600px;top:760px" data-in="1.5" data-fx="pop"><svg width="40" height="40" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>50 sacs reçus</span>
+  <!-- La cliente (la même femme qu'au plan 1) reçoit le rapport : le chef lui parle, à elle. -->
+  <svg class="abs" style="left:0;top:0" width="1080" height="1920"><path id="sig" d="M232 820 C170 560 520 470 792 610" fill="none" stroke="#C2410C" stroke-width="6" stroke-linecap="round" stroke-dasharray="2 18"/></svg>
+  <div class="dest" data-in=".55" data-fx="pop" data-origin="center"><div class="av" id="destav"></div><span class="badge"></span></div>
+  <span class="chip w" style="left:600px;top:760px" data-in="1.0" data-fx="pop"><svg width="40" height="40" viewBox="0 0 24 24"><path d="M5 15a7 7 0 0 1 14 0" fill="#D99A2B"/><rect x="3.5" y="14.5" width="17" height="3" rx="1.5" fill="#B97F1C"/></svg>12 ouvriers</span>
+  <span class="chip g" style="left:600px;top:866px" data-in="1.5" data-fx="pop"><svg width="40" height="40" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>50 sacs reçus</span>
   <div class="card rep" data-in=".45" data-fx="up">
     <div class="top"><span class="dot"></span>Rapport du jour<small>14:32</small><span class="net" id="net"></span></div>
     <div class="voice"><span class="play"><svg width="34" height="34" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="#fff"/></svg></span><span class="wave" id="wave"></span><span class="tm" id="vtm">0:00</span></div>
@@ -257,10 +276,12 @@ svg { display: block; overflow: visible; }
 <!-- 5. Valider puis payer : 17,1 → 20,9 s -->
 <section class="scene dark" id="a5" data-start="17.1" data-end="20.9">
   <h1 class="hl"><span class="l" data-in=".6" data-fx="words">Validez,</span><span class="l acc" data-in="1.65" data-fx="words">puis payez.</span></h1>
-  <div class="card" data-in=".05" data-fx="up">
-    <div class="stg"><span class="ic" style="background:var(--vert-soft)"><svg width="34" height="34" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#26774B" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Fondations<span class="bar"><i style="width:100%"></i></span></span><span class="st">Payée</span></div>
-    <div class="stg" id="murs"><span class="ic" id="mic"><svg width="34" height="34" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" fill="none" stroke="#14263D" stroke-width="2.2"/><path d="M4 12h16M12 6v6M8 12v6M16 12v6" stroke="#14263D" stroke-width="2"/></svg></span><span style="position:relative">Murs<span class="bar"><i id="mbar"></i></span><span class="vbtn" id="vbtn" style="top:-6px;transform:none">Valider l'étape</span></span><span class="st" id="mst" style="color:var(--muted)">72 %</span></div>
-    <div class="stg off"><span class="ic"><svg width="34" height="34" viewBox="0 0 24 24"><path d="M3 12 12 5l9 7" stroke="#A3A8AE" stroke-width="2.4" fill="none"/></svg></span><span>Toiture<span class="bar"></span></span><span class="st" style="color:#A3A8AE">À venir</span></div>
+  <!-- stat-chart : pour chaque étape, ce qui est réalisé (vert) et ce qui est versé (pêche). -->
+  <div class="card chart" data-in=".05" data-fx="up">
+    <div class="leg"><span><i style="background:var(--vert)"></i>Réalisé</span><span><i style="background:var(--peche)"></i>Versé</span></div>
+    <div class="row" id="r1"><b>Fondations</b><span class="st">Payée</span><div class="bars"><span class="b r"><i></i></span><span class="b v"><i></i></span></div></div>
+    <div class="row" id="r2"><b>Murs</b><span class="st" id="mst"></span><span class="vbtn" id="vbtn">Valider l'étape</span><div class="bars"><span class="b r"><i></i></span><span class="b v"><i></i></span></div></div>
+    <div class="row off"><b>Toiture</b><span class="st" style="color:#A3A8AE">À venir</span><div class="bars"><span class="b r"><i></i></span><span class="b v"><i></i></span></div></div>
     <div class="btn" id="pay"><svg id="lock" width="46" height="46" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="currentColor"/><path id="shackle" d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2.4" fill="none"/></svg>Versement suivant · 15&nbsp;000&nbsp;€</div>
   </div>
 </section>
@@ -357,9 +378,10 @@ function womanWorry(skin, hair, top, topd) {
   </svg>`;
 }
 $("#woman1").innerHTML = woman("worry");
+$("#destav").innerHTML = woman("joy").replace('viewBox="0 0 600 640"', 'viewBox="170 30 260 260"');
 
 // Titres : chaque mot monte à son tour.
-const splitWords = (el) => { el.innerHTML = el.textContent.split(/(\s+)/).map((w) => (w.trim() ? `<span class="w">${w}</span>` : w)).join(""); };
+const splitWords = (el) => { el.innerHTML = el.textContent.split(/( +)/).map((w) => (w.trim() ? `<span class="w">${w}</span>` : w)).join(""); };
 document.querySelectorAll('[data-fx="words"]').forEach(splitWords);
 
 // Vocal du chef : enveloppe sonore réelle (volume par image) pour la vague et la bouche ; transcription mot à mot.
@@ -403,6 +425,7 @@ function facadeAt(svg, local, from, step) {
 
 const per = {
   a1(l) {
+    const ul = $("#h1b .ul"); if (ul) ul.style.setProperty("--ul", 100 * inout((l - ulAt) / 0.5) + "%");
     $("#woman1").style.transform = `translateY(${Math.sin(l * 2.2) * 3}px)`;
     $(".glow").style.opacity = 0.6 + 0.4 * clamp((l - 0.1) / 0.3) * (0.8 + 0.2 * Math.sin(l * 9));
   },
@@ -435,6 +458,7 @@ const per = {
     const n = trWords.length * clamp((l - 0.4) / 2.2);
     trWords.forEach((w, k) => { w.style.opacity = k < n ? 1 : 0.18; });
     // Même sans réseau : le rapport attend dans le téléphone, puis part dès que le réseau revient.
+    const sig = $("#sig"); sig.style.strokeDashoffset = -l * 60; sig.style.opacity = clamp((l - 0.5) * 3);
     const net = $("#net"), off = l >= 2.4 && l < 3.3;
     net.style.opacity = l < 2.4 ? 0 : 1;
     net.style.background = off ? "#FCF1DB" : "var(--vert-soft)"; net.style.color = off ? "#7A4E06" : "var(--vert)";
@@ -443,17 +467,21 @@ const per = {
     net.style.transform = `scale(${l >= 3.3 ? 0.9 + 0.1 * back((l - 3.3) / 0.4) : 1})`;
   },
   a5(l) {
-    const b = out3((l - 0.3) / 0.75);
-    $("#mbar").style.width = 72 + 28 * b + "%";
-    $("#mst").textContent = l < 1.15 ? Math.round(72 + 28 * b) + " %" : "Validée";
-    $("#mst").style.color = l < 1.15 ? "var(--muted)" : "var(--vert)";
-    const vb = $("#vbtn"); vb.style.opacity = l < 1.15 ? clamp((l - 0.85) * 5) : 0; vb.style.transform = l > 1.0 && l < 1.15 ? "scale(.92)" : "none";
-    $("#mic").style.background = l < 1.15 ? "var(--paper)" : "var(--vert-soft)";
+    // Stat-chart : les barres montent ; les murs atteignent 100 %, on valide, le versement se débloque, puis il est versé.
+    const set = (row, real, vers) => { const [r, v] = $(row).querySelectorAll(".b i"); r.style.width = real + "%"; v.style.width = vers + "%"; };
+    set("#r1", 100 * out3((l - 0.15) / 0.6), 100 * out3((l - 0.3) / 0.6));
+    const real = 72 * out3((l - 0.2) / 0.5) + 28 * out3((l - 0.6) / 0.4);
+    set("#r2", real, 100 * out3((l - 2.85) / 0.55));
+    const ok = l >= 1.15;
+    $("#mst").textContent = ok ? "Validée" : Math.round(real) + " %";
+    $("#mst").style.color = ok ? "var(--vert)" : "var(--muted)";
+    $("#mst").style.opacity = l > 0.85 && !ok ? 0 : 1;
+    const vb = $("#vbtn"); vb.style.opacity = !ok ? clamp((l - 0.85) * 5) : 0; vb.style.transform = l > 1.0 && !ok ? "scale(.92)" : "none";
     const u = clamp((l - 1.75) / 0.35), pay = $("#pay");
     pay.style.background = u ? `rgba(194,65,12,${0.15 + 0.85 * u})` : "#EDEAE4";
     pay.style.color = u > 0.5 ? "#fff" : "#A3A8AE";
     $("#shackle").setAttribute("d", u > 0.4 ? "M8 11V8a4 4 0 0 1 7.6-1.8" : "M8 11V8a4 4 0 0 1 8 0v3");
-    const pulse = l > 2.1 ? 1 + 0.03 * Math.sin((l - 2.1) * 9) : 1; pay.style.transform = `scale(${pulse})`;
+    const pulse = l > 2.1 && l < 2.75 ? 1 + 0.03 * Math.sin((l - 2.1) * 9) : 1; pay.style.transform = `scale(${pulse})`;
     let rp = pay.querySelector(".ripple"); if (!rp) { rp = document.createElement("span"); rp.className = "ripple"; pay.appendChild(rp); }
     const r = clamp((l - 2.75) / 0.5); rp.style.left = "50%"; rp.style.top = "50%"; rp.style.opacity = r > 0 ? 1 - r : 0; rp.style.transform = `translate(-50%,-50%) scale(${1 + r * 30})`;
   },
@@ -480,14 +508,17 @@ window.seek = (t) => {
 window.DURATION = 29.6;
 // Accroches à tester. A : « 15 000 €… pour quoi ? » (par défaut). B et C changent le titre, le message et la durée du plan 1 :
 // toutes les scènes suivantes sont décalées de `shift` secondes (durée de la phrase d'accroche moins celle de A).
+let ulAt = 99;
 const HOOKS = {
   a: { h1a: ["15 000 €…", 0.35, "l acc big"], h1b: ["pour quoi ?", 2.85, "l"], msg: "Il faut encore <b>15&nbsp;000&nbsp;€</b> pour le ciment et&nbsp;le&nbsp;fer." },
-  b: { h1a: ["« Les murs avancent bien. »", 0.3, "l"], h1b: ["Vraiment ?", 1.75, "l acc"], msg: "Les murs avancent bien ! Il faut encore <b>15&nbsp;000&nbsp;€</b> pour le ciment et&nbsp;le&nbsp;fer." },
+  b: { h1a: ["«\u00a0Les murs avancent bien.\u00a0»", 0.3, "l"], h1b: ["Vraiment ?", 1.75, "l acc"], msg: "Les murs avancent bien ! Il faut encore <b>15&nbsp;000&nbsp;€</b> pour le ciment et&nbsp;le&nbsp;fer." },
   c: { h1a: ["Votre maison au pays,", 0.3, "l"], h1b: ["vous la voyez comment ?", 1.95, "l acc"], msg: "Il faut encore <b>15&nbsp;000&nbsp;€</b> pour le ciment et&nbsp;le&nbsp;fer." },
 };
 window.setHook = (h, shift) => {
   const H = HOOKS[h] || HOOKS.a;
   for (const k of ["h1a", "h1b"]) { const el = $("#" + k); el.textContent = H[k][0]; el.dataset.in = H[k][1]; el.className = H[k][2]; splitWords(el); }
+  // Headline : un trait orange souligne la question, une fois tous ses mots arrivés.
+  const last = $("#h1b"); last.innerHTML = `<span class="ul">${last.innerHTML}</span>`; ulAt = H.h1b[1] + 0.12 * last.querySelectorAll(".w").length + 0.3;
   $("#msg1").innerHTML = H.msg;
   scenes.forEach((s, i) => { if (i > 0) s.a += shift; s.b += shift; });
   window.DURATION += shift;

@@ -1,5 +1,5 @@
-// Guide offert « Premier chantier au pays » : marketing/guide/guide.html imprimé en PDF A4.
-// Usage : BASE_URL=https://votre-domaine npm run guide   →   public/guide/premier-chantier-au-pays.pdf
+// Guide offert « Les 7 vérifications avant d'envoyer de l'argent pour votre chantier » : marketing/guide/guide.html imprimé en PDF A4.
+// Usage : BASE_URL=https://votre-domaine npm run guide   →   public/guide/7-verifications-chantier.pdf
 // Le PDF est servi par le site : c'est ce lien qu'envoie la réponse automatique au commentaire « CHANTIER ».
 const fs = require("node:fs");
 const path = require("node:path");
@@ -18,7 +18,7 @@ const url = base && !base.includes("example.com") ? base.replace(/^https?:\/\//,
   const page = await browser.newPage();
   await page.setContent(html, { waitUntil: "networkidle" });
   await page.evaluate(() => document.fonts.ready);
-  const file = path.join(OUT, "premier-chantier-au-pays.pdf");
+  const file = path.join(OUT, "7-verifications-chantier.pdf");
   await page.pdf({ path: file, format: "A4", printBackground: true, preferCSSPageSize: true });
   await browser.close();
   console.log("Guide prêt :", file, base ? "" : "(sans BASE_URL : pas d'adresse du site dans le PDF)");
