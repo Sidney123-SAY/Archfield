@@ -1728,4 +1728,17 @@ window.AF_EN = {
   "Recevoir un code": "Get a code",
   "Me connecter": "Sign in",
   "Avec un numéro, pas de mot de passe à retenir : vous vous connectez avec un code reçu par WhatsApp ou par SMS.": "With a phone number, no password to remember: you sign in with a code sent by WhatsApp or SMS.",
+  // Accueil : la maison se construit au défilement
+  "Votre maison, comme si vous y étiez.": "Your house, as if you were there.",
+  "Du premier sac de ciment à la remise des clés, chaque étape est datée, localisée et validée par vous.": "From the first bag of cement to the handover of the keys, every stage is dated, located and approved by you.",
+  "Jusqu'aux finitions.": "All the way to the finishes.",
+  "Carrelage, enduits, menuiseries : les dépenses arrivent avec leur reçu, et vous les approuvez avant de payer.": "Tiling, rendering, doors and windows: expenses arrive with their receipt, and you approve them before paying.",
+  "Le jour de la remise des clés, vous savez ce que vous avez payé.": "On handover day, you know exactly what you paid for.",
+  "Plan": "Plan",
+  "Dalle et étage": "Slab and upper floor",
+  "L'intérieur": "Inside",
+  "Gros œuvre": "Structural work",
+  "Second œuvre": "Fit-out",
+  "Pièce finie": "Finished room",
+  "Faites défiler": "Scroll"
 };

@@ -253,3 +253,50 @@ body.lp::before { background: var(--lp-paper); }
 .lp-gallery img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 4px; display: block; }
 .lp-gallery figcaption { font-size: .86rem; opacity: .8; }
 @media (max-width: 860px) { .lp-plans-2 { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- La maison se construit au défilement (public/js/build.js) ----------
+   Plein écran : la scène reste fixe pendant que l'on fait défiler ; texte à gauche, fiche de l'application à droite,
+   nom de l'étape en bas à gauche et barre de progression. Sans JavaScript, les textes s'affichent simplement à la suite. */
+.lp-build { position: relative; margin-top: -65px; background: #0E1B2C; color: #DCE3EC; }
+.lp-build.on { height: calc(var(--frames, 10) * 85vh + 100vh); }
+.b-pin { position: relative; }
+.lp-build.on .b-pin { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
+.b-scene { position: absolute; inset: 0; opacity: 0; transition: opacity .6s ease; }
+.lp-build.ready .b-scene[data-scene="ext"] { opacity: 1; }
+.b-scene svg { display: block; width: 100%; height: 100%; }
+.lp-build.ready .b-scene { transition: none; }
+.b-scrim { position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, rgba(8, 16, 27, .82) 0%, rgba(8, 16, 27, .5) 32%, rgba(8, 16, 27, 0) 56%), linear-gradient(0deg, rgba(8, 16, 27, .6) 0%, rgba(8, 16, 27, 0) 24%), linear-gradient(180deg, rgba(8, 16, 27, .45) 0%, rgba(8, 16, 27, 0) 18%); }
+.b-panels { position: relative; padding-block: 120px 60px; display: grid; gap: 72px; }
+.lp-build.on .b-panels { position: absolute; inset: 0; padding: 0; margin: 0 auto; max-width: 1200px; pointer-events: none; }
+.b-panel { display: grid; gap: 22px; justify-items: start; max-width: 560px; }
+.lp-build.on .b-panel { position: absolute; left: max(24px, env(safe-area-inset-left, 0px)); top: 0; bottom: 0; align-content: center; opacity: 0; visibility: hidden; pointer-events: auto; will-change: opacity, transform; }
+.b-panel .lp-h2 { color: #fff; font-size: clamp(2rem, 1.3rem + 2.6vw, 3.6rem); line-height: 1.04; letter-spacing: -.02em; text-wrap: balance; margin: 0; }
+.b-panel .lp-p { color: #DCE3EC; font-size: clamp(1rem, .95rem + .3vw, 1.15rem); line-height: 1.6; max-width: 27em; margin: 0; }
+.b-hero .lp-kicker { color: #F0A27A; }
+.b-panel .lp-h1, .b-panel .lp-h2 { text-shadow: 0 2px 30px rgba(0, 0, 0, .25); }
+.b-cards { display: none; }
+.lp-build.on .b-cards { display: block; position: absolute; right: max(24px, 4vw); bottom: 110px; width: 340px; height: 230px; pointer-events: none; }
+.lp-build.on .b-cards .ui-card { position: absolute; right: 0; bottom: 0; width: 340px; opacity: 0; visibility: hidden; will-change: opacity, transform; }
+.b-foot { display: none; }
+.lp-build.on .b-foot { display: flex; position: absolute; left: 0; right: 0; bottom: 26px; margin: 0 auto; max-width: 1200px; align-items: flex-end; justify-content: space-between; pointer-events: none; }
+.b-labels { position: relative; height: 2.4em; min-width: 320px; }
+.b-label { position: absolute; left: 0; bottom: 0; margin: 0; white-space: nowrap; opacity: 0; font-family: var(--f-display); font-weight: 400; font-size: clamp(1.25rem, 1rem + .9vw, 1.8rem); color: #fff; text-shadow: 0 2px 18px rgba(0, 0, 0, .4); }
+.b-n { font-family: var(--f-ui); font-size: .78rem; font-weight: 600; letter-spacing: .14em; color: #F0A27A; vertical-align: .3em; margin-right: 6px; }
+.b-hint { margin: 0; font-size: .74rem; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: rgba(255, 255, 255, .75); }
+.b-hint::after { content: " ↓"; }
+.b-bar { display: none; }
+.lp-build.on .b-bar { display: block; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(255, 255, 255, .14); }
+.b-bar i { display: block; height: 100%; background: #D99A2B; transform: scaleX(0); transform-origin: left; }
+@media (max-width: 860px), (orientation: portrait) and (max-width: 1024px) {
+  .b-scrim { background: linear-gradient(0deg, rgba(8, 16, 27, .9) 0%, rgba(8, 16, 27, .72) 34%, rgba(8, 16, 27, 0) 58%), linear-gradient(180deg, rgba(8, 16, 27, .5) 0%, rgba(8, 16, 27, 0) 16%); }
+  .lp-build.on .b-panel { top: auto; bottom: 84px; right: max(20px, env(safe-area-inset-right, 0px)); left: max(20px, env(safe-area-inset-left, 0px)); align-content: end; max-width: none; gap: 14px; }
+  .b-panel .lp-h1 { font-size: clamp(2.2rem, 1.4rem + 4vw, 3rem); }
+  .b-panel .lp-h2 { font-size: clamp(1.7rem, 1.2rem + 3vw, 2.4rem); }
+  .b-panel .lp-p, .b-panel .lp-lead { font-size: .98rem; }
+  .b-hero .lp-fine { display: none; }
+  .lp-build.on .b-cards { display: none; }
+  .lp-build.on .b-foot { bottom: 18px; }
+  .b-labels { min-width: 0; }
+  .b-label { font-size: 1.1rem; }
+}
