@@ -54,6 +54,13 @@ Chaque vidéo part d'une image (**start image**) et arrive à la suivante (**end
 | B6 | A7 | A8 | Time-lapse: the walls are plastered and the window frame is installed, tiles are laid. Static camera. |
 | B7 | A8 | A6 | Time-lapse: the room is painted and furnished, sofa, rug, plants and lights appear. Static camera. |
 
+## Après la génération (Claude s'en charge)
+
+1. Récupérer les 7 vidéos (connecteur Higgsfield) dans `video/higgsfield/B1.mp4` … `B7.mp4`.
+2. `node tools/sequence.js` : les vidéos deviennent une suite d'images (ordinateur et téléphone) dans `public/img/sequence/`.
+3. La page d'accueil passe toute seule en mode photo : les images défilent avec la molette, les textes, les fiches de
+   l'application, le nom de l'étape et la barre de progression restent. Pour revenir aux dessins : supprimer `public/img/sequence/`.
+
 ## Crédits
 
 Le compte est en offre gratuite avec 10 crédits : c'est trop peu pour 8 images et 7 vidéos. Il faut un abonnement payant

@@ -20,9 +20,57 @@
   const seg = (v, a, b) => ease((v - a) / (b - a));
   const lerp = (a, b, t) => a + (b - a) * t;
 
-  let ext = null, int = null;
+  let ext = null, int = null, seq = null;
   const load = (url, box) => fetch(url).then((r) => (r.ok ? r.text() : Promise.reject())).then((t) => { box.innerHTML = t; const s = box.querySelector("svg"); s.setAttribute("aria-hidden", "true"); return s; });
-  Promise.all([load("/img/chantier-ext.svg", extBox), load("/img/chantier-int.svg", intBox)]).then(([e, i]) => {
+  // Mode « séquence » (photoréaliste) : si public/img/sequence/manifest.json existe (tools/sequence.js, vidéos Higgsfield),
+  // on affiche les images de la vidéo au rythme du défilement ; sinon, les scènes dessinées.
+  fetch("/img/sequence/manifest.json").then((r) => (r.ok ? r.json() : Promise.reject())).then(startSeq).catch(startSvg);
+
+  function startSeq(m) {
+    const canvas = document.createElement("canvas");
+    canvas.className = "b-canvas";
+    canvas.setAttribute("aria-hidden", "true");
+    extBox.appendChild(canvas);
+    intBox.remove();
+    const dir = (pin.clientWidth / pin.clientHeight < 0.8 ? m.mobile : m.desktop) || "d";
+    const imgs = new Array(m.count);
+    const url = (i) => `/img/sequence/${dir}/${String(i + 1).padStart(4, "0")}.${m.ext || "webp"}`;
+    // Chargement progressif : les images des étapes d'abord, puis une sur huit, une sur quatre… jusqu'à toutes.
+    const order = [...new Set([...m.keys, ...[8, 4, 2, 1].flatMap((st) => Array.from({ length: Math.ceil(m.count / st) }, (_, k) => k * st))])].filter((i) => i < m.count);
+    let next = 0;
+    const pump = () => {
+      if (next >= order.length) return;
+      const i = order[next++], img = new Image();
+      img.decoding = "async";
+      img.onload = () => { imgs[i] = img; if (seq && Math.abs(seq.shown - i) < 12) kick(true); pump(); };
+      img.onerror = pump;
+      img.src = url(i);
+    };
+    for (let k = 0; k < 6; k++) pump();
+    seq = { m, canvas, ctx: canvas.getContext("2d"), imgs, shown: -1, drawn: -1 };
+    sec.classList.add("ready", "is-seq");
+    frame(true);
+  }
+  // Image à montrer pour l'étape f (interpolée entre les images des étapes), puis la plus proche déjà chargée.
+  function drawSeq(f) {
+    const { m, canvas, ctx, imgs } = seq, keys = m.keys;
+    const k = Math.min(keys.length - 2, Math.floor(f)), t = f - k;
+    const want = Math.round(lerp(keys[k], keys[k + 1], clamp(t)));
+    let i = want;
+    for (let d = 0; d < m.count; d++) { if (imgs[want - d]) { i = want - d; break; } if (imgs[want + d]) { i = want + d; break; } }
+    seq.shown = want;
+    const dpr = Math.min(2, window.devicePixelRatio || 1), W = Math.round(pin.clientWidth * dpr), H = Math.round(pin.clientHeight * dpr);
+    if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; seq.drawn = -1; }
+    const img = imgs[i];
+    if (!img || seq.drawn === i) return;
+    const s = Math.max(W / img.naturalWidth, H / img.naturalHeight), w = img.naturalWidth * s, h = img.naturalHeight * s;
+    // Sur grand écran, l'image est décalée à droite pour laisser la place au texte.
+    const shift = W / H > 1.2 ? Math.min((w - W) / 2, W * 0.06) : 0;
+    ctx.drawImage(img, (W - w) / 2 + shift, (H - h) / 2, w, h);
+    seq.drawn = i;
+  }
+
+  function startSvg() { Promise.all([load("/img/chantier-ext.svg", extBox), load("/img/chantier-int.svg", intBox)]).then(([e, i]) => {
     ext = e; int = i;
     const q = (svg, id) => svg.querySelector("#" + id);
     ext.parts = Object.fromEntries(["cam", "plan", "sky-night", "night", "found", "rdc", "scaf", "dalle", "etage", "roof-frame", "roof-tiles", "finish", "garden"].map((id) => [id, q(ext, id)]));
@@ -31,7 +79,7 @@
     int.clips = { tiles: q(int, "c-tiles").firstElementChild };
     sec.classList.add("ready");
     frame(true);
-  }).catch(() => {});
+  }).catch(() => {}); }
 
   // Cadrage : on garde la maison entière à l'écran, quel que soit le format (téléphone en hauteur, grand écran).
   function fit(svg, cx, cy, minW) {
@@ -99,7 +147,8 @@
     cur = still || force ? target : cur + (target - cur) * 0.14;
     if (Math.abs(target - cur) < 0.001) cur = target;
     const f = cur;
-    if (ext) {
+    if (seq) drawSeq(f);
+    else if (ext) {
       refit();
       const enter = seg(f, EXT + 0.15, EXT + 0.75);
       drawExt(Math.min(f, EXT), enter);
@@ -117,7 +166,7 @@
     sec.classList.toggle("is-day", f > 1.1 && f < EXT + 0.6 || f > EXT + 1.3);
     if (Math.abs(target - cur) > 0.0005) raf = requestAnimationFrame(() => frame(false));
   }
-  const kick = () => { if (!raf) raf = requestAnimationFrame(() => frame(false)); };
+  function kick(redraw) { if (redraw === true && seq) seq.drawn = -1; if (!raf) raf = requestAnimationFrame(() => frame(false)); }
   window.addEventListener("scroll", kick, { passive: true });
   window.addEventListener("resize", () => { lastFit = ""; kick(); });
   sec.classList.add("on");

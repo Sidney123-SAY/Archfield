@@ -300,3 +300,5 @@ body.lp::before { background: var(--lp-paper); }
   .b-labels { min-width: 0; }
   .b-label { font-size: 1.1rem; }
 }
+/* Mode séquence : images de la vidéo, en plein écran, à la place des scènes dessinées. */
+.b-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
