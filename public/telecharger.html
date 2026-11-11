@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F1F3F5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0A131E" media="(prefers-color-scheme: dark)">
+<title>Télécharger l'application · Archfield</title>
+<meta name="description" content="Installez Archfield sur votre téléphone Android ou iPhone : une icône sur l'écran d'accueil, sans passer par un store.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Archfield">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<script src="/js/theme.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<header class="pub-head gutter"><a class="logo" href="/" id="logo">Archfield</a><div data-prefs></div></header>
+<main class="legal guide dl gutter" data-download>
+  <p class="guide-k" data-i18n>Application mobile</p>
+  <h1 data-i18n>Archfield sur votre téléphone</h1>
+  <p class="guide-lead" data-i18n>Une icône sur l'écran d'accueil, en plein écran, sans passer par un store. Gratuit, quelques secondes, et l'application se met à jour toute seule.</p>
+
+  <!-- Une seule de ces trois zones s'affiche, selon l'appareil (public/js/home.js). -->
+  <div class="dl-box" data-dl="installed" hidden>
+    <p data-i18n>Archfield est déjà installé sur cet appareil.</p>
+    <p class="guide-actions"><a class="btn primary" href="/app" data-i18n>Ouvrir l'application</a></p>
+  </div>
+  <div class="dl-box" data-dl="phone" hidden>
+    <p class="guide-actions"><button type="button" class="btn primary" data-install data-dl-button hidden><img src="/icons/icon-192.png" alt="" width="22" height="22"> <span data-i18n>Installer Archfield</span></button></p>
+    <p class="dl-insecure" data-dl-insecure hidden data-i18n>Cette adresse n'est pas sécurisée (https) : le téléphone ajoutera un simple raccourci. L'application complète s'installe depuis l'adresse officielle du site.</p>
+  </div>
+  <div class="dl-box" data-dl="desktop" hidden>
+    <p data-i18n>Vous êtes sur un ordinateur. Ouvrez cette page sur votre téléphone :</p>
+    <p class="dl-url" data-dl-url></p>
+    <p class="guide-actions"><a class="btn primary" data-dl-whatsapp target="_blank" rel="noopener" data-i18n>M'envoyer le lien sur WhatsApp</a> <button type="button" class="btn ghost" data-dl-copy data-i18n>Copier le lien</button></p>
+  </div>
+
+  <div class="dl-grid">
+    <section class="dl-card" data-os="android">
+      <h2 data-i18n>Android</h2>
+      <ol class="guide-list">
+        <li><p data-i18n>Ouvrez cette page dans Chrome.</p></li>
+        <li><p data-i18n>Touchez « Installer Archfield » plus haut. Si le bouton n'apparaît pas, ouvrez le menu (les trois points en haut à droite).</p></li>
+        <li><p data-i18n>Choisissez « Installer l'application » ou « Ajouter à l'écran d'accueil », puis confirmez.</p></li>
+      </ol>
+    </section>
+    <section class="dl-card" data-os="ios">
+      <h2 data-i18n>iPhone et iPad</h2>
+      <ol class="guide-list">
+        <li><p data-i18n>Ouvrez cette page dans Safari.</p></li>
+        <li><p data-i18n>Touchez le bouton Partager (le carré avec une flèche vers le haut), en bas de l'écran.</p></li>
+        <li><p data-i18n>Choisissez « Sur l'écran d'accueil », puis « Ajouter ».</p></li>
+      </ol>
+    </section>
+  </div>
+
+  <h2 data-i18n>Ensuite</h2>
+  <p data-i18n>Touchez l'icône Archfield sur votre écran d'accueil, puis connectez-vous ou créez votre compte. Les écrans déjà ouverts restent consultables sans réseau, et une publication faite sans réseau part toute seule dès qu'il revient.</p>
+  <p class="guide-actions"><a class="btn ghost" href="/inscription" data-i18n>Créer un compte</a> <a class="btn ghost" href="/connexion" data-i18n>Se connecter</a></p>
+  <footer class="site-foot"><span>Archfield</span><div data-footer-links></div></footer>
+</main>
+<script src="/js/i18n-en.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/js/home.js"></script>
+</body>
+</html>

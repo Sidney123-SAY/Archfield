@@ -28,8 +28,8 @@
   const initials = (n) => n.split(/\s+/).map((x) => x[0]).join("").slice(0, 2).toUpperCase();
 
   function shell(section, body) {
-    const sideOn = (k) => k === section || (k === "journal" && section === "chantier") || (k === "chantiers" && section === "nouveau-chantier");
-    const tabOn = (k) => k === section || (k === "chantiers" && ["tableau-de-bord", "nouveau-chantier", "clients"].includes(section)) || (k === "journal" && section === "chantier");
+    const sideOn = (k) => k === section || (k === "chantiers" && (section === "chantier" || section === "nouveau-chantier"));
+    const tabOn = (k) => k === section || (k === "chantiers" && ["tableau-de-bord", "nouveau-chantier", "chantier", "clients"].includes(section));
     app.innerHTML = `<div class="shell">
       <aside class="side">
         <a class="logo" href="#tableau-de-bord">${LOGO(24)} Archfield</a>
@@ -409,7 +409,7 @@
         <div class="field"><label for="pf-city">${t("Ville")}</label><input id="pf-city" name="city" value="${esc(me.city)}"></div></div>
         <div><button class="btn" type="submit">${t("Enregistrer")}</button></div></form>
       <form class="card card-p form" id="password" style="max-width:560px"><h2>${me.has_password ? t("Mot de passe") : t("Ajouter un mot de passe")}</h2>
-        ${me.has_password ? "" : `<p class="muted" style="font-size:.86rem">${t("Vous vous connectez avec Google. Un mot de passe vous permet aussi de vous connecter avec votre e-mail.")}</p>`}
+        ${me.has_password ? "" : `<p class="muted" style="font-size:.86rem">${me.google || me.apple ? t("Vous vous connectez avec Google. Un mot de passe vous permet aussi de vous connecter avec votre e-mail.") : t("Vous vous connectez avec un code reçu par WhatsApp ou SMS. Un mot de passe est facultatif.")}</p>`}
         <div class="row2">${me.has_password ? `<div class="field"><label for="pw-current">${t("Mot de passe actuel")}</label><input id="pw-current" name="current" type="password" required autocomplete="current-password"></div>` : ""}
         <div class="field"><label for="pw-new">${t("Nouveau mot de passe")}</label><input id="pw-new" name="password" type="password" required minlength="8" autocomplete="new-password"></div></div>
         <div><button class="btn" type="submit">${me.has_password ? t("Changer le mot de passe") : t("Enregistrer le mot de passe")}</button></div></form>
@@ -421,7 +421,7 @@
         <div class="row-acts"><a class="btn" href="/api/me/export" download>${t("Télécharger mes données")}</a><button type="button" class="btn ghost" data-cookies>${t("Gérer les cookies")}</button></div></section>
       <form class="card card-p form" id="delete-account" style="max-width:560px"><h2>${t("Supprimer le compte")}</h2>
         <p class="muted" style="font-size:.86rem">${isPro() ? t("Tous vos chantiers, photos et documents sont effacés définitivement, et les liens de vos clients cessent de marcher. Téléchargez vos données avant.") : t("Les chantiers qu'on vous a confiés reviennent à leur propriétaire, avec tout leur journal.")}</p>
-        <div class="field"><label for="del-password">${me.has_password ? t("Votre mot de passe, pour confirmer") : t("Votre adresse e-mail, pour confirmer")}</label><input id="del-password" name="password" type="${me.has_password ? "password" : "email"}" required autocomplete="${me.has_password ? "current-password" : "off"}"></div>
+        <div class="field"><label for="del-password">${me.has_password ? t("Votre mot de passe, pour confirmer") : me.email ? t("Votre adresse e-mail, pour confirmer") : t("Votre numéro de téléphone, pour confirmer")}</label><input id="del-password" name="password" type="${me.has_password ? "password" : me.email ? "email" : "tel"}" required autocomplete="${me.has_password ? "current-password" : "off"}"></div>
         <div><button class="btn danger" type="submit">${t("Supprimer définitivement mon compte")}</button></div></form>
       <div><button type="button" class="btn ghost" data-logout>${t("Se déconnecter")}</button></div>`);
     $("#phone-form").addEventListener("submit", async (e) => {

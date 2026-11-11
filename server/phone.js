@@ -36,13 +36,15 @@ function normalize(input, country) {
   return /^\+[1-9]\d{7,14}$/.test(s) ? s : null;
 }
 const isPhoneLike = (s) => /^[+\d\s.()\-/]{6,}$/.test(String(s || "").trim()) && !String(s).includes("@");
-// Pour l'affichage : « +229 01 97 00 00 00 » (groupes de deux chiffres après l'indicatif).
+// Pour l'affichage : groupes de deux chiffres après l'indicatif (« +229 01 97 00 00 00 »). Nombre impair de chiffres :
+// un chiffre d'abord là où le 0 national est tombé (« +33 6 12 34 56 78 »), sinon 2 puis 3 (« +221 77 892 31 35 »).
 function pretty(p) {
   if (!p) return "";
-  const code = Object.values(DIAL).map((d) => d.code).sort((a, b) => b.length - a.length).find((c) => p.startsWith("+" + c));
-  if (!code) return p;
-  const rest = p.slice(code.length + 1);
-  return `+${code} ${rest.replace(/(\d{2})(?=\d)/g, "$1 ")}`;
+  const d = Object.values(DIAL).sort((a, b) => b.code.length - a.code.length).find((x) => p.startsWith("+" + x.code));
+  if (!d) return p;
+  const rest = p.slice(d.code.length + 1), pairs = (s) => s.replace(/(\d{2})(?=\d)/g, "$1 ");
+  if (rest.length % 2 === 0) return `+${d.code} ${pairs(rest)}`;
+  return d.trunk ? `+${d.code} ${rest[0]} ${pairs(rest.slice(1))}` : `+${d.code} ${rest.slice(0, 2)} ${rest.slice(2, 5)} ${pairs(rest.slice(5))}`;
 }
 const publicDial = () => Object.entries(DIAL).map(([k, v]) => ({ country: k, code: v.code, name: v.name }));
 

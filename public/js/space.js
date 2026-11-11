@@ -249,6 +249,7 @@
         <div class="field"><label for="pf-city">${t("Ville")}</label><input id="pf-city" name="city" value="${esc(me.city || "")}"></div></div>
         <div><button class="btn" type="submit">${t("Enregistrer")}</button></div></form>
       <form class="card card-p form" id="password" style="max-width:560px"><h2>${me.has_password ? t("Mot de passe") : t("Ajouter un mot de passe")}</h2>
+        ${me.has_password || me.email ? "" : `<p class="muted" style="font-size:.86rem">${t("Vous vous connectez avec un code reçu par WhatsApp ou SMS. Un mot de passe est facultatif.")}</p>`}
         <div class="row2">${me.has_password ? `<div class="field"><label for="pw-current">${t("Mot de passe actuel")}</label><input id="pw-current" name="current" type="password" required autocomplete="current-password"></div>` : ""}
         <div class="field"><label for="pw-new">${t("Nouveau mot de passe")}</label><input id="pw-new" name="password" type="password" required minlength="8" autocomplete="new-password"></div></div>
         <div><button class="btn" type="submit">${t("Enregistrer le mot de passe")}</button></div></form>
@@ -258,7 +259,7 @@
       <section class="card card-p planbox"><h2>${t("Vos données")}</h2><div class="row-acts"><a class="btn" href="/api/me/export" download>${t("Télécharger mes données")}</a><button type="button" class="btn ghost" data-cookies>${t("Gérer les cookies")}</button></div></section>
       <form class="card card-p form" id="delete-account" style="max-width:560px"><h2>${t("Supprimer le compte")}</h2>
         <p class="muted" style="font-size:.86rem">${t("Les chantiers que vous avez créés sont effacés. Ceux gérés par des entreprises restent chez elles.")}</p>
-        <div class="field"><label for="del-password">${me.has_password ? t("Votre mot de passe, pour confirmer") : t("Votre adresse e-mail, pour confirmer")}</label><input id="del-password" name="password" type="${me.has_password ? "password" : "email"}" required></div>
+        <div class="field"><label for="del-password">${me.has_password ? t("Votre mot de passe, pour confirmer") : me.email ? t("Votre adresse e-mail, pour confirmer") : t("Votre numéro de téléphone, pour confirmer")}</label><input id="del-password" name="password" type="${me.has_password ? "password" : me.email ? "email" : "tel"}" required></div>
         <div><button class="btn danger" type="submit">${t("Supprimer définitivement mon compte")}</button></div></form>
       <div><button type="button" class="btn ghost" data-logout>${t("Se déconnecter")}</button></div>`);
     const send = (id, fn) => $(id).addEventListener("submit", async (e) => { e.preventDefault(); try { await fn(Object.fromEntries(new FormData(e.target))); } catch (x) { toast(x.message); } });

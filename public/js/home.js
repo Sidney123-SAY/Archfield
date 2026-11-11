@@ -105,4 +105,27 @@
       if (el.getBoundingClientRect().top > window.innerHeight) { el.classList.add("reveal", "pending"); io.observe(el); }
     });
   }
+
+  // Page « Télécharger l'application » (/telecharger) : déjà installée, téléphone (bouton d'installation quand le
+  // navigateur le propose, sinon la marche à suivre de son système en premier) ou ordinateur (lien à s'envoyer).
+  const dl = document.querySelector("[data-download]");
+  if (dl) {
+    const { t, copy } = window.AF;
+    const ua = navigator.userAgent;
+    const ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const android = /Android/.test(ua);
+    const standalone = () => window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+    const show = (zone) => dl.querySelectorAll("[data-dl]").forEach((el) => { el.hidden = el.dataset.dl !== zone; });
+    const button = dl.querySelector("[data-dl-button]");
+    show(standalone() ? "installed" : ios || android ? "phone" : "desktop");
+    dl.querySelector("[data-dl-insecure]").hidden = window.isSecureContext;
+    if (ios) dl.querySelector(".dl-grid").prepend(dl.querySelector('[data-os="ios"]'));
+    dl.querySelectorAll("[data-os]").forEach((el) => el.classList.toggle("mine", el.dataset.os === (ios ? "ios" : android ? "android" : "")));
+    window.addEventListener("beforeinstallprompt", () => { button.hidden = false; });
+    window.addEventListener("appinstalled", () => show("installed"));
+    const url = location.origin + "/telecharger";
+    dl.querySelector("[data-dl-url]").textContent = url;
+    dl.querySelector("[data-dl-whatsapp]").href = "https://wa.me/?text=" + encodeURIComponent(t("Installer Archfield sur mon téléphone : {url}", { url }));
+    dl.querySelector("[data-dl-copy]").addEventListener("click", () => copy(url, t("Lien copié.")));
+  }
 })();

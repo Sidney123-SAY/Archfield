@@ -144,7 +144,7 @@
     else if (b.matches("[data-cookies-custom]")) cookieBanner(true);
     else saveConsent(document.getElementById("cb-analytics")?.checked);
   });
-  const footerLinks = () => `<nav class="foot-links" aria-label="${t("Informations")}"><a href="/a-propos">${t("À propos")}</a><a href="/guide">${t("Guide gratuit")}</a><a href="/confidentialite">${t("Confidentialité")}</a><a href="/mentions-legales">${t("Mentions légales")}</a><a href="#" data-cookies>${t("Gérer les cookies")}</a></nav>`;
+  const footerLinks = () => `<nav class="foot-links" aria-label="${t("Informations")}"><a href="/a-propos">${t("À propos")}</a><a href="/guide">${t("Guide gratuit")}</a><a href="/telecharger">${t("Application mobile")}</a><a href="/confidentialite">${t("Confidentialité")}</a><a href="/mentions-legales">${t("Mentions légales")}</a><a href="#" data-cookies>${t("Gérer les cookies")}</a></nav>`;
   document.addEventListener("DOMContentLoaded", () => {
     translatePage();
     document.querySelectorAll("[data-prefs]").forEach((el) => { el.innerHTML = prefs(); });
@@ -185,6 +185,15 @@
     const box = b.closest(".install")?.querySelector("[data-install-steps]");
     if (box) box.hidden = !box.hidden;
     else { location.hash = "compte"; setTimeout(() => document.querySelector("[data-install-steps]")?.removeAttribute("hidden"), 400); }
+  });
+
+  // Zone de dépôt d'un seul fichier (photo du reçu) : elle affiche le nom du fichier choisi.
+  document.addEventListener("change", (e) => {
+    const name = e.target.closest?.(".drop-file")?.querySelector("[data-file-name]");
+    if (!name) return;
+    name.dataset.empty ??= name.textContent;
+    name.textContent = e.target.files?.[0]?.name || name.dataset.empty;
+    e.target.closest(".drop-file").classList.toggle("has-file", !!e.target.files?.length);
   });
 
   /* ---------- Formats ---------- */
@@ -453,7 +462,7 @@
     <div class="field"><label for="dp-cat">${t("Catégorie")}</label><select id="dp-cat" name="category">${Object.entries(CATEGORY).map(([k, v]) => `<option value="${k}">${t(v)}</option>`).join("")}</select></div></div>
     <div class="row2"><div class="field"><label for="dp-amount">${t("Montant ({cur})", { cur })}</label><input id="dp-amount" name="amount" type="number" min="1" required inputmode="numeric"></div>
     <div class="field"><label for="dp-date">${t("Date")}</label><input id="dp-date" name="entry_date" type="date" required value="${today()}"></div></div>
-    <div class="field"><label for="dp-receipt">${t("Photo du reçu (conseillé)")}</label><input id="dp-receipt" name="receipt" type="file" accept="image/*"></div>
+    <div class="field"><span class="fl">${t("Photo du reçu (conseillé)")}</span><label class="drop drop-file" for="dp-receipt"><input id="dp-receipt" name="receipt" type="file" accept="image/*">${ic("cam", 20)}<b data-file-name>${t("Ajouter la photo du reçu")}</b></label></div>
     <div><button class="btn primary" type="submit">${t("Ajouter la dépense")}</button></div></form>`;
   const versementForm = (cur, { received } = {}) => `<form class="card card-p form" id="add-versement"><h2>${received ? t("Noter un versement reçu") : t("Noter un versement")}</h2>
     <p class="muted" style="font-size:.84rem">${received ? t("L'argent reçu du propriétaire pour le chantier.") : t("Chaque envoi d'argent pour le chantier. Vous voyez tout de suite si vous avez payé plus que ce qui est construit.")}</p>

@@ -36,7 +36,8 @@
         <p class="au-sub"><span data-i18n>Vous n'avez pas de compte ?</span> <a href="/inscription" class="au-link" id="to-signup"><span data-i18n>S'inscrire</span> ›</a></p>
         <div class="google-zone" hidden><a class="btn au-google" href="/auth/google" data-provider="google"><span class="g-ic"></span><span data-i18n>Continuer avec Google</span></a><a class="btn au-apple" href="/auth/apple" data-provider="apple"><span class="a-ic"></span><span data-i18n>Continuer avec Apple</span></a><p class="au-or"><span data-i18n>ou avec votre numéro ou votre e-mail</span></p></div>
         <div class="au-field"><label for="li-ident" data-i18n>Téléphone ou adresse e-mail</label><div class="ident"><select class="dial" id="li-dial" name="dial" hidden aria-label="Pays de l'indicatif" data-i18n-label></select><input id="li-ident" name="ident" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="Ex. 01 97 00 00 00 ou nom@entreprise.com" data-i18n-ph required></div></div>
-        <div class="au-field"><label for="li-password" data-i18n>Mot de passe</label><div class="au-pw"><input id="li-password" name="password" type="password" autocomplete="current-password" required><button type="button" class="au-eye" data-eye aria-label="Afficher le mot de passe" data-i18n-label></button></div></div>
+        <div class="au-field" id="li-pw-field"><label for="li-password" data-i18n>Mot de passe</label><div class="au-pw"><input id="li-password" name="password" type="password" autocomplete="current-password" required><button type="button" class="au-eye" data-eye aria-label="Afficher le mot de passe" data-i18n-label></button></div></div>
+        <p class="au-pw-toggle"><button type="button" class="linkbtn" id="li-pw-toggle" hidden></button></p>
         <label class="au-check"><input type="checkbox" name="remember" checked><span data-i18n>Rester connecté sur cet appareil</span></label>
         <div class="error-box" hidden></div>
         <button class="btn primary au-submit" type="submit" data-i18n>Se connecter</button>
@@ -94,8 +95,8 @@
         <div class="au-step" data-step="account">
           <h1 class="au-title" data-i18n>Dernière étape : votre accès</h1>
           <div class="google-zone" hidden><a class="btn au-google" href="/auth/google" data-provider="google"><span class="g-ic"></span><span data-i18n>Continuer avec Google</span></a><a class="btn au-apple" href="/auth/apple" data-provider="apple"><span class="a-ic"></span><span data-i18n>Continuer avec Apple</span></a><p class="au-or"><span data-i18n>ou avec votre numéro ou votre e-mail</span></p></div>
-          <div class="au-field"><label for="su-ident" data-i18n>Téléphone ou adresse e-mail</label><div class="ident"><select class="dial" id="su-dial" name="dial" hidden aria-label="Pays de l'indicatif" data-i18n-label></select><input id="su-ident" name="ident" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="Ex. 01 97 00 00 00 ou nom@entreprise.com" data-i18n-ph></div><span class="hint" data-i18n>Avec un numéro, vous recevez un code de confirmation par WhatsApp ou par SMS.</span></div>
-          <div class="au-field"><label for="su-password" data-i18n>Mot de passe</label><div class="au-pw"><input id="su-password" name="password" type="password" minlength="8" autocomplete="new-password"><button type="button" class="au-eye" data-eye aria-label="Afficher le mot de passe" data-i18n-label></button></div><span class="hint" data-i18n>8 caractères au moins.</span></div>
+          <div class="au-field"><label for="su-ident" data-i18n>Téléphone ou adresse e-mail</label><div class="ident"><select class="dial" id="su-dial" name="dial" hidden aria-label="Pays de l'indicatif" data-i18n-label></select><input id="su-ident" name="ident" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="Ex. 01 97 00 00 00 ou nom@entreprise.com" data-i18n-ph></div><span class="hint" data-i18n>Avec un numéro, pas de mot de passe à retenir : vous vous connectez avec un code reçu par WhatsApp ou par SMS.</span></div>
+          <div class="au-field" id="su-pw-field"><label for="su-password" data-i18n>Mot de passe</label><div class="au-pw"><input id="su-password" name="password" type="password" minlength="8" autocomplete="new-password"><button type="button" class="au-eye" data-eye aria-label="Afficher le mot de passe" data-i18n-label></button></div><span class="hint" data-i18n>8 caractères au moins.</span></div>
           <p class="hint muted" data-i18n>En créant un compte, vous acceptez la <a href="/confidentialite">politique de confidentialité</a>.</p>
         </div>
 
@@ -141,6 +142,7 @@
         <button class="btn primary au-submit" type="submit" id="cd-submit" data-i18n>Confirmer mon numéro</button>
         <p class="au-sub" id="cd-wait" aria-live="polite"></p>
         <p class="au-sub"><button type="button" class="au-link linkbtn" id="cd-other"></button></p>
+        <p class="au-sub" id="cd-back" hidden><a href="/connexion" class="au-link" data-i18n>Changer de numéro</a></p>
       </form>
     </div>
 

@@ -2,6 +2,8 @@
 (function () {
   "use strict";
   const { t, ic, api, esc, dialSelect, looksPhone, guessDial, toast } = window.AF;
+  // L'indicatif d'un numéro qui a servi (inscription, connexion) est proposé la fois suivante sur cet appareil.
+  const rememberDial = (ident, dial) => { if (dial && looksPhone(ident) && !/^\s*(\+|00)/.test(ident)) window.AF.store.set("af-dial", dial); };
   const $ = (s) => document.querySelector(s);
   const params = new URLSearchParams(location.search);
   const path = location.pathname;
@@ -24,8 +26,20 @@
   document.querySelectorAll(".g-ic").forEach((el) => { el.innerHTML = ic("google", 20); });
   document.querySelectorAll(".a-ic").forEach((el) => { el.innerHTML = ic("apple", 20); });
   // Comme chez Finary : « Se connecter » reste grisé tant que l'e-mail et le mot de passe ne sont pas remplis.
+  // Avec un numéro, pas de mot de passe : « Recevoir un code » (WhatsApp ou SMS). « Utiliser mon mot de passe » le rouvre.
   const loginForm = $("#login"), loginBtn = loginForm.querySelector("[type=submit]");
-  const syncLogin = () => { loginBtn.disabled = !($("#li-ident").value.trim() && $("#li-password").value); };
+  let usePassword = false;
+  const loginByCode = () => looksPhone($("#li-ident").value) && !usePassword;
+  const syncLogin = () => {
+    const phone = looksPhone($("#li-ident").value), code = phone && !usePassword;
+    $("#li-pw-field").hidden = code;
+    $("#li-password").required = !code;
+    $("#li-pw-toggle").hidden = !phone;
+    $("#li-pw-toggle").textContent = code ? t("Utiliser mon mot de passe") : t("Recevoir plutôt un code");
+    loginBtn.textContent = code ? t("Recevoir un code") : t("Se connecter");
+    loginBtn.disabled = !($("#li-ident").value.trim() && (code || $("#li-password").value));
+  };
+  $("#li-pw-toggle").addEventListener("click", () => { usePassword = !usePassword; syncLogin(); if (usePassword) $("#li-password").focus(); });
   loginForm.addEventListener("input", syncLogin);
   setTimeout(syncLogin, 300); // après le remplissage automatique du navigateur
   document.querySelectorAll("[data-eye]").forEach((b) => {
@@ -69,8 +83,10 @@
     showError($("#signup"), "");
     // Indicatif proposé : le pays choisi plus tôt (entreprise ou lieu de vie), s'il est dans la liste.
     if (cur === "account") {
-      const c = $("#su-country")?.value || $("#su-home")?.value, dial = $("#su-dial");
+      // Le pays qui correspond au profil : celui de l'entreprise, ou le lieu de vie du client (pas l'autre, pré-rempli).
+      const c = role() === "pro" ? $("#su-country")?.value : role() === "client" ? $("#su-home")?.value : "", dial = $("#su-dial");
       if (c && dial && [...dial.options].some((o) => o.value === c)) dial.value = c;
+      syncSignupPw();
     }
     const first = document.querySelector(`.au-step[data-step="${cur}"] input:not([type=radio]), .au-step[data-step="${cur}"] select`);
     if (first && window.matchMedia("(min-width: 761px)").matches) first.focus();
@@ -88,14 +104,14 @@
     if (cur === "account") {
       const id = v("ident");
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(id) && !(looksPhone(id) && id.replace(/\D/g, "").length >= 8)) return t("Indiquez un numéro de téléphone ou une adresse e-mail valide.");
-      if (v("password").length < 8) return t("Le mot de passe doit faire au moins 8 caractères.");
+      if (!looksPhone(id) && v("password").length < 8) return t("Le mot de passe doit faire au moins 8 caractères.");
     }
     return "";
   }
   async function submitSignup() {
     const f = $("#signup"), d = Object.fromEntries(new FormData(f));
     const r = role();
-    const body = { account_type: r, contact_name: d.contact_name, ident: d.ident, dial: d.dial || guessDial(), password: d.password };
+    const body = { account_type: r, contact_name: d.contact_name, ident: d.ident, dial: d.dial || guessDial(), password: looksPhone(d.ident) ? undefined : d.password };
     if (r === "pro") Object.assign(body, { country: d.country, company_id: d.company_id, company: d.company, city: d.city });
     if (r === "client") Object.assign(body, { country: countries.some((c) => c.code === d.home_country) ? d.home_country : "", city: d.home_city });
     if (invite) body.invite_code = invite.code;
@@ -104,6 +120,7 @@
     btn.disabled = true;
     try {
       const res = await api("/api/signup", { method: "POST", body, authRedirect: false });
+      rememberDial(body.ident, body.dial);
       store.set("af-invite", null);
       if (res.confirm_phone) { history.pushState(null, "", "/inscription/confirmer"); return openConfirm(); }
       location.href = "/app";
@@ -180,10 +197,13 @@
     const sel = input.parentElement.querySelector("select.dial");
     if (sel) sel.hidden = !(looksPhone(input.value) && !input.value.trim().startsWith("+") && !input.value.trim().startsWith("00"));
   }
-  document.addEventListener("input", (e) => { if (e.target.matches(".ident input")) syncDial(e.target); });
+  // Inscription avec un numéro : pas de mot de passe (connexion par code), le champ disparaît.
+  const syncSignupPw = () => { $("#su-pw-field").hidden = looksPhone($("#su-ident").value); };
+  document.addEventListener("input", (e) => { if (e.target.matches(".ident input")) syncDial(e.target); if (e.target.id === "su-ident") syncSignupPw(); });
 
   /* ---------- Confirmer son numéro, saisir le code ---------- */
-  let codeMode = "verify", resetPhone = null, channel = "whatsapp", waitTimer = null;
+  // codeMode : « verify » (confirmer son numéro), « reset » (mot de passe oublié) ou « login » (connexion par code).
+  let codeMode = "verify", resetPhone = null, loginPhone = null, loginRemember = true, channel = "whatsapp", waitTimer = null;
   async function openConfirm() {
     document.title = t("Confirmer votre numéro") + " · Archfield";
     show("confirm");
@@ -205,14 +225,15 @@
     } catch (e) { if (!$("#confirm").hidden) showErr("confirm", e.message); else showErr("code", e.message); }
   }
   function openCode(phonePretty, wait, testCode) {
-    history.pushState(null, "", codeMode === "verify" ? "/inscription/code" : "/mot-de-passe-oublie");
+    if (codeMode !== "login") history.pushState(null, "", codeMode === "verify" ? "/inscription/code" : "/mot-de-passe-oublie");
     document.title = t("Saisir le code") + " · Archfield";
     show("code");
     $("#cd-sub").textContent = channel === "sms" ? t("Code envoyé par SMS au {phone}.", { phone: phonePretty }) : t("Code envoyé par WhatsApp au {phone}.", { phone: phonePretty });
     $("#cd-test").hidden = !testCode;
     $("#cd-test").textContent = testCode ? t("Mode test (aucun SMS envoyé) : votre code est {code}", { code: testCode }) : "";
     $("#cd-pw").hidden = codeMode !== "reset";
-    $("#cd-submit").textContent = codeMode === "reset" ? t("Enregistrer et me connecter") : t("Confirmer mon numéro");
+    $("#cd-submit").textContent = codeMode === "reset" ? t("Enregistrer et me connecter") : codeMode === "login" ? t("Me connecter") : t("Confirmer mon numéro");
+    $("#cd-back").hidden = codeMode !== "login";
     $("#cd-other").textContent = channel === "sms" ? t("Recevoir plutôt par WhatsApp") : t("Recevoir plutôt par SMS");
     $("#cd-code").value = ""; showErr("code", "");
     $("#cd-code").focus();
@@ -230,11 +251,12 @@
   $("#cd-other").addEventListener("click", async () => {
     const ch = channel === "sms" ? "whatsapp" : "sms";
     if (codeMode === "verify") return sendCode(ch);
-    try { channel = ch; const r = await api("/api/password/forgot", { method: "POST", body: { ident: resetPhone, channel: ch }, authRedirect: false }); openCode(r.phone_pretty, r.wait, r.test_code); } catch (e) { showErr("code", e.message); }
+    const [url, ident] = codeMode === "login" ? ["/api/login/code/send", loginPhone] : ["/api/password/forgot", resetPhone];
+    try { channel = ch; const r = await api(url, { method: "POST", body: { ident, channel: ch }, authRedirect: false }); openCode(r.phone_pretty, r.wait, r.test_code); } catch (e) { showErr("code", e.message); }
   });
   $("#cd-code").addEventListener("input", (e) => {
     e.target.value = e.target.value.replace(/\D/g, "").slice(0, 6);
-    if (e.target.value.length === 6 && codeMode === "verify") $("#code").requestSubmit();
+    if (e.target.value.length === 6 && codeMode !== "reset") $("#code").requestSubmit();
   });
   $("#code").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -242,6 +264,7 @@
     if (code.length !== 6) return showErr("code", t("Le code contient 6 chiffres."));
     btn.disabled = true; showErr("code", "");
     try {
+      if (codeMode === "login") { await api("/api/login/code", { method: "POST", body: { phone: loginPhone, code, remember: loginRemember }, authRedirect: false }); return done(); }
       if (codeMode === "reset") { await api("/api/password/reset-code", { method: "POST", body: { phone: resetPhone, code, password: $("#cd-password").value }, authRedirect: false }); location.href = "/app"; return; }
       await api("/api/phone/verify", { method: "POST", body: { code }, authRedirect: false });
       toast(t("Numéro confirmé."));
@@ -259,6 +282,12 @@
     if ((f.id === "login" || f.id === "forgot") && !body.dial) body.dial = guessDial();
     btn.disabled = true; showError(f, "");
     try {
+      if (f.id === "login" && loginByCode()) {
+        const r = await api("/api/login/code/send", { method: "POST", body: { ident: body.ident, dial: body.dial, channel: "whatsapp" }, authRedirect: false });
+        codeMode = "login"; loginPhone = r.phone; loginRemember = body.remember; channel = r.channel; btn.disabled = false;
+        rememberDial(body.ident, body.dial);
+        return openCode(r.phone_pretty, r.wait, r.test_code);
+      }
       const r = await api(f.dataset.api, { method: "POST", body, authRedirect: false });
       if (f.id === "forgot" && r.method === "code") { codeMode = "reset"; resetPhone = r.phone; channel = "whatsapp"; btn.disabled = false; return openCode(r.phone_pretty, r.wait, r.test_code); }
       if (f.id === "forgot") { ok.hidden = false; btn.disabled = false; return; }

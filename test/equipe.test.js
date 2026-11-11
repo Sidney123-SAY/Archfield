@@ -91,6 +91,10 @@ test("équipe, rapport du jour, problème, dépense à approuver, tableau du dir
   assert.equal(pub.kind, "membre"); assert.equal(pub.site, "Villa R+1"); assert.equal(pub.owner, "BTP Cotonou");
   assert.equal((await chef.call("POST", "/api/signup", { contact_name: "Adjovi", ident: "+2290197000002", password: "chantier-2026", invite_code: inv.data.code })).status, 201);
   assert.equal((await chef.call("GET", "/api/me")).data.account_type, "membre");
+  // Inscrit avec son numéro : rien ne s'écrit avant de l'avoir confirmé par le code reçu.
+  assert.equal((await chef.call("POST", `/api/sites/${site.id}/updates`, undefined, form({ text: "Trop tôt." }))).status, 403);
+  const sent = await chef.call("POST", "/api/phone/send", { channel: "whatsapp" });
+  assert.equal((await chef.call("POST", "/api/phone/verify", { code: sent.data.test_code })).status, 200);
   await equipe.call("POST", "/api/signup", { account_type: "pro", contact_name: "Pascal", company: "Pascal Maçonnerie", country: "BJ", company_id: "", email: "pascal@example.com", password: "chantier-2026" });
   const added = await boss.call("POST", `/api/sites/${site.id}/team`, { name: "Pascal", contact: "pascal@example.com", role: "chef_equipe", perms: { photos: true, probleme: true, vocal: true, rapport: false, depenses: false, budget: false } });
   assert.equal(added.data.added, true, "compte existant : ajouté directement");

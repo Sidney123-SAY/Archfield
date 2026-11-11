@@ -132,9 +132,14 @@ function sessionArtisan(req) {
   const s = t && get("SELECT * FROM sessions WHERE token = ? AND expires_at > ?", t, nowIso());
   return s ? get("SELECT * FROM artisans WHERE id = ?", s.artisan_id) : null;
 }
+// Compte ouvert avec un numéro seulement, pas encore confirmé par un code : il peut lire, changer son numéro ou
+// supprimer son compte, rien d'autre. Sinon n'importe qui pourrait s'inscrire, sans mot de passe, au numéro d'un autre.
+const phonePending = (a) => !!(a.phone && !a.phone_verified_at && !a.email);
 function auth(req, res, next) {
   req.artisan = sessionArtisan(req);
   if (!req.artisan) return res.status(401).json({ error: "Connectez-vous pour continuer." });
+  if (phonePending(req.artisan) && req.method !== "GET" && req.path !== "/me/phone" && !(req.method === "DELETE" && req.path === "/me"))
+    return res.status(403).json({ error: "Confirmez d'abord votre numéro de téléphone avec le code reçu.", confirm_phone: true });
   next();
 }
 // « Rester connecté » (coché par défaut) : 30 jours. Sinon, la session s'arrête à la fermeture du navigateur (12 h au plus).
@@ -194,7 +199,8 @@ app.post("/api/signup", limit("signup", 10, 60 * 60e3), wrap(async (req, res) =>
     // Téléphone ou e-mail dans le même champ (« ident ») ; « email » reste accepté seul.
     const id = identOf(b.ident ?? b.email, b.dial || b.country);
     mail = id.email || null; tel = id.phone || null;
-    hash = await bcrypt.hash(passwordOk(b.password), 10);
+    // Avec un numéro, le mot de passe est facultatif : on se connecte alors avec un code reçu par WhatsApp ou SMS.
+    hash = tel && !b.password ? "!code" : await bcrypt.hash(passwordOk(b.password), 10);
   }
   if (mail && get("SELECT 1 FROM artisans WHERE email = ?", mail)) fail(409, "Un compte existe déjà avec cet e-mail. Connectez-vous.");
   if (tel && get("SELECT 1 FROM artisans WHERE phone = ?", tel)) fail(409, "Un compte existe déjà avec ce numéro. Connectez-vous.");
@@ -219,11 +225,32 @@ app.post("/api/login", wrap(async (req, res) => {
   const id = identOf(b.ident ?? b.email, b.dial);
   const t = throttle(req.ip + "|" + (id.email || id.phone));
   const a = byIdent(id);
+  if (a && a.password_hash === "!code") fail(400, "Ce compte n'a pas de mot de passe : connectez-vous avec un code reçu par WhatsApp ou SMS.");
   if (a && !hasPassword(a)) fail(400, a.apple_sub && !a.google_sub ? "Ce compte se connecte avec Apple. Cliquez sur « Continuer avec Apple »." : "Ce compte se connecte avec Google. Cliquez sur « Continuer avec Google ».");
   if (!a || !(await bcrypt.compare(String(b.password || ""), a.password_hash))) { t.failed(); fail(401, id.phone ? "Numéro ou mot de passe incorrect." : "E-mail ou mot de passe incorrect."); }
   t.ok();
   openSession(res, a.id, b.remember !== false && b.remember !== "off");
-  res.json({ ok: true, confirm_phone: !!(a.phone && !a.phone_verified_at && !a.email) });
+  res.json({ ok: true, confirm_phone: phonePending(a) });
+}));
+
+// Connexion sans mot de passe : un code à 6 chiffres par WhatsApp ou SMS au numéro du compte.
+// Dire qu'aucun compte n'a ce numéro n'apprend rien de plus que l'inscription (« Un compte existe déjà avec ce numéro »).
+app.post("/api/login/code/send", limit("login-code", 12, 60 * 60e3), wrap(async (req, res) => {
+  const id = identOf(req.body?.ident, req.body?.dial);
+  if (!id.phone) fail(400, "La connexion par code se fait avec un numéro de téléphone.");
+  if (!get("SELECT 1 FROM artisans WHERE phone = ?", id.phone)) fail(404, "Aucun compte avec ce numéro. Vérifiez-le, ou créez un compte.");
+  const r = await phoneLib.sendCode(id.phone, "login", req.body?.channel);
+  res.json({ ok: true, phone: id.phone, phone_pretty: phoneLib.pretty(id.phone), ...r });
+}));
+app.post("/api/login/code", limit("phone-check", 30, 60 * 60e3), wrap(async (req, res) => {
+  const tel = phoneLib.normalize(req.body?.phone, null);
+  const a = tel && get("SELECT * FROM artisans WHERE phone = ?", tel);
+  if (!a) fail(400, "Ce code a expiré. Demandez-en un nouveau.");
+  await phoneLib.checkCode(tel, "login", req.body?.code);
+  // Le code est arrivé sur ce téléphone : le numéro est prouvé.
+  run("UPDATE artisans SET phone_verified_at = COALESCE(phone_verified_at, ?) WHERE id = ?", nowIso(), a.id);
+  openSession(res, a.id, req.body?.remember !== false);
+  res.json({ ok: true });
 }));
 
 /* ---------- Numéro de téléphone : code à 6 chiffres par WhatsApp ou SMS ---------- */
@@ -558,8 +585,10 @@ api.get("/me/export", (req, res) => {
   res.json({ exported_at: nowIso(), account: publicArtisan(a), sites, ledger_on_other_sites: ledgerElsewhere });
 });
 api.delete("/me", wrap(async (req, res) => {
-  const ok = hasPassword(req.artisan) ? await bcrypt.compare(String(req.body?.password || ""), req.artisan.password_hash) : String(req.body?.password || "").trim().toLowerCase() === req.artisan.email;
-  if (!ok) fail(400, hasPassword(req.artisan) ? "Mot de passe incorrect : le compte n'a pas été supprimé." : "Tapez l'adresse e-mail du compte pour confirmer la suppression.");
+  const a = req.artisan, typed = String(req.body?.password || "").trim();
+  // Sans mot de passe : on tape l'e-mail du compte, ou son numéro s'il n'a pas d'e-mail (connexion par code).
+  const ok = hasPassword(a) ? await bcrypt.compare(typed, a.password_hash) : a.email ? typed.toLowerCase() === a.email : phoneLib.normalize(typed, a.country) === a.phone;
+  if (!ok) fail(400, hasPassword(a) ? "Mot de passe incorrect : le compte n'a pas été supprimé." : a.email ? "Tapez l'adresse e-mail du compte pour confirmer la suppression." : "Tapez le numéro de téléphone du compte pour confirmer la suppression.");
   // Les chantiers gérés pour un propriétaire lui reviennent ; les autres sont effacés avec leurs photos et leurs reçus.
   // Les demandes de visite (téléphone, précisions) partent avec le compte. Les lignes d'argent notées sur le chantier
   // d'un autre restent chez lui, avec le nom de leur auteur : c'est sa trace des versements et des dépenses.
@@ -1039,9 +1068,16 @@ app.get("/admin", page("admin.html"));
 app.get("/confidentialite", page("confidentialite.html"));
 app.get("/a-propos", page("a-propos.html"));
 app.get("/guide", page("guide.html"));
+app.get("/telecharger", page("telecharger.html"));
 app.get("/mentions-legales", page("mentions-legales.html"));
 app.get("/app", page("app.html"));
-app.get("/c/:token", page("client.html"));
+// Lien du client : la page annonce un manifeste propre à ce lien, pour que l'application installée depuis le lien
+// rouvre ce chantier (et non la page de connexion, puisque le client n'a pas de compte).
+app.get("/c/:token", (req, res) => {
+  const html = fs.readFileSync(path.join(PUBLIC, "client.html"), "utf8");
+  const href = /^[\w-]{1,100}$/.test(req.params.token) ? `/c/${req.params.token}/manifest.webmanifest` : "/manifest.webmanifest";
+  res.type("html").send(html.replace('href="/manifest.webmanifest"', `href="${href}"`));
+});
 app.get("/hors-connexion", page("offline.html"));
 // Surveillance (UptimeRobot…) : répond « ok » si le serveur et la base répondent.
 app.get("/healthz", (req, res) => { get("SELECT 1"); res.type("text").send("ok"); });
@@ -1062,6 +1098,16 @@ app.get("/sw.js", (req, res) => {
   res.send(swCache.body);
 });
 app.get("/manifest.webmanifest", (req, res) => { res.type("application/manifest+json"); res.sendFile(path.join(PUBLIC, "manifest.webmanifest")); });
+app.get("/c/:token/manifest.webmanifest", limit("client", 120, 60e3), (req, res) => {
+  const s = get("SELECT name FROM sites WHERE client_token = ?", req.params.token);
+  const m = JSON.parse(fs.readFileSync(path.join(PUBLIC, "manifest.webmanifest"), "utf8"));
+  if (s) {
+    const start = `/c/${req.params.token}`;
+    Object.assign(m, { id: start, start_url: start, scope: start, name: `${s.name} · Archfield` });
+  }
+  res.type("application/manifest+json").setHeader("Cache-Control", "no-cache");
+  res.send(JSON.stringify(m));
+});
 app.use(express.static(PUBLIC, { index: false, maxAge: PROD ? "1h" : 0 }));
 
 app.use((err, req, res, next) => {

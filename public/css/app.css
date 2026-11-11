@@ -164,7 +164,7 @@ td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
 .mini { display: inline-flex; align-items: center; gap: 8px; }
 .mini .t { width: 64px; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
 .mini .t span { display: block; height: 100%; background: var(--orange); }
-.chip { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px; font-size: .7rem; font-weight: 600; white-space: nowrap; }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 999px; font-size: .7rem; font-weight: 600; white-space: nowrap; }
 .chip.ok { background: var(--vert-soft); color: var(--vert); }
 .chip.warn { background: var(--ambre-soft); color: var(--ambre-ink); }
 .chip.wait { background: var(--orange-soft); color: var(--orange); }
@@ -824,4 +824,28 @@ select.dial { flex: none; width: 6.6em; max-width: 6.6em; }
   .guide-table td { border: 0; padding: 2px 64px 2px 0; white-space: normal; }
   .guide-table td:first-child { font-weight: 600; }
   .guide-table td:last-child { position: absolute; right: 0; top: 12px; padding: 0; }
+}
+
+/* Télécharger l'application (/telecharger) */
+.dl-box { display: grid; gap: 6px; }
+.dl-box .btn img { border-radius: 5px; }
+.legal .dl-insecure { background: var(--ambre-soft); color: var(--ambre-ink); border-radius: 10px; padding: 10px 14px; font-size: .92rem; }
+.dl-url { font: 600 1.05rem/1.4 var(--f-ui); word-break: break-all; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; }
+.dl-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 8px; }
+.dl-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px 18px 4px; }
+.dl-card.mine { border-color: var(--orange); box-shadow: 0 0 0 1px var(--orange); }
+.legal .dl-card h2 { margin-top: 0; font-size: 1.3rem; }
+.dl-card .guide-list > li { padding: 12px 0 12px 40px; }
+.dl-card .guide-list > li::before { font-size: 1.6rem; top: 10px; }
+.dl-card .guide-list > li:first-child { border-top: 0; }
+
+/* Zone de dépôt d'un seul fichier (photo du reçu) */
+.drop-file { grid-auto-flow: column; justify-content: start; gap: 10px; padding: 12px 14px; }
+.drop-file b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.drop-file.has-file { border-style: solid; border-color: var(--vert); color: var(--vert); }
+
+/* Onglets d'un chantier sur téléphone : un fondu à droite montre qu'il y en a d'autres */
+@media (max-width: 560px) {
+  .tabs { scrollbar-width: none; padding-right: 32px; -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent); }
+  .tabs::-webkit-scrollbar { display: none; }
 }
