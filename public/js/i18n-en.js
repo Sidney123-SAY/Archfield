@@ -1740,5 +1740,11 @@ window.AF_EN = {
   "Gros œuvre": "Structural work",
   "Second œuvre": "Fit-out",
   "Pièce finie": "Finished room",
-  "Faites défiler": "Scroll"
+  "Faites défiler": "Scroll",
+  "Code envoyé par e-mail à {email}.": "Code sent by email to {email}.",
+  "Saisissez le code reçu par e-mail.": "Enter the code you received by email.",
+  "Mode test (aucun e-mail envoyé) : votre code est {code}": "Test mode (no email sent): your code is {code}",
+  "Confirmer mon e-mail": "Confirm my email",
+  "Renvoyer le code": "Resend the code",
+  "Adresse e-mail confirmée.": "Email address confirmed.",
 };

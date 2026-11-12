@@ -241,6 +241,8 @@ if (db.prepare("PRAGMA table_info(artisans)").all().find((c) => c.name === "emai
 }
 addColumn("artisans", "phone", "TEXT");
 addColumn("artisans", "phone_verified_at", "TEXT");
+// Inscrit avec un e-mail (pas Google ni Apple) alors que l'envoi d'e-mails marche : l'adresse est confirmée par un code.
+addColumn("artisans", "email_confirm_required", "INTEGER NOT NULL DEFAULT 0");
 addColumn("artisans", "is_admin", "INTEGER NOT NULL DEFAULT 0");
 // Abonnement payé par carte (Stripe) ou activé à la main par l'équipe.
 addColumn("artisans", "stripe_customer_id", "TEXT");

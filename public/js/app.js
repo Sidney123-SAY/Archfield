@@ -654,6 +654,8 @@
     if (code) { try { await api(`/api/invitations/${code}/accept`, { method: "POST" }); me = await api("/api/me"); toast(t("Invitation acceptée : le chantier est dans votre liste.")); } catch (e) { toast(e.message); } }
     // Inscrit avec son numéro : il le confirme d'abord (code par WhatsApp ou SMS).
     if (me.phone && !me.phone_verified && !me.email && location.hash !== "#compte") { location.href = "/inscription/confirmer"; return; }
+    // Inscrit avec son e-mail : il le confirme avec le code reçu par e-mail.
+    if (me.email_pending && location.hash !== "#compte") { location.href = "/inscription/email"; return; }
     const q = new URLSearchParams(location.search);
     if (q.get("paiement")) { toast(q.get("paiement") === "ok" ? t("Paiement reçu : votre offre est active. Merci !") : t("Paiement annulé : rien n'a été débité.")); history.replaceState(null, "", location.pathname + location.hash); }
     if (me.account_type === "client") return window.AFSpace.start(me);

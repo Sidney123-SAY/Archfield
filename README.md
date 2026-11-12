@@ -151,7 +151,9 @@ Render, Railway, Fly.io ou une machine virtuelle gratuite (Oracle Cloud « Alway
 ### Avant d'ouvrir au public
 
 - Compléter et faire relire `public/confidentialite.html` et `public/mentions-legales.html` (éléments entre crochets), et ajouter des CGV.
-- Configurer `SMTP_URL` (Brevo, Resend ou Postmark) : sans lui, ni le mot de passe oublié ni les e-mails aux clients ne partent.
+- Configurer `SMTP_URL` avec Brevo ([deploy/EMAIL.md](deploy/EMAIL.md)) : sans lui, ni le code de confirmation, ni le mot de passe oublié, ni les e-mails aux clients ne partent.
+- Configurer Twilio ([deploy/TELEPHONE.md](deploy/TELEPHONE.md)) : sans lui, les codes par SMS ou WhatsApp ne partent pas.
+- Vérifier les deux avec `npm run test-envoi -- +33612345678` puis `npm run test-envoi -- vous@exemple.com`.
 - Mettre `DEMO=off` et ne pas lancer `npm run seed` en production.
 - Sauvegarder chaque jour le dossier `DATA_DIR` (base et photos).
 

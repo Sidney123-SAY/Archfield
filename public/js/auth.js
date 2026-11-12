@@ -123,6 +123,7 @@
       rememberDial(body.ident, body.dial);
       store.set("af-invite", null);
       if (res.confirm_phone) { history.pushState(null, "", "/inscription/confirmer"); return openConfirm(); }
+      if (res.confirm_email) return openEmailConfirm();
       location.href = "/app";
     }
     catch (e) { showError(f, e.message); btn.disabled = false; }
@@ -173,6 +174,9 @@
     document.querySelectorAll("[data-provider]").forEach((el) => { el.hidden = !(c[el.dataset.provider] || c.demo); });
     if (c.google || c.apple || c.demo) document.querySelectorAll(".google-zone").forEach((el) => { el.hidden = false; });
     if (c.demo) $("#demo").hidden = false;
+    // Canaux d'envoi des codes : WhatsApp n'est proposé que s'il est activé sur le serveur.
+    if (c.sms_channels?.length) smsChannels = c.sms_channels;
+    document.querySelectorAll("[data-channel]").forEach((b) => { b.hidden = !smsChannels.includes(b.dataset.channel); });
     countries = c.countries || [];
     dials = c.dial || [];
     document.querySelectorAll("select.dial").forEach((sel) => { sel.outerHTML = dialSelect(sel.id, dials).replace("<select", `<select ${sel.hidden ? "hidden" : ""}`); });
@@ -202,8 +206,20 @@
   document.addEventListener("input", (e) => { if (e.target.matches(".ident input")) syncDial(e.target); if (e.target.id === "su-ident") syncSignupPw(); });
 
   /* ---------- Confirmer son numéro, saisir le code ---------- */
-  // codeMode : « verify » (confirmer son numéro), « reset » (mot de passe oublié) ou « login » (connexion par code).
+  // codeMode : « verify » (confirmer son numéro), « email » (confirmer son e-mail), « reset » (mot de passe oublié)
+  // ou « login » (connexion par code). smsChannels : canaux activés sur le serveur, le premier par défaut.
   let codeMode = "verify", resetPhone = null, loginPhone = null, loginRemember = true, channel = "whatsapp", waitTimer = null;
+  let smsChannels = "whatsapp,sms".split(",");
+  const otherChannel = () => smsChannels.find((c) => c !== channel);
+  // Inscrit avec un e-mail : le code part tout seul à l'ouverture de l'écran.
+  async function openEmailConfirm() {
+    codeMode = "email"; channel = "email";
+    try {
+      const r = await api("/api/email/send", { method: "POST", authRedirect: false });
+      if (r.verified) return finishVerified();
+      openCode(r.email, r.wait, r.test_code);
+    } catch (e) { openCode("", 45, null); showErr("code", e.message); }
+  }
   async function openConfirm() {
     document.title = t("Confirmer votre numéro") + " · Archfield";
     show("confirm");
@@ -225,16 +241,20 @@
     } catch (e) { if (!$("#confirm").hidden) showErr("confirm", e.message); else showErr("code", e.message); }
   }
   function openCode(phonePretty, wait, testCode) {
-    if (codeMode !== "login") history.pushState(null, "", codeMode === "verify" ? "/inscription/code" : "/mot-de-passe-oublie");
+    const url = { verify: "/inscription/code", email: "/inscription/email", reset: "/mot-de-passe-oublie" }[codeMode];
+    if (url && location.pathname !== url) history.pushState(null, "", url);
     document.title = t("Saisir le code") + " · Archfield";
     show("code");
-    $("#cd-sub").textContent = channel === "sms" ? t("Code envoyé par SMS au {phone}.", { phone: phonePretty }) : t("Code envoyé par WhatsApp au {phone}.", { phone: phonePretty });
+    $("#cd-sub").textContent = channel === "email" ? (phonePretty ? t("Code envoyé par e-mail à {email}.", { email: phonePretty }) : t("Saisissez le code reçu par e-mail."))
+      : channel === "sms" ? t("Code envoyé par SMS au {phone}.", { phone: phonePretty }) : t("Code envoyé par WhatsApp au {phone}.", { phone: phonePretty });
     $("#cd-test").hidden = !testCode;
-    $("#cd-test").textContent = testCode ? t("Mode test (aucun SMS envoyé) : votre code est {code}", { code: testCode }) : "";
+    $("#cd-test").textContent = !testCode ? "" : channel === "email" ? t("Mode test (aucun e-mail envoyé) : votre code est {code}", { code: testCode }) : t("Mode test (aucun SMS envoyé) : votre code est {code}", { code: testCode });
     $("#cd-pw").hidden = codeMode !== "reset";
-    $("#cd-submit").textContent = codeMode === "reset" ? t("Enregistrer et me connecter") : codeMode === "login" ? t("Me connecter") : t("Confirmer mon numéro");
+    $("#cd-submit").textContent = codeMode === "reset" ? t("Enregistrer et me connecter") : codeMode === "login" ? t("Me connecter") : codeMode === "email" ? t("Confirmer mon e-mail") : t("Confirmer mon numéro");
     $("#cd-back").hidden = codeMode !== "login";
-    $("#cd-other").textContent = channel === "sms" ? t("Recevoir plutôt par WhatsApp") : t("Recevoir plutôt par SMS");
+    const other = codeMode === "email" ? t("Renvoyer le code") : otherChannel() === "sms" ? t("Recevoir plutôt par SMS") : otherChannel() === "whatsapp" ? t("Recevoir plutôt par WhatsApp") : "";
+    $("#cd-other").textContent = other;
+    $("#cd-other").parentElement.hidden = !other;
     $("#cd-code").value = ""; showErr("code", "");
     $("#cd-code").focus();
     let left = wait || 45;
@@ -249,7 +269,9 @@
   }
   document.querySelectorAll("[data-channel]").forEach((b) => b.addEventListener("click", () => sendCode(b.dataset.channel)));
   $("#cd-other").addEventListener("click", async () => {
-    const ch = channel === "sms" ? "whatsapp" : "sms";
+    if (codeMode === "email") return openEmailConfirm();
+    const ch = otherChannel();
+    if (!ch) return;
     if (codeMode === "verify") return sendCode(ch);
     const [url, ident] = codeMode === "login" ? ["/api/login/code/send", loginPhone] : ["/api/password/forgot", resetPhone];
     try { channel = ch; const r = await api(url, { method: "POST", body: { ident, channel: ch }, authRedirect: false }); openCode(r.phone_pretty, r.wait, r.test_code); } catch (e) { showErr("code", e.message); }
@@ -264,6 +286,7 @@
     if (code.length !== 6) return showErr("code", t("Le code contient 6 chiffres."));
     btn.disabled = true; showErr("code", "");
     try {
+      if (codeMode === "email") { await api("/api/email/verify", { method: "POST", body: { code }, authRedirect: false }); toast(t("Adresse e-mail confirmée.")); return finishVerified(); }
       if (codeMode === "login") { await api("/api/login/code", { method: "POST", body: { phone: loginPhone, code, remember: loginRemember }, authRedirect: false }); return done(); }
       if (codeMode === "reset") { await api("/api/password/reset-code", { method: "POST", body: { phone: resetPhone, code, password: $("#cd-password").value }, authRedirect: false }); location.href = "/app"; return; }
       await api("/api/phone/verify", { method: "POST", body: { code }, authRedirect: false });
@@ -283,15 +306,16 @@
     btn.disabled = true; showError(f, "");
     try {
       if (f.id === "login" && loginByCode()) {
-        const r = await api("/api/login/code/send", { method: "POST", body: { ident: body.ident, dial: body.dial, channel: "whatsapp" }, authRedirect: false });
+        const r = await api("/api/login/code/send", { method: "POST", body: { ident: body.ident, dial: body.dial, channel: smsChannels[0] }, authRedirect: false });
         codeMode = "login"; loginPhone = r.phone; loginRemember = body.remember; channel = r.channel; btn.disabled = false;
         rememberDial(body.ident, body.dial);
         return openCode(r.phone_pretty, r.wait, r.test_code);
       }
       const r = await api(f.dataset.api, { method: "POST", body, authRedirect: false });
-      if (f.id === "forgot" && r.method === "code") { codeMode = "reset"; resetPhone = r.phone; channel = "whatsapp"; btn.disabled = false; return openCode(r.phone_pretty, r.wait, r.test_code); }
+      if (f.id === "forgot" && r.method === "code") { codeMode = "reset"; resetPhone = r.phone; channel = smsChannels[0]; btn.disabled = false; return openCode(r.phone_pretty, r.wait, r.test_code); }
       if (f.id === "forgot") { ok.hidden = false; btn.disabled = false; return; }
       if (r && r.confirm_phone) { history.pushState(null, "", "/inscription/confirmer"); return openConfirm(); }
+      if (r && r.confirm_email) return openEmailConfirm();
       done();
     } catch (x) { showError(f, x.message); btn.disabled = false; }
   }));
@@ -334,6 +358,7 @@
     }
     if (path === "/inscription") return openSignup();
     if (path === "/inscription/confirmer" || path === "/inscription/code") return openConfirm();
+    if (path === "/inscription/email") return openEmailConfirm();
     if (path === "/mot-de-passe-oublie") { document.title = t("Mot de passe oublié") + " · Archfield"; return show("forgot"); }
     if (path === "/reinitialiser") {
       document.title = t("Nouveau mot de passe") + " · Archfield";

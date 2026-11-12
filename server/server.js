@@ -9,7 +9,7 @@ const heicConvert = require("heic-convert");
 const { all, get, run, tx, UPLOAD_DIR } = require("./db");
 const { siteWithSummary, dashboard, stepStatus, DAY } = require("./analytics");
 const { sendReport, startScheduler } = require("./reports");
-const { sendMail, BASE_URL } = require("./mail");
+const { sendMail, BASE_URL, mailEnabled } = require("./mail");
 const { checkCompany, publicCountries, siret: checkSiret, COUNTRIES } = require("./company");
 const space = require("./space");
 const money = require("./money");
@@ -116,7 +116,7 @@ const sponsorsOf = (a) => all("SELECT DISTINCT o.contact_name FROM sites s JOIN 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "").split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
 const isAdmin = (a) => !!a && (a.is_admin === 1 || (a.email && ADMIN_EMAILS.includes(a.email)));
 const publicArtisan = (a) => ({
-  id: a.id, email: a.email, phone: a.phone, phone_pretty: phoneLib.pretty(a.phone), phone_verified: !!a.phone_verified_at, account_type: a.account_type, company: a.company, contact_name: a.contact_name, city: a.city, country: a.country, company_id: a.company_id,
+  id: a.id, email: a.email, phone: a.phone, phone_pretty: phoneLib.pretty(a.phone), phone_verified: !!a.phone_verified_at, email_verified: !!a.email_verified_at, email_pending: emailPending(a), account_type: a.account_type, company: a.company, contact_name: a.contact_name, city: a.city, country: a.country, company_id: a.company_id,
   market: a.market, currency: a.currency, trial_ends_at: a.trial_ends_at, google: !!a.google_sub, apple: !!a.apple_sub, has_password: hasPassword(a), created_at: a.created_at, admin: isAdmin(a),
   // Entreprise : offre en cours (essai, Démarrage, PME, Pro ou gratuite). Les proches et l'équipe ne paient pas.
   access: a.account_type === "pro" ? billing.proPlan(a) : { status: "free", active: true, until: null, days_left: 0 },
@@ -135,6 +135,8 @@ function sessionArtisan(req) {
 // Compte ouvert avec un numéro seulement, pas encore confirmé par un code : il peut lire, changer son numéro ou
 // supprimer son compte, rien d'autre. Sinon n'importe qui pourrait s'inscrire, sans mot de passe, au numéro d'un autre.
 const phonePending = (a) => !!(a.phone && !a.phone_verified_at && !a.email);
+// Inscrit avec un e-mail : l'interface demande le code reçu par e-mail avant d'ouvrir l'application.
+const emailPending = (a) => !!(a.email && a.email_confirm_required && !a.email_verified_at);
 function auth(req, res, next) {
   req.artisan = sessionArtisan(req);
   if (!req.artisan) return res.status(401).json({ error: "Connectez-vous pour continuer." });
@@ -205,11 +207,13 @@ app.post("/api/signup", limit("signup", 10, 60 * 60e3), wrap(async (req, res) =>
   if (mail && get("SELECT 1 FROM artisans WHERE email = ?", mail)) fail(409, "Un compte existe déjà avec cet e-mail. Connectez-vous.");
   if (tel && get("SELECT 1 FROM artisans WHERE phone = ?", tel)) fail(409, "Un compte existe déjà avec ce numéro. Connectez-vous.");
   const contact = str(b.contact_name, 120, "nom");
+  // Adresse tapée à la main : confirmée par un code, si l'e-mail peut vraiment partir (ou s'afficher en test).
+  const confirmMail = !!(mail && !b.google_token && (mailEnabled || phoneLib.SHOW_CODES));
   const id = tx(() => {
     const r = run(
-      `INSERT INTO artisans (email, phone, password_hash, account_type, company, contact_name, city, country, company_id, market, currency, google_sub, apple_sub, email_verified_at, trial_ends_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO artisans (email, phone, password_hash, account_type, company, contact_name, city, country, company_id, market, currency, google_sub, apple_sub, email_verified_at, email_confirm_required, trial_ends_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       mail, tel, hash, type, type === "pro" ? str(b.company, 120, "entreprise") : contact, contact, str(b.city, 120, "ville", false), co.country, co.company_id,
-      co.market, co.currency, googleSub, appleSub, b.google_token ? nowIso() : null, new Date(Date.now() + (type === "client" ? space.CLIENT_TRIAL_DAYS : TRIAL_DAYS) * DAY).toISOString(), nowIso());
+      co.market, co.currency, googleSub, appleSub, b.google_token ? nowIso() : null, confirmMail ? 1 : 0, new Date(Date.now() + (type === "client" ? space.CLIENT_TRIAL_DAYS : TRIAL_DAYS) * DAY).toISOString(), nowIso());
     if (b.google_token) run("DELETE FROM oauth_pending WHERE token_hash = ?", sha256(String(b.google_token)));
     return Number(r.lastInsertRowid);
   });
@@ -217,7 +221,7 @@ app.post("/api/signup", limit("signup", 10, 60 * 60e3), wrap(async (req, res) =>
   if (teamInvite) teamApi.acceptTeamInvite(teamInvite.code, get("SELECT * FROM artisans WHERE id = ?", id));
   openSession(res, id, b.remember !== false);
   // Inscription par téléphone : le numéro est confirmé ensuite par un code (WhatsApp ou SMS).
-  res.status(201).json({ ok: true, confirm_phone: !!tel });
+  res.status(201).json({ ok: true, confirm_phone: !!tel, confirm_email: confirmMail });
 }));
 
 app.post("/api/login", wrap(async (req, res) => {
@@ -230,7 +234,24 @@ app.post("/api/login", wrap(async (req, res) => {
   if (!a || !(await bcrypt.compare(String(b.password || ""), a.password_hash))) { t.failed(); fail(401, id.phone ? "Numéro ou mot de passe incorrect." : "E-mail ou mot de passe incorrect."); }
   t.ok();
   openSession(res, a.id, b.remember !== false && b.remember !== "off");
-  res.json({ ok: true, confirm_phone: phonePending(a) });
+  res.json({ ok: true, confirm_phone: phonePending(a), confirm_email: emailPending(a) });
+}));
+
+/* ---------- Adresse e-mail : code à 6 chiffres reçu par e-mail ---------- */
+app.post("/api/email/send", limit("email-send", 12, 60 * 60e3), wrap(async (req, res) => {
+  const a = sessionArtisan(req);
+  if (!a) fail(401, "Connectez-vous pour continuer.");
+  if (!a.email) fail(400, "Aucune adresse e-mail sur ce compte.");
+  if (a.email_verified_at) return res.json({ ok: true, verified: true });
+  const r = await phoneLib.sendCode(a.email, "email", "email");
+  res.json({ ok: true, email: a.email, ...r });
+}));
+app.post("/api/email/verify", limit("email-check", 30, 60 * 60e3), wrap(async (req, res) => {
+  const a = sessionArtisan(req);
+  if (!a) fail(401, "Connectez-vous pour continuer.");
+  await phoneLib.checkCode(a.email, "email", req.body?.code);
+  run("UPDATE artisans SET email_verified_at = ? WHERE id = ?", nowIso(), a.id);
+  res.json({ ok: true });
 }));
 
 // Connexion sans mot de passe : un code à 6 chiffres par WhatsApp ou SMS au numéro du compte.
@@ -364,7 +385,7 @@ app.post("/api/password/reset-code", limit("reset", 20, 60 * 60e3), wrap(async (
 // Les comptes de démo ne sont affichés sur la page de connexion que si DEMO=on.
 app.get("/api/config", (req, res) => res.json({
   demo: DEMO_ON, google: GOOGLE.enabled, apple: APPLE.enabled, countries: publicCountries(), dial: phoneLib.publicDial(),
-  plans: publicPlans(), billing: billing.live() ? "stripe" : billing.testMode() ? "test" : "off", sms: phoneLib.PROVIDER || "test"
+  plans: publicPlans(), billing: billing.live() ? "stripe" : billing.testMode() ? "test" : "off", sms: phoneLib.PROVIDER || "test", sms_channels: phoneLib.CHANNELS, mail: mailEnabled
 }));
 
 /* ---------- Connexion avec Google (OpenID Connect) ---------- */
@@ -1062,7 +1083,7 @@ app.get("/c/:token/media/:file", limit("client-media", 600, 60e3), (req, res) =>
 /* ---------- Pages ---------- */
 const page = (f) => (req, res) => res.sendFile(path.join(PUBLIC, f));
 app.get("/", page("index.html"));
-app.get(["/connexion", "/inscription", "/inscription/confirmer", "/inscription/code", "/mot-de-passe-oublie", "/reinitialiser", "/invitation/:code"], page("auth.html"));
+app.get(["/connexion", "/inscription", "/inscription/confirmer", "/inscription/code", "/inscription/email", "/mot-de-passe-oublie", "/reinitialiser", "/invitation/:code"], page("auth.html"));
 app.get("/paiement-test", page("paiement-test.html"));
 app.get("/admin", page("admin.html"));
 app.get("/confidentialite", page("confidentialite.html"));

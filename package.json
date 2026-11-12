@@ -9,6 +9,7 @@
     "dev": "node --no-warnings --env-file-if-exists=.env --watch server/server.js",
     "seed": "node --no-warnings --env-file-if-exists=.env server/seed.js",
     "activate": "node --no-warnings --env-file-if-exists=.env server/activate.js",
+    "test-envoi": "node --no-warnings --env-file-if-exists=.env server/test-envoi.js",
     "screenshots": "node tools/screenshots.js",
     "icons": "node tools/icons.js",
     "qa": "node --no-warnings tools/qa.js",

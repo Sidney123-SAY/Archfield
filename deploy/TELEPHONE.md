@@ -29,9 +29,20 @@ Twilio Verify envoie le code par SMS ou WhatsApp et le vérifie lui-même. Pas d
    TWILIO_ACCOUNT_SID=AC…
    TWILIO_AUTH_TOKEN=…
    TWILIO_VERIFY_SID=VA…
+   SMS_CHANNELS=sms
    ```
 
-4. Redémarrez : `bash deploy/mettre-a-jour.sh`, ou `bash deploy/test-local.sh` en test.
+   L'**Account SID** et l'**Auth Token** sont sur la page d'accueil de la console. Le **Verify SID** (`VA…`) est sur la page du service créé à l'étape 2.
+
+   `SMS_CHANNELS=sms` : seul le SMS est proposé. Une fois WhatsApp relié chez Twilio, mettez `SMS_CHANNELS=whatsapp,sms` (WhatsApp d'abord, SMS en secours).
+4. Vérifiez avec votre propre numéro : `npm run test-envoi -- +33612345678`. Le code doit arriver dans la minute. En cas d'échec, le message de Twilio s'affiche, avec son numéro d'erreur.
+5. Redémarrez : `bash deploy/mettre-a-jour.sh`, ou `bash deploy/test-local.sh` en test.
+
+### Compte d'essai Twilio
+
+Le compte d'essai donne un petit crédit gratuit, mais **n'envoie qu'aux numéros que vous avez vérifiés** dans la console (**Phone Numbers › Manage › Verified Caller IDs**). Pour tester avec votre numéro, c'est suffisant. Pour vos utilisateurs, passez le compte en payant (**Upgrade**).
+
+Si un pays est refusé (erreur sur un numéro sénégalais ou béninois par exemple), autorisez-le dans les **autorisations géographiques** (*Geo permissions*) de la console.
 
 **Coût** : chaque vérification réussie est facturée. Voyez les tarifs par pays sur twilio.com : un SMS vers le Bénin coûte bien plus cher qu'un message WhatsApp.
 

@@ -84,3 +84,26 @@ test("connexion par code : numéro inconnu, e-mail, compte avec mot de passe", a
   assert.equal((await other.call("GET", "/api/me")).data.phone_verified, true);
   assert.equal((await user().call("POST", "/api/login", { ident: "+2290197112233", password: "chantier-2026" })).status, 200, "le mot de passe marche toujours");
 });
+
+test("inscription avec un e-mail : code reçu par e-mail pour confirmer l'adresse", async () => {
+  const { outbox } = require("../server/mail");
+  const lea = user();
+  const su = await lea.call("POST", "/api/signup", { account_type: "client", contact_name: "Léa", country: "FR", ident: "lea@example.com", password: "chantier-2026" });
+  assert.equal(su.status, 201);
+  assert.equal(su.data.confirm_email, true);
+  assert.equal((await lea.call("GET", "/api/me")).data.email_pending, true);
+
+  const sent = await lea.call("POST", "/api/email/send");
+  assert.equal(sent.status, 200, JSON.stringify(sent.data));
+  assert.equal(sent.data.channel, "email");
+  const mail = outbox.filter((m) => m.to === "lea@example.com").pop();
+  assert.ok(mail.text.includes(sent.data.test_code), "le code est dans l'e-mail");
+  assert.equal((await lea.call("POST", "/api/email/send")).status, 429, "45 secondes entre deux codes");
+
+  assert.equal((await lea.call("POST", "/api/email/verify", { code: "12" })).status, 400);
+  assert.equal((await lea.call("POST", "/api/email/verify", { code: sent.data.test_code })).status, 200);
+  const me = (await lea.call("GET", "/api/me")).data;
+  assert.equal(me.email_verified, true);
+  assert.equal(me.email_pending, false);
+  assert.equal((await user().call("POST", "/api/login", { ident: "lea@example.com", password: "chantier-2026" })).data.confirm_email, false);
+});

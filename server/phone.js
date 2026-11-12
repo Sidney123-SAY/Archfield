@@ -5,6 +5,7 @@
 // par SMS ou par WhatsApp et le vérifie lui-même (SMS_PROVIDER=twilio, voir deploy/TELEPHONE.md).
 const crypto = require("node:crypto");
 const { get, run } = require("./db");
+const { sendMail, mailEnabled } = require("./mail");
 
 // Indicatif de chaque pays ; trunk : le 0 du numéro national disparaît au format international (06… → +33 6…).
 // Au Bénin et en Côte d'Ivoire, le 0 fait partie du numéro (+229 01…, +225 07…).
@@ -50,6 +51,10 @@ const publicDial = () => Object.entries(DIAL).map(([k, v]) => ({ country: k, cod
 
 /* ---------- Envoi et vérification des codes ---------- */
 const PROVIDER = (process.env.SMS_PROVIDER || "").toLowerCase(); // "" (journal du serveur) ou "twilio"
+// Canaux proposés, dans l'ordre de préférence. WhatsApp demande chez Twilio un numéro WhatsApp Business relié :
+// SMS_CHANNELS=sms le retire tant que ce n'est pas fait.
+const CHANNELS = (process.env.SMS_CHANNELS || "whatsapp,sms").split(",").map((c) => c.trim().toLowerCase()).filter((c) => c === "whatsapp" || c === "sms");
+if (!CHANNELS.length) CHANNELS.push("sms");
 const TWILIO = { sid: process.env.TWILIO_ACCOUNT_SID, token: process.env.TWILIO_AUTH_TOKEN, verify: process.env.TWILIO_VERIFY_SID, base: process.env.TWILIO_VERIFY_URL || "https://verify.twilio.com/v2" };
 const SHOW_CODES = process.env.SHOW_TEST_CODES === "on" || (process.env.NODE_ENV !== "production" && process.env.SHOW_TEST_CODES !== "off");
 const CODE_MIN = 10, RESEND_S = 45, MAX_TRIES = 5, MAX_PER_HOUR = 6;
@@ -63,14 +68,21 @@ async function twilio(path, params) {
     body: new URLSearchParams(params)
   });
   const data = await r.json().catch(() => ({}));
-  if (!r.ok) { const e = new Error(data.message || "Envoi du code refusé."); e.status = r.status; throw e; }
+  if (!r.ok) {
+    // Le détail (numéro non vérifié en période d'essai, pays non autorisé, canal non activé…) va dans le journal ;
+    // l'utilisateur reçoit un message simple. Codes : https://www.twilio.com/docs/api/errors
+    console.error(`Twilio ${path} refusé (HTTP ${r.status}, code ${data.code || "?"}) : ${data.message || "sans détail"}`);
+    const e = new Error(r.status === 429 ? "Trop de codes demandés pour ce numéro. Réessayez dans un moment." : "Le code n'a pas pu être envoyé à ce numéro. Vérifiez-le, ou essayez l'autre moyen (SMS ou WhatsApp).");
+    e.status = r.status === 429 ? 429 : 502; throw e;
+  }
   return data;
 }
 
 // Envoie un code. Renvoie { channel, wait } ; en mode test, aussi { test_code } pour l'afficher à l'écran.
 // Lève une erreur { status, message } si l'on demande trop vite ou trop souvent.
+// Canal « email » : le code part par e-mail (phone contient alors l'adresse), avec les mêmes limites.
 async function sendCode(phone, purpose, channel) {
-  channel = channel === "sms" ? "sms" : "whatsapp";
+  if (channel !== "email") channel = CHANNELS.includes(channel) ? channel : CHANNELS[0];
   const now = Date.now();
   const last = get("SELECT created_at FROM phone_codes WHERE phone = ? AND purpose = ? ORDER BY id DESC LIMIT 1", phone, purpose);
   if (last && now - Date.parse(last.created_at) < RESEND_S * 1000) {
@@ -79,6 +91,16 @@ async function sendCode(phone, purpose, channel) {
   const n = get("SELECT COUNT(*) AS n FROM phone_codes WHERE phone = ? AND created_at > ?", phone, new Date(now - 3600e3).toISOString()).n;
   if (n >= MAX_PER_HOUR) { const e = new Error("Trop de codes demandés pour ce numéro. Réessayez dans une heure."); e.status = 429; throw e; }
   const created = new Date(now).toISOString(), expires = new Date(now + CODE_MIN * 60e3).toISOString();
+  if (channel === "email") {
+    const code = String(crypto.randomInt(0, 1e6)).padStart(6, "0");
+    run("INSERT INTO phone_codes (phone, purpose, channel, code_hash, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)", phone, purpose, channel, sha(phone + ":" + code), created, expires);
+    const sent = await sendMail({
+      to: phone, subject: `Archfield : votre code ${code}`,
+      text: `Bonjour,\n\nVotre code de confirmation Archfield : ${code}\n\nIl est valable ${CODE_MIN} minutes. Si vous n'avez rien demandé, ignorez ce message.`
+    });
+    if (!sent && mailEnabled) { const e = new Error("L'e-mail n'a pas pu partir. Vérifiez l'adresse, ou réessayez dans un instant."); e.status = 502; throw e; }
+    return { channel, wait: RESEND_S, ...(!mailEnabled && SHOW_CODES ? { test_code: code } : {}) };
+  }
   if (PROVIDER === "twilio") {
     await twilio("Verifications", { To: phone, Channel: channel, Locale: "fr" });
     run("INSERT INTO phone_codes (phone, purpose, channel, code_hash, created_at, expires_at) VALUES (?, ?, ?, NULL, ?, ?)", phone, purpose, channel, created, expires);
@@ -107,4 +129,4 @@ async function checkCode(phone, purpose, code) {
   return true;
 }
 
-module.exports = { DIAL, normalize, isPhoneLike, pretty, publicDial, sendCode, checkCode, enabled, SHOW_CODES, RESEND_S, PROVIDER };
+module.exports = { DIAL, normalize, isPhoneLike, pretty, publicDial, sendCode, checkCode, enabled, SHOW_CODES, RESEND_S, PROVIDER, CHANNELS };
