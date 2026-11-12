@@ -1,3 +1,16 @@
+# Accueil : photos de la maison qui se construit
+
+**Version en ligne (sans abonnement)** : 2 photos, dans `marketing/accueil/` : la villa finie (`ext-fini.jpg`) et les
+fondations (`ext-fondations.jpg`). Le plan bleu lumineux est tiré automatiquement de la villa finie, et les passages
+(fondu, maison qui monte du sol) sont fabriqués par `node tools/sequence.js`.
+
+**Pour aller plus loin avec les 10 crédits gratuits de Higgsfield** : générez une ou deux images de plus avec le modèle
+économique Nano Banana (prompts A4 et A5 ci-dessous, en mettant `marketing/accueil/ext-fini.jpg` en référence), enregistrez-les
+sous `ext-murs.jpg` et `ext-gros-oeuvre.jpg` dans `marketing/accueil/`, puis relancez `node tools/sequence.js`.
+Pour l'intérieur, ajoutez `int-brut.jpg` et `int-fini.jpg` (prompts A7 et A6) : le salon apparaît alors après la maison.
+
+---
+
 # Higgsfield : images et vidéos pour l'accueil « la maison se construit »
 
 À faire dans l'application Higgsfield, toujours dans le même ordre. Quand c'est fini, dites « c'est fait » à Claude :

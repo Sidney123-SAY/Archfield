@@ -7,11 +7,11 @@
   if (!sec) return;
   const pin = sec.querySelector(".b-pin");
   const extBox = sec.querySelector('[data-scene="ext"]'), intBox = sec.querySelector('[data-scene="int"]');
-  const panels = [...sec.querySelectorAll(".b-panel")];
-  const cards = [...sec.querySelectorAll(".b-cards .ui-card")];
-  const labels = [...sec.querySelectorAll(".b-label")];
+  let panels = [...sec.querySelectorAll(".b-panel")];
+  let cards = [...sec.querySelectorAll(".b-cards .ui-card")];
+  let labels = [...sec.querySelectorAll(".b-label")];
   const bar = sec.querySelector(".b-bar i"), hint = sec.querySelector(".b-hint");
-  const N = labels.length; // nombre d'étapes
+  let N = labels.length; // nombre d'étapes
   const EXT = 5;           // étapes 0 à 5 : extérieur ; 6 à N-1 : intérieur
   const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -27,6 +27,18 @@
   fetch("/img/sequence/manifest.json").then((r) => (r.ok ? r.json() : Promise.reject())).then(startSeq).catch(startSvg);
 
   function startSeq(m) {
+    // Moins d'étapes que de textes (par exemple seulement l'extérieur) : on garde les premières, et la dernière
+    // étape reçoit le texte de conclusion (avec le bouton).
+    if (m.keys.length < N) {
+      const last = m.keys.length - 1, close = panels.find((el) => Number(el.dataset.k) === N - 1);
+      panels.filter((el) => Number(el.dataset.k) >= last && el !== close).forEach((el) => el.remove());
+      if (close) close.dataset.k = String(last);
+      cards.filter((el) => Number(el.dataset.k) > last).forEach((el) => el.remove());
+      labels.slice(m.keys.length).forEach((el) => el.remove());
+      panels = [...sec.querySelectorAll(".b-panel")]; cards = [...sec.querySelectorAll(".b-cards .ui-card")]; labels = [...sec.querySelectorAll(".b-label")];
+      N = m.keys.length;
+      sec.style.setProperty("--frames", String(N));
+    }
     const canvas = document.createElement("canvas");
     canvas.className = "b-canvas";
     canvas.setAttribute("aria-hidden", "true");
